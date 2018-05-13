@@ -1,0 +1,8 @@
+*/build/
+*/data/
+build/
+data/
+exercise1/hash/build/
+exercise1/pq/build/
+.vs/
+.vscode/
