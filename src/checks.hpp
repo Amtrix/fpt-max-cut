@@ -14,3 +14,18 @@ bool COMPARE_(int x, int y, int line_number, const char* file) {
     }
     return true;
 }
+
+bool COMPARE_(vector<int> x, vector<int> y, int line_number, const char* file) {
+    if (x.size() != y.size()) {
+        cout << "FAIL @ " << file << ":" << line_number << endl;
+        cout << "       Different size. First: " << x.size() << ", second: " << y.size() << endl;
+        return false;
+    }
+
+    if (x != y) {
+        cout << "FAIL @ " << file << ":" << line_number << endl;
+        cout << "       Vectors contain different values." << endl;
+        return false;
+    }
+    return true;
+}

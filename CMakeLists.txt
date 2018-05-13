@@ -18,12 +18,7 @@ add_executable(benchmark executables/benchmark.cpp)
 target_sources(benchmark PRIVATE src/mc-graph.cpp)
 target_link_libraries(benchmark Threads::Threads)
 
-add_executable(test-articulation-points executables/test-articulation-points.cpp)
-target_sources(test-articulation-points PRIVATE src/mc-graph.cpp)
-target_link_libraries(test-articulation-points Threads::Threads)
+add_executable(test-articulation-and-biconnected executables/test-articulation-and-biconnected.cpp)
+target_sources(test-articulation-and-biconnected PRIVATE src/mc-graph.cpp)
+target_link_libraries(test-articulation-and-biconnected Threads::Threads)
 
-
-
-#add_executable(eval_single-thread tests/test-and-eval-single.cpp)
-#target_sources(eval_single-thread PRIVATE implementation/dynamic_connectivity.cpp)
-#target_link_libraries(eval_single-thread Threads::Threads)

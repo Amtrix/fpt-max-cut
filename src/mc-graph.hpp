@@ -3,6 +3,8 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+// Definition articulation node:
+// Its removal parts the graph in at least two non-empty graphs.
 
 // Undirected, Unweighted.
 class MaxCutGraph {
@@ -15,16 +17,25 @@ public:
     void AddEdge(int a, int b) {
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);
+
+        bicomponents_computed = false;
+        articulations_computed = false;
     }
 
     // https://github.com/niklasb/tcr/blob/master/graphentheorie/arti-bruecken.cpp
-    void ComputeArticulationPoints() {
+    void ComputeArticulationAndBiconnected() {
+        biconnected_components.clear();
+        is_articulation.assign(num_nodes, false);
+
         vector<bool> visited(num_nodes, false);
         vector<int> depth(num_nodes, -1);
         vector<int> low(num_nodes, -1);
         vector<int> child_count(num_nodes, 0);
         vector<int> parent(num_nodes, -1);
-        is_articulation.resize(num_nodes, false);
+
+        // DFS tree tracking data:
+        stack<pair<int,int>> component_edges;
+        vector<int> component;
 
         // In case multiple components exist, go over all nodes:
         for (int curr_node = 0; curr_node < num_nodes; ++curr_node) {
@@ -43,7 +54,21 @@ public:
                 } else if (u.type == tarjan_dfs_data_type::REVISIT) {
                     int w = g_adj_list[u.node][u.last_dx];
                     if (low[u.node] > low[w]) low[u.node] = low[w];
-                    is_articulation[u.node] = is_articulation[u.node] || (low[w] >= u.depth);
+                    if (low[w] >= u.depth) {
+                        is_articulation[u.node] = true;
+                        //cout << "COMPONENT-X: " << parent[u.node] << " " << u.node<< endl;
+                        while (!component_edges.empty()) {
+                            pair<int,int> e = component_edges.top();
+                            component_edges.pop();
+                            component.push_back(e.first);
+                            component.push_back(e.second);
+                            //cout << e.first << " " << e.second << endl;
+
+                            if (e.first == u.node) break;
+                        }
+                        biconnected_components.push_back(component);
+                        component.clear();
+                    }
                     start_it_dx = u.last_dx + 1;
                 }
 
@@ -51,6 +76,7 @@ public:
                     int w = g_adj_list[u.node][i];
                     
                     if (depth[w] < 0) {
+                        component_edges.push(make_pair(u.node,w));
                         child_count[u.node]++;
                         parent[w] = u.node;
                         stk.push({u.depth, u.node, tarjan_dfs_data_type::REVISIT, i});
@@ -62,10 +88,18 @@ public:
                 }
             }
 
+            if (g_adj_list[curr_node].size() == 0) {
+               // cout << "COMPONENT: " << endl;
+               // cout << curr_node << endl;
+                biconnected_components.push_back(vector<int>{curr_node});
+            }
+
             is_articulation[curr_node] = child_count[curr_node] > 1;
         }
+      //  cout << "DONE" << endl;
 
         articulations_computed = true;
+        bicomponents_computed = true;
     }
 
     vector<int> GetArticulationNodes() {
@@ -78,6 +112,14 @@ public:
             if (is_articulation[i])
                 ret.push_back(i);
         return ret;
+    }
+
+    vector<vector<int>> GetBiconnectedComponents() {
+        if (!bicomponents_computed) {
+            throw std::logic_error("Biconnected components not computed");
+        }
+
+        return biconnected_components;
     }
 
 private:
@@ -99,6 +141,7 @@ private:
     bool articulations_computed = false;
 
     vector<vector<int>> g_adj_list;
+    vector<vector<int>> biconnected_components;
 
     vector<bool> is_articulation;
 };
