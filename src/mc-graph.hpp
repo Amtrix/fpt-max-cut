@@ -14,6 +14,34 @@ public:
         g_adj_list.resize(num_nodes);
     }
 
+    // File based input is 1-index based.
+    MaxCutGraph(const string path) {
+        ifstream in(path.c_str());
+        if (in.fail()) {
+            throw std::logic_error("File doesn't exist.");
+        }
+
+        in >> num_nodes >> num_edges;
+        g_adj_list.resize(num_nodes);
+
+        string w;
+        getline(in, w); // previous EOL
+        for (int i = 0; i < num_edges; ++i) {
+            getline(in, w);
+
+            vector<int> params;
+            stringstream line_in(w);
+            while (line_in.eof() == false) {
+                int val; line_in >> val;
+                params.push_back(val);
+            }
+
+            if (params.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
+
+            AddEdge(params[0] - 1, params[1] - 1);
+        }
+    }
+
     void AddEdge(int a, int b) {
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);
