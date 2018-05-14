@@ -14,5 +14,8 @@ int main(int argc, char **argv){
     MaxCutGraph G(data_filepath);
 
     int k = 5;
-    cout << TryOneWayReduce(G, k) << endl;
+    int rule_taken;
+    while ((rule_taken = TryOneWayReduce(G, k)) != -1) {
+        cout << "RULE: " << rule_taken << endl;
+    }
 }

@@ -6,6 +6,7 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
     // First, find leaf block.
     int selected_block_dx = -1;
     auto bicomponents = G.GetBiconnectedComponents();
+    cout << "SZ: " << bicomponents.size() << endl;
     for (unsigned int i = 0; i < bicomponents.size(); ++i) {
         const auto& component = bicomponents[i];
         if (component.size() == 1) continue; // ?????
@@ -24,6 +25,10 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
         if (G.IsArticulation(component[i]))
             r = i;
     r = component[r];
+
+    cout << "r: " << r << endl;
+    for (int i = 0; i < component.size(); ++i)
+        cout << component[i] << " " ; cout << endl;
 
     if (G.IsClique(component)) { // Apply RULE 5
         G.ApplyRule5(component, r);

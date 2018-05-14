@@ -86,15 +86,18 @@ public:
                     if (low[u.node] > low[w]) low[u.node] = low[w];
                     if (low[w] >= u.depth) {
                         is_articulation[u.node] = true;
-                        //cout << "COMPONENT-X: " << parent[u.node] << " " << u.node<< endl;
+                       // cout << "COMPONENT-X: " << parent[u.node] << " " << u.node<< endl;
                         while (!component_edges.empty()) {
                             pair<int,int> e = component_edges.top();
                             component_edges.pop();
-                            component.push_back(e.first);
+                            // component.push_back(e.first); -- we dont want this since it makes double vertices
                             component.push_back(e.second);
                             //cout << e.first << " " << e.second << endl;
 
-                            if (e.first == u.node) break;
+                            if (e.first == u.node) {
+                                component.push_back(e.first);
+                                break;
+                            }
                         }
                         biconnected_components.push_back(component);
                         component.clear();

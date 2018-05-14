@@ -108,7 +108,20 @@ std::function<void()> suite[] = {
         VERIFY(anodes[0], 0);
         VERIFY(anodes[1], 1);
         VERIFY(anodes[2], 2);
-        VERIFY(bicomponents.size(), 4);
+        VERIFY_RETURN_ON_FAIL(bicomponents.size(), 4);
+
+        /*
+        for (auto component : bicomponents) {
+            cout << "COMPONENT: " << endl;
+            for (int i = 0; i < component.size(); ++i)
+                cout << component[i] << " "; cout << endl;
+        }
+        */
+
+        VERIFY(bicomponents[0], (vector<int>{0, 1 ,2}));
+        VERIFY(bicomponents[1], (vector<int>{0, 3 ,4}));
+        VERIFY(bicomponents[2], (vector<int>{1, 5 ,6}));
+        VERIFY(bicomponents[3], (vector<int>{2, 7 ,8}));
 
         // MORE spice:
         G.AddEdge(8, 6);
