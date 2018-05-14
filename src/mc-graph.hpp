@@ -17,6 +17,8 @@ public:
     void AddEdge(int a, int b) {
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);
+        edge_exists_lookup[make_pair(a,b)] = true;
+        edge_exists_lookup[make_pair(b,a)] = true;
 
         bicomponents_computed = false;
         articulations_computed = false;
@@ -102,10 +104,39 @@ public:
         bicomponents_computed = true;
     }
 
-    vector<int> GetArticulationNodes() {
-        if (!articulations_computed) {
-            throw std::logic_error("Articulation nodes not computed");
+    void RemoveNode(int node) {
+        articulations_computed = false;
+        bicomponents_computed = false;
+
+        g_adj_list[node].clear();
+
+        for (int i = 0; i < num_nodes; ++i) {
+            const auto it = std::find(g_adj_list[i].cbegin(), g_adj_list[i].cend(), node);
+            if (it != g_adj_list[i].end())
+                g_adj_list[i].erase(it);
+            
+            edge_exists_lookup.erase(make_pair(node, i));
+            edge_exists_lookup.erase(make_pair(i, node));
         }
+    }
+
+    bool IsClique(const vector<int>& vertex_set) {
+        for (unsigned int i = 0; i < vertex_set.size(); ++i)
+            for (unsigned int j = i + 1; j < vertex_set.size(); ++j)
+                if (edge_exists_lookup[make_pair(vertex_set[i], vertex_set[j])] == false)
+                    return false;
+        return true;
+    }
+
+    void ApplyRule5(const vector<int>& c_with_v, const int v) {
+        for (const int node : c_with_v) {
+            if (node == v) continue;
+            RemoveNode(node);
+        }
+    }
+
+    vector<int> GetArticulationNodes() {
+        if (!articulations_computed) ComputeArticulationAndBiconnected();
 
         vector<int> ret;
         for (int i = 0; i < num_nodes; ++i)
@@ -114,10 +145,14 @@ public:
         return ret;
     }
 
+    bool IsArticulation(int node) {
+        if (!articulations_computed) ComputeArticulationAndBiconnected();
+
+        return is_articulation[node];
+    }
+
     vector<vector<int>> GetBiconnectedComponents() {
-        if (!bicomponents_computed) {
-            throw std::logic_error("Biconnected components not computed");
-        }
+        if (!bicomponents_computed) ComputeArticulationAndBiconnected();
 
         return biconnected_components;
     }
@@ -131,7 +166,7 @@ private:
     struct tarjan_dfs_data {
         int depth;
         int node;
-        tarjan_dfs_data_type type; // false -- forward, true -- reeval past node
+        tarjan_dfs_data_type type;
         unsigned int last_dx;
     };
 
@@ -140,6 +175,7 @@ private:
     bool bicomponents_computed = false;
     bool articulations_computed = false;
 
+    map<pair<int,int>, bool> edge_exists_lookup; // IMPROVE TO O(1)!!!!
     vector<vector<int>> g_adj_list;
     vector<vector<int>> biconnected_components;
 
