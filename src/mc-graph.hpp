@@ -52,6 +52,13 @@ public:
         articulations_computed = false;
     }
 
+    const vector<int>& GetAdjacency(int node) {
+        return g_adj_list[node];
+    }
+    bool AreAdjacent(int n1, int n2) {
+        return edge_exists_lookup[make_pair(n1,n2)];
+    }
+
     // https://github.com/niklasb/tcr/blob/master/graphentheorie/arti-bruecken.cpp
     void ComputeArticulationAndBiconnected() {
         biconnected_components.clear();
@@ -159,11 +166,47 @@ public:
         return true;
     }
 
+    // (c_with_v - v) is clique
+    void ApplyRule3(const vector<int>& c_with_v, const int v) {
+        int any_adj_to_v_node = -1;
+        int any_nonadj_to_v_node = -1;
+        for (const int node : c_with_v) {
+            if (node == v) continue;
+
+            if (edge_exists_lookup[make_pair(node, v)])
+                any_adj_to_v_node = node;
+            if (!edge_exists_lookup[make_pair(node, v)])
+                any_nonadj_to_v_node = node;
+            
+            if (any_adj_to_v_node >= 0 && any_nonadj_to_v_node >= 0)
+                break;
+        }
+
+        if (any_adj_to_v_node) {
+            throw std::logic_error("Rule 3 assertion fail: No adjacent node to v found in C");
+        }
+
+        RemoveNode(any_adj_to_v_node);
+        RemoveNode(any_nonadj_to_v_node);
+        paper_S.push_back(any_adj_to_v_node);
+        paper_S.push_back(any_nonadj_to_v_node);
+    }
+
     void ApplyRule5(const vector<int>& c_with_v, const int v) {
         for (const int node : c_with_v) {
             if (node == v) continue;
             RemoveNode(node);
         }
+    }
+
+    void ApplyRule7(const vector<int>& c, const int v, const int b) {
+        RemoveNode(v);
+        RemoveNode(b);
+        paper_S.push_back(v);
+        paper_S.push_back(b);
+
+        for (const int node : c)
+            RemoveNode(node);
     }
 
     vector<int> GetArticulationNodes() {
@@ -173,6 +216,7 @@ public:
         for (int i = 0; i < num_nodes; ++i)
             if (is_articulation[i])
                 ret.push_back(i);
+                
         return ret;
     }
 
@@ -186,6 +230,10 @@ public:
         if (!bicomponents_computed) ComputeArticulationAndBiconnected();
 
         return biconnected_components;
+    }
+
+    double GetEdwardsErdosBound() {
+        return (num_edges / 2.0) + (num_nodes - 1) / 4.0;
     }
 
 private:
@@ -209,6 +257,7 @@ private:
     map<pair<int,int>, bool> edge_exists_lookup; // IMPROVE TO O(1)!!!!
     vector<vector<int>> g_adj_list;
     vector<vector<int>> biconnected_components;
+    vector<int> paper_S;
 
     vector<bool> is_articulation;
 };
