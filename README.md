@@ -1,0 +1,1 @@
+make && ./benchmark -f ../data/custom/input0

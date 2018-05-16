@@ -14,11 +14,18 @@ find_package(Threads REQUIRED)
 
 #### TARGETS ###################################################################
 
+#ALL_CPP_FILES = src/mc-graph.cpp src/utils.cpp
+
+list(APPEND ALL_CPP_FILES
+    "src/mc-graph.cpp"
+    "src/utils.cpp"
+)
+
 add_executable(benchmark executables/benchmark.cpp)
-target_sources(benchmark PRIVATE src/mc-graph.cpp)
+target_sources(benchmark PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(benchmark Threads::Threads)
 
 add_executable(test-articulation-and-biconnected executables/test-articulation-and-biconnected.cpp)
-target_sources(test-articulation-and-biconnected PRIVATE src/mc-graph.cpp)
+target_sources(test-articulation-and-biconnected PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(test-articulation-and-biconnected Threads::Threads)
 

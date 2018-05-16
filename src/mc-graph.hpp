@@ -1,5 +1,7 @@
 #pragma once
 
+#include "./utils.hpp"
+
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -42,6 +44,32 @@ public:
         }
     }
 
+    // Create induced subgraph
+    MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {
+        int source_num_nodes = source.GetNumNodes();
+
+        for (int i = 0; i < source_num_nodes; ++i)
+            removed_node[i] = true;
+        
+        for (const int node : subset)
+            removed_node[node] = false;
+
+        num_edges = 0;
+        for (const int node : subset) {
+            auto adj = source.GetAdjacency(node);
+            for (const int w : adj) {
+                if (removed_node[w])
+                    continue;
+
+                AddEdge(node, w);
+                num_edges++;
+            }
+        }
+    }
+
+    int GetNumNodes() const { return num_nodes; }
+    int GetNumEdges() const { return num_edges; }
+
     void AddEdge(int a, int b) {
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);
@@ -52,7 +80,7 @@ public:
         articulations_computed = false;
     }
 
-    const vector<int>& GetAdjacency(int node) {
+    const vector<int>& GetAdjacency(int node) const {
         return g_adj_list[node];
     }
     bool AreAdjacent(int n1, int n2) {
@@ -76,7 +104,7 @@ public:
 
         // In case multiple components exist, go over all nodes:
         for (int curr_node = 0; curr_node < num_nodes; ++curr_node) {
-            if (depth[curr_node] >= 0) continue;
+            if (depth[curr_node] >= 0 || removed_node[curr_node]) continue;
 
             stack<tarjan_dfs_data> stk;
             stk.push({0, curr_node, tarjan_dfs_data_type::FIRST_VISIT, 0});
@@ -142,6 +170,49 @@ public:
         bicomponents_computed = true;
     }
 
+    void CalculateSingleSourceDistance(int source) {
+        single_source_dist.assign(num_nodes, -1);
+        single_source_prev.assign(num_nodes, -1);
+
+        queue<int> q;
+        q.push(source);
+        single_source_dist[source] = 0;
+
+
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+
+            for (unsigned int i = 0; i < g_adj_list[u].size(); ++i) {
+                int w = g_adj_list[u][i];
+
+                if (single_source_dist[w] == -1) continue;
+                single_source_prev[w] = u;
+                single_source_dist[w] = single_source_dist[u] + 1;
+                q.push(w);
+            }
+        }
+    }
+
+    int GetSingleSourceDistance(int dest) {
+        return single_source_dist[dest];
+    }
+
+    // Return: {r,...,dest}
+    vector<int> GetSingleSourcePath(int dest) {
+        if (single_source_dist[dest] == -1)
+            throw logic_error("Requested path to unreachable destination.");
+        
+        vector<int> ret;
+        int curr = dest;
+        while (curr != -1) {
+            ret.push_back(curr);
+            curr = single_source_prev[curr];
+        }
+
+        return ret;
+    }
+
     void RemoveNode(int node) {
         articulations_computed = false;
         bicomponents_computed = false;
@@ -156,6 +227,16 @@ public:
             edge_exists_lookup.erase(make_pair(node, i));
             edge_exists_lookup.erase(make_pair(i, node));
         }
+
+        removed_node[node] = true;
+    }
+
+    vector<int> GetAllExistingNodes() {
+        vector<int> ret;
+        for (int i = 0; i < num_nodes; ++i)
+            if (!removed_node[i])
+                ret.push_back(i);
+        return ret;
     }
 
     bool IsClique(const vector<int>& vertex_set) {
@@ -197,6 +278,81 @@ public:
             if (node == v) continue;
             RemoveNode(node);
         }
+    }
+
+    vector<int> GetInducedPathByLemma2(const vector<int>& component, int r) {
+        assert(GetBiconnectedComponents().size() == 1);
+
+        auto component_minus_r = SetSubstract(component, vector<int>{r});
+       // MaxCutGraph c_minus_r_graph(c_graph, component_minus_r);
+      //  MaxCutGraph minus_r
+    }
+
+    vector<int> FindInducedPathForRule6(const vector<int>& component, const int r) {
+        MaxCutGraph c_graph(*this, component);
+
+        auto component_minus_r = SetSubstract(component, vector<int>{r});
+        MaxCutGraph c_minus_r_graph(c_graph, component_minus_r);
+        c_minus_r_graph.ComputeArticulationAndBiconnected();
+        auto bicomponents_sub = c_minus_r_graph.GetBiconnectedComponents();
+        cout << "SUBSZ: " << bicomponents_sub.size() << endl;
+
+        if (bicomponents_sub.size() == 1) { // X - r is 2-connected
+            c_graph.CalculateSingleSourceDistance(r);
+
+            // Calculate L_i's
+            int mx = 0;
+            for (auto node : component) mx = max(mx, c_graph.GetSingleSourceDistance(node));
+            vector<vector<int>> Li(mx);
+            for (auto node : component) Li[c_graph.GetSingleSourceDistance(node)].push_back(node); // different from paper since we also take r
+            sort(Li[1].begin(), Li[1].end());// need for comparing {x,y} = Li[1]
+
+            // make sure lexicographically sorted
+            sort(component_minus_r.begin(), component_minus_r.end());
+
+            // find the x,y
+            int current_min_d_xr = 1e9;
+            int selected_x = -1, selected_y = -1;
+            for (unsigned int i = 0; i < component_minus_r.size(); ++i) {
+                for (unsigned int j = i+1; j < component_minus_r.size(); ++j) {
+                    int x = component_minus_r[i];
+                    int y = component_minus_r[j];
+
+                    if (edge_exists_lookup[make_pair(x,y)]) continue;
+                    if (Li[1] == vector<int>{x,y}) continue;
+                    
+                    int d_xr = c_graph.GetSingleSourceDistance(x);
+                    if (current_min_d_xr > d_xr) {
+                        current_min_d_xr = d_xr;
+                        selected_x = x;
+                        selected_y = y;
+                    }
+                }
+            }
+
+            // Shortest path Q from r to x
+            auto Q = c_graph.GetSingleSourcePath(selected_x);
+            assert(Q.size() <= 3); // length of Q <= 2, meaning at most 3 nodes on path
+
+            vector<int> C_minus_Q_minus_x = SetSubstract(Q, {selected_x});
+            C_minus_Q_minus_x = SetSubstract(component, C_minus_Q_minus_x);
+            
+            MaxCutGraph G_CmQmx(c_graph, C_minus_Q_minus_x);
+            G_CmQmx.CalculateSingleSourceDistance(selected_x);
+            auto P = G_CmQmx.GetSingleSourcePath(selected_y);
+            
+            if (P.size() >= 3) {
+                assert(P[0] == selected_x);
+            } else {
+
+            }
+
+        //   vector<int> xy = c_
+        } else { // not 2-connected => use Lemma 4
+
+        }
+
+        return vector<int>();
     }
 
     void ApplyRule7(const vector<int>& c, const int v, const int b) {
@@ -254,10 +410,17 @@ private:
     bool bicomponents_computed = false;
     bool articulations_computed = false;
 
+    // Invariant: no edges should exist from/to removed_nodes.
+    unordered_map<int, bool> removed_node;
+
     map<pair<int,int>, bool> edge_exists_lookup; // IMPROVE TO O(1)!!!!
     vector<vector<int>> g_adj_list;
     vector<vector<int>> biconnected_components;
     vector<int> paper_S;
 
     vector<bool> is_articulation;
+
+    // Used inside CalculateSingleSourceDistance
+    vector<int> single_source_dist;
+    vector<int> single_source_prev;
 };

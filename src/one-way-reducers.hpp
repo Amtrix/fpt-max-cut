@@ -13,14 +13,15 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
     int selected_block_dx = -1;
     auto bicomponents = G.GetBiconnectedComponents();
 
-    /*
+    
     cout << "SZ: " << bicomponents.size() << ", all components: " << endl;
     for (auto component : bicomponents) {
-        for (int i = 0; i < component.size(); ++i)
-            cout << component[i] << " "; cout << endl;
+        for (unsigned int i = 0; i < component.size(); ++i)
+            cout << component[i] << " ";
+        cout << endl;
     }
     cout << "-- END-COMPONENTS --" << endl;
-    */
+    
 
     for (unsigned int i = 0; i < bicomponents.size(); ++i) {
         const auto& component = bicomponents[i];
@@ -90,7 +91,21 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
 
 
     // ############## TRY RULE 6 ##############
+    vector<int> induced_path = G.FindInducedPathForRule6(component, r);
+    
+    
+    /*MaxCutGraph c_graph(G, component);
 
+    MaxCutGraph c_minus_r_graph(c_graph, component_minus_r);
+    c_minus_r_graph.ComputeArticulationAndBiconnected();
+    auto bicomponents_sub = G.GetBiconnectedComponents();
+    cout << "SUBSZ: " << bicomponents_sub.size() << endl;
+
+    if (bicomponents_sub.size() == 1) { // X - r is 2-connected
+        vector<int> xy = c_
+    } else { // not 2-connected => use Lemma 4
+
+    }*/
     // #########################################
     return -1;
 }
