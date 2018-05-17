@@ -15,11 +15,12 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
 
     
     OutputDebugLog("Number of biconnected components in graph: " + to_string(bicomponents.size()) + ", all components:");
-    for (auto component : bicomponents) {
-        OutputDebugLogNoNewLine("Component: ");
+    for (unsigned int dx = 0; dx < bicomponents.size(); ++dx) {
+        const auto& component = bicomponents[dx];
+        OutputDebugLogNoNewLine("Component " + to_string(dx) + ": ");
         for (unsigned int i = 0; i < component.size(); ++i)
-            OutputDebugLogX(to_string(component[i]) + " ");
-        OutputDebugLogX("\n");
+            OutputDebugLogRaw(to_string(component[i]) + " ");
+        OutputDebugLogRaw("\n");
     }
     OutputDebugLog("-- END-COMPONENTS --");
     
@@ -44,6 +45,7 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
         if (G.IsArticulation(component[i]))
             r = i;
     r = component[r];
+    OutputDebugLog("r = " + to_string(r) + ", X = Component " + to_string(selected_block_dx));
 
     /*
     // PRINT-CHECK FOR VALUE X and r AS IN PAPER

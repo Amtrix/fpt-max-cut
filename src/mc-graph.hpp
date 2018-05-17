@@ -194,6 +194,12 @@ public:
         }
     }
 
+    bool DoesDisconnect(vector<int> selection_rem) {
+        if (!bicomponents_computed) ComputeArticulationAndBiconnected();
+
+        // TODO //
+    }
+
     int GetSingleSourceDistance(int dest) {
         return single_source_dist[dest];
     }
@@ -337,6 +343,9 @@ public:
             // Shortest path Q from r to x
             auto Q = c_graph.GetSingleSourcePathFromRoot(selected_x);
             assert(Q.size() <= 3); // length of Q <= 2, meaning at most 3 nodes on path
+            OutputDebugLogNoNewLine("Q: ");
+            for (auto node : Q) OutputDebugLogRaw(to_string(node) + " ");
+            OutputDebugLogRaw("\n");
 
             vector<int> C_minus_Q_minus_x = SetSubstract(Q, {selected_x});
             C_minus_Q_minus_x = SetSubstract(component, C_minus_Q_minus_x);
@@ -346,10 +355,13 @@ public:
             auto P = G_CmQmx.GetSingleSourcePathFromRoot(selected_y);
             
             if (P.size() >= 3) {
-                for (unsigned int i = 0; i < P.size(); ++i)
-                    cout << P[i] << " ";
-                cout << endl;
                 assert(P[0] == selected_x);
+
+                vector<int> PP;
+                for (unsigned int i = 0; i < P.size(); ++i)
+                    PP.push_back(P[i]);
+                
+                if(!DoesDisconnect(PP)) return PP; // G!
             } else {
 
             }

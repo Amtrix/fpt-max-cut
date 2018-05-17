@@ -15,7 +15,7 @@ const int NO_LINE_BREAK = 1;
 
 #define OutputDebugLogNoNewLine(str) OutputDebugLog_(__FILE__,__LINE__,str,NO_LINE_BREAK)
 #define OutputDebugLog(str) OutputDebugLog_(__FILE__,__LINE__,str,0)
-#define OutputDebugLogX(str) OutputDebugLogX_(str)
+#define OutputDebugLogRaw(str) OutputDebugLogX_(str)
 
 vector<int> SetSubstract(const vector<int>& source, const vector<int>& target);
 
