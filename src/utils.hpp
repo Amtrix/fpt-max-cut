@@ -17,7 +17,9 @@ const int NO_LINE_BREAK = 1;
 #define OutputDebugLog(str) OutputDebugLog_(__FILE__,__LINE__,str,0)
 #define OutputDebugLogRaw(str) OutputDebugLogX_(str)
 
-vector<int> SetSubstract(const vector<int>& source, const vector<int>& target);
-
 void OutputDebugLog_(const string file, const int line_num, const string str, const int flags = 0);
 void OutputDebugLogX_(const string str);
+
+vector<int> SetSubstract(const vector<int>& source, const vector<int>& target);
+vector<int> SetUnion(const vector<int>& s1, const vector<int>& s2);
+bool IsASubsetOfB(const vector<int>& A, const vector<int>& B);

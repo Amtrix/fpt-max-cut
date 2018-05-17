@@ -194,10 +194,76 @@ public:
         }
     }
 
-    bool DoesDisconnect(vector<int> selection_rem) {
-        if (!bicomponents_computed) ComputeArticulationAndBiconnected();
+    /*
+    MISSING: ignoring removed nodes.
+    vector<int> GetReachableNodes(int snode, const vector<int>& ignore) {
+        vector<bool> visited(num_nodes, false);
+        for (auto node : ignore) visited[node] = true;
 
-        // TODO //
+        queue<int> q;
+        q.push(snode);
+
+        vector<int> ret;
+        while (!q.empty()) {
+            int u = q.front(); q.pop();
+            ret.push_back(u);
+
+            for (unsigned int i = 0; i < g_adj_list[u].size(); ++i) {
+                int w = g_adj_list[u][i];
+                if (visited[w]) continue;
+                visited[w] = true;
+                q.push(w);
+            }
+        }
+        
+        return ret;
+    }*/
+
+    vector<vector<int>> GetAllConnectedComponents() {
+        vector<bool> visited(num_nodes, false);
+        vector<vector<int>> ret;
+
+        for (int curr_node = 0; curr_node < num_nodes; ++curr_node) {
+            if (visited[curr_node] || removed_node[curr_node]) continue;
+
+            queue<int> q;
+            visited[curr_node] = true;
+            q.push(curr_node);
+
+            vector<int> component;
+            while (!q.empty()) {
+                int u = q.front();
+                q.pop();
+
+                component.push_back(u);
+
+                for (unsigned int i = 0; i < g_adj_list[u].size(); ++i) {
+                    int w = g_adj_list[u][i];
+
+                    if (visited[w] || removed_node[w]) continue;
+                    visited[w] = true;
+                    q.push(w);
+                }
+            }
+
+            ret.push_back(component);
+        }
+
+        return ret;
+    }
+
+    bool DoesDisconnect(vector<int> selection_rem) {
+        auto before = GetAllConnectedComponents();
+        auto vset_after_sub = SetSubstract(GetAllExistingNodes(), selection_rem);
+        MaxCutGraph ng(*this, vset_after_sub);
+        auto after = ng.GetAllConnectedComponents();
+
+        int num_deleted_whole_components = 0;
+        for (auto component : before)
+            if (IsASubsetOfB(component, selection_rem))
+                num_deleted_whole_components++;
+        
+        return before.size() != (after.size() + num_deleted_whole_components);
     }
 
     int GetSingleSourceDistance(int dest) {
