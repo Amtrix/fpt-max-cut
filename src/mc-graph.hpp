@@ -258,6 +258,7 @@ public:
         MaxCutGraph ng(*this, vset_after_sub);
         auto after = ng.GetAllConnectedComponents();
 
+        // If a whole component gets deleted, it doesn't make the graph disconnected, so account for these cases.
         int num_deleted_whole_components = 0;
         for (auto component : before)
             if (IsASubsetOfB(component, selection_rem))
@@ -409,9 +410,7 @@ public:
             // Shortest path Q from r to x
             auto Q = c_graph.GetSingleSourcePathFromRoot(selected_x);
             assert(Q.size() <= 3); // length of Q <= 2, meaning at most 3 nodes on path
-            OutputDebugLogNoNewLine("Q: ");
-            for (auto node : Q) OutputDebugLogRaw(to_string(node) + " ");
-            OutputDebugLogRaw("\n");
+            OutputDebugVector("Q", Q);
 
             vector<int> C_minus_Q_minus_x = SetSubstract(Q, {selected_x});
             C_minus_Q_minus_x = SetSubstract(component, C_minus_Q_minus_x);
@@ -438,6 +437,15 @@ public:
         }
 
         return vector<int>();
+    }
+
+    void ApplyRule6(const vector<int>& induced_2path) {
+        assert(induced_2path.size() == 3);
+
+        for (auto node : induced_2path) {
+            RemoveNode(node);
+            paper_S.push_back(node);
+        }
     }
 
     void ApplyRule7(const vector<int>& c, const int v, const int b) {

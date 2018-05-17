@@ -17,8 +17,10 @@ int main(int argc, char **argv){
 
     int k = 0;
     int rule_taken;
+    OutputDebugLog("----------- START APPLYING ONE-WAY REDUCTION RULES -----------");
     while ((rule_taken = TryOneWayReduce(G, k)) != -1) {
         cout << "RULE: " << rule_taken << endl;
+        OutputDebugLog("-----------");
     }
 
     cout << "EE = " << EE << endl;
