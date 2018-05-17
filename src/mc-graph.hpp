@@ -182,11 +182,11 @@ public:
         while (!q.empty()) {
             int u = q.front();
             q.pop();
-
+            
             for (unsigned int i = 0; i < g_adj_list[u].size(); ++i) {
                 int w = g_adj_list[u][i];
 
-                if (single_source_dist[w] == -1) continue;
+                if (single_source_dist[w] > -1) continue;
                 single_source_prev[w] = u;
                 single_source_dist[w] = single_source_dist[u] + 1;
                 q.push(w);
@@ -199,7 +199,7 @@ public:
     }
 
     // Return: {r,...,dest}
-    vector<int> GetSingleSourcePath(int dest) {
+    vector<int> GetSingleSourcePathFromRoot(int dest) {
         if (single_source_dist[dest] == -1)
             throw logic_error("Requested path to unreachable destination.");
         
@@ -209,7 +209,8 @@ public:
             ret.push_back(curr);
             curr = single_source_prev[curr];
         }
-
+        
+        reverse(ret.begin(), ret.end());
         return ret;
     }
 
@@ -295,7 +296,7 @@ public:
         MaxCutGraph c_minus_r_graph(c_graph, component_minus_r);
         c_minus_r_graph.ComputeArticulationAndBiconnected();
         auto bicomponents_sub = c_minus_r_graph.GetBiconnectedComponents();
-        cout << "SUBSZ: " << bicomponents_sub.size() << endl;
+        OutputDebugLog("Number of biconnected components in X - r: " + to_string(bicomponents_sub.size()));
 
         if (bicomponents_sub.size() == 1) { // X - r is 2-connected
             c_graph.CalculateSingleSourceDistance(r);
@@ -303,9 +304,11 @@ public:
             // Calculate L_i's
             int mx = 0;
             for (auto node : component) mx = max(mx, c_graph.GetSingleSourceDistance(node));
-            vector<vector<int>> Li(mx);
+            vector<vector<int>> Li(mx + 1);
+            OutputDebugLog("Maximum distance from r in X: " + to_string(mx));
             for (auto node : component) Li[c_graph.GetSingleSourceDistance(node)].push_back(node); // different from paper since we also take r
             sort(Li[1].begin(), Li[1].end());// need for comparing {x,y} = Li[1]
+            OutputDebugLog("Li computation successful");
 
             // make sure lexicographically sorted
             sort(component_minus_r.begin(), component_minus_r.end());
@@ -329,9 +332,10 @@ public:
                     }
                 }
             }
+            OutputDebugLog("Selection of (x,y) = (" + to_string(selected_x) + "," + to_string(selected_y) + ")");
 
             // Shortest path Q from r to x
-            auto Q = c_graph.GetSingleSourcePath(selected_x);
+            auto Q = c_graph.GetSingleSourcePathFromRoot(selected_x);
             assert(Q.size() <= 3); // length of Q <= 2, meaning at most 3 nodes on path
 
             vector<int> C_minus_Q_minus_x = SetSubstract(Q, {selected_x});
@@ -339,9 +343,12 @@ public:
             
             MaxCutGraph G_CmQmx(c_graph, C_minus_Q_minus_x);
             G_CmQmx.CalculateSingleSourceDistance(selected_x);
-            auto P = G_CmQmx.GetSingleSourcePath(selected_y);
+            auto P = G_CmQmx.GetSingleSourcePathFromRoot(selected_y);
             
             if (P.size() >= 3) {
+                for (unsigned int i = 0; i < P.size(); ++i)
+                    cout << P[i] << " ";
+                cout << endl;
                 assert(P[0] == selected_x);
             } else {
 

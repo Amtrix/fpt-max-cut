@@ -14,13 +14,14 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
     auto bicomponents = G.GetBiconnectedComponents();
 
     
-    cout << "SZ: " << bicomponents.size() << ", all components: " << endl;
+    OutputDebugLog("Number of biconnected components in graph: " + to_string(bicomponents.size()) + ", all components:");
     for (auto component : bicomponents) {
+        OutputDebugLogNoNewLine("Component: ");
         for (unsigned int i = 0; i < component.size(); ++i)
-            cout << component[i] << " ";
-        cout << endl;
+            OutputDebugLogX(to_string(component[i]) + " ");
+        OutputDebugLogX("\n");
     }
-    cout << "-- END-COMPONENTS --" << endl;
+    OutputDebugLog("-- END-COMPONENTS --");
     
 
     for (unsigned int i = 0; i < bicomponents.size(); ++i) {

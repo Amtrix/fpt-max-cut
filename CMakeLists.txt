@@ -24,6 +24,7 @@ list(APPEND ALL_CPP_FILES
 add_executable(benchmark executables/benchmark.cpp)
 target_sources(benchmark PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(benchmark Threads::Threads)
+target_compile_definitions(benchmark PRIVATE DEBUG)
 
 add_executable(test-articulation-and-biconnected executables/test-articulation-and-biconnected.cpp)
 target_sources(test-articulation-and-biconnected PRIVATE ${ALL_CPP_FILES})
