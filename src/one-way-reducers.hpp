@@ -87,6 +87,10 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
     if (induced_path.size() > 0) {
         OutputDebugVector("Induced path for rule 6", induced_path);
 
+        assert(G.AreAdjacent(induced_path[0], induced_path[1]));
+        assert(G.AreAdjacent(induced_path[1], induced_path[2]));
+        assert(!G.AreAdjacent(induced_path[0], induced_path[2]));
+
         G.ApplyRule6(induced_path);
         k--;
         return 6;

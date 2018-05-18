@@ -23,10 +23,14 @@ int main(int argc, char **argv){
         OutputDebugLog("-----------");
     }
 
+    cout << "|V| = " << G.GetNumNodes() << endl;
+    cout << "|E| = " << G.GetNumEdges() << endl; 
     cout << "EE = " << EE << endl;
     cout << "k' = " << k << endl;
-    cout << "S: " << " ";
+
     auto S = G.GetMarkedVerticesByOneWayRules();
+    cout << "|S| = " << S.size() << endl;
+    cout << "S: " << " ";
     for (auto node : S) cout << node << " ";
     cout << endl;
 }

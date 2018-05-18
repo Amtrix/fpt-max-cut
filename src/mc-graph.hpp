@@ -11,6 +11,8 @@ using namespace std;
 // Undirected, Unweighted.
 class MaxCutGraph {
 public:
+    MaxCutGraph() {}
+
     MaxCutGraph(int n, int m) {
         num_nodes = n, num_edges = m;
         g_adj_list.resize(num_nodes);
@@ -431,33 +433,98 @@ public:
                 
                 if(!DoesDisconnect(PP)) return PP; // G!
             } else {
-
+                assert(false);
             }
 
         //   vector<int> xy = c_
         } else { // not 2-connected => use Lemma 4
+            OutputDebugLog("Computing induced path for Rule 6 by using Lemma, since X - r not 2-connected.");
+
+            // 1.
             auto bicomponents = c_minus_r_graph.GetBiconnectedComponents();
             auto anodes = c_minus_r_graph.GetArticulationNodes();
             assert(anodes.size() > 0);
             int v = anodes[0];
 
-            vector<int> Z1,Z2;
+            vector<int> Z[3];
             for (auto component : bicomponents) {
                 if (find(component.begin(), component.end(), v) != component.end()) {
-                    if (Z1.empty()) Z1 = component;
-                    else if (Z2.empty()) { Z2 = component; break; }
+                    if (Z[1].empty()) Z[1] = component;
+                    else if (Z[2].empty()) { Z[2] = component; break; }
                 }
             }
 
-            assert(!Z2.empty());
+            assert(!Z[2].empty());
             OutputDebugLog("Cut vertex v = " + to_string(v));
-            OutputDebugVector("Z1", Z1);
-            OutputDebugVector("Z2", Z2);
+            OutputDebugVector("Z1", Z[1]);
+            OutputDebugVector("Z2", Z[2]);
 
-            // continue on 2.
+            // 2.
+            auto component_minus_v = SetSubstract(component, vector<int>{v});
+            MaxCutGraph c_minus_v_graph(c_graph, component_minus_v);
+            c_minus_v_graph.CalculateSingleSourceDistance(r);
+            OutputDebugLog("X - v graph computed.");
+
+            int u_dist[3] = {-1, 1 << 30, 1 << 30};
+            int u[3] = {-1, -1, -1};
+            for (unsigned int i = 1; i <= 2; ++i) {
+                for (auto node : Z[i]) {
+                    if (node == v) continue;
+                    int d = c_minus_v_graph.GetSingleSourceDistance(node);
+                    if (d < u_dist[i]) {
+                        u_dist[i] = d;
+                        u[i] = node;
+                    }
+                }
+            }
+
+            assert(u[1] != -1 && u[2] != -1);
+            assert(u_dist[1] != -1 && u_dist[2] != -1);
+
+            vector<int> P[3] = {(vector<int>{}), c_minus_v_graph.GetSingleSourcePathFromRoot(u[1]),
+                c_minus_v_graph.GetSingleSourcePathFromRoot(u[2])};
+            
+            // 3.
+            MaxCutGraph T[3];
+            for (unsigned int i = 1; i <= 2; ++i) {
+                T[i] = MaxCutGraph(c_graph, Z[i]);
+                T[i].CalculateLemma4DFSTree(v, u[i]);
+            }
+
+            // 4.
+            int w[3] = {-1, -1, -1};
+            int w_depth[3] = {-1, -1, -1};
+            for (unsigned int i = 1; i <= 2; ++i) {
+                const auto& adj_v = T[i].GetAdjacency(v);
+                for (auto w_candidate : adj_v) {
+                    int depth = T[i].GetDfsTreeDepthFromRoot(w_candidate);
+                    if (depth > w_depth[i]) { // I ASSUME!!!!!!!!! lowest in dfs tree => largest depth.
+                        w_depth[i] = depth;
+                        w[i] = w_candidate;
+                    }
+                }
+            }
+
+            assert(w[1] != -1 && w[2] != -1);
+            OutputDebugLog("(w1,w2) = (" + to_string(w[1]) + "," + to_string(w[2]) + ")");
+
+            return vector<int>{w[1], v, w[2]};
         }
 
         return vector<int>();
+    }
+
+    void CalculateLemma4DFSTree(int root, int ui) {
+        dfs_tree_parent.assign(num_nodes, -1);
+        dfs_tree_depth.assign(num_nodes, -1);
+        dfs_tree_ui = ui;
+
+        dfs_tree_depth[root] = 0;
+        CalculateLemma4DFSTree_(root);
+    }
+
+    int GetDfsTreeDepthFromRoot(int node) {
+        return dfs_tree_depth[node];
     }
 
     void ApplyRule6(const vector<int>& induced_2path) {
@@ -522,6 +589,32 @@ private:
         tarjan_dfs_data_type type;
         unsigned int last_dx;
     };
+
+    void CalculateLemma4DFSTree_(int node) {
+
+        // ui child of v if (v,ui) in E; here v = root, dfs_tree_ui = ui.
+        if (dfs_tree_depth[node] == 0) {
+            for (auto child : g_adj_list[node]) {
+                if (child == dfs_tree_ui) {
+                    dfs_tree_parent[child] = node;
+                    dfs_tree_depth[child] = dfs_tree_depth[node] + 1;
+                    CalculateLemma4DFSTree_(child);
+                }
+            }
+        }
+
+        for (auto child : g_adj_list[node]) {
+            if (dfs_tree_depth[child] > -1) continue; // visited
+
+            dfs_tree_parent[child] = node;
+            dfs_tree_depth[child] = dfs_tree_depth[node] + 1;
+            CalculateLemma4DFSTree_(child);
+        }
+    }
+
+    vector<int> dfs_tree_parent;
+    vector<int> dfs_tree_depth;
+    int dfs_tree_ui;
 
     int num_nodes, num_edges;
 
