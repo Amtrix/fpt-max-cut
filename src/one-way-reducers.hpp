@@ -55,6 +55,14 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
     // ############## TRY RULE 3 ##############
     auto component_minus_r = SetSubstract(component, vector<int>{r});
     if (G.IsClique(component_minus_r)) {
+        /*for (auto node : component) {
+            cout << "adjacent to " << node << " = ";
+            MaxCutGraph sub(G, component);
+            auto adj = sub.GetAdjacency(node);
+            for (auto w : adj)
+                cout << w << " ";
+            cout << endl;
+        }*/
         G.ApplyRule3(component, r);
         k -= 2;
         return 3;

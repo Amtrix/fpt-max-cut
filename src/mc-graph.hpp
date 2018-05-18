@@ -60,7 +60,7 @@ public:
         for (const int node : subset) {
             auto adj = source.GetAdjacency(node);
             for (const int w : adj) {
-                if (removed_node[w])
+                if (removed_node[w] || edge_exists_lookup[make_pair(node, w)])
                     continue;
 
                 AddEdge(node, w);
@@ -339,7 +339,7 @@ public:
                 break;
         }
 
-        if (any_adj_to_v_node) {
+        if (any_adj_to_v_node == -1) {
             throw std::logic_error("Rule 3 assertion fail: No adjacent node to v found in C");
         }
 
@@ -428,7 +428,7 @@ public:
                 assert(P[0] == selected_x);
 
                 vector<int> PP;
-                for (unsigned int i = 0; i < P.size(); ++i)
+                for (unsigned int i = 0; i < 3; ++i)
                     PP.push_back(P[i]);
                 
                 if(!DoesDisconnect(PP)) return PP; // G!
@@ -508,6 +508,7 @@ public:
             assert(w[1] != -1 && w[2] != -1);
             OutputDebugLog("(w1,w2) = (" + to_string(w[1]) + "," + to_string(w[2]) + ")");
 
+            // 5.
             return vector<int>{w[1], v, w[2]};
         }
 
