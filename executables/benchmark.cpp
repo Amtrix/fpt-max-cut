@@ -25,4 +25,8 @@ int main(int argc, char **argv){
 
     cout << "EE = " << EE << endl;
     cout << "k' = " << k << endl;
+    cout << "S: " << " ";
+    auto S = G.GetMarkedVerticesByOneWayRules();
+    for (auto node : S) cout << node << " ";
+    cout << endl;
 }

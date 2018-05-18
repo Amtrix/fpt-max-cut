@@ -390,7 +390,9 @@ public:
             int current_min_d_xr = 1e9;
             int selected_x = -1, selected_y = -1;
             for (unsigned int i = 0; i < component_minus_r.size(); ++i) {
-                for (unsigned int j = i+1; j < component_minus_r.size(); ++j) {
+                for (unsigned int j = 0; j < component_minus_r.size(); ++j) { // we can't do j = i + 1, because symmetry not given in x and y because of min(r,x) condition.
+                    if (i == j) continue;
+
                     int x = component_minus_r[i];
                     int y = component_minus_r[j];
 
@@ -409,6 +411,7 @@ public:
 
             // Shortest path Q from r to x
             auto Q = c_graph.GetSingleSourcePathFromRoot(selected_x);
+            assert(Li[1].size() > 0 && Li[3].size() > 0);
             assert(Q.size() <= 3); // length of Q <= 2, meaning at most 3 nodes on path
             OutputDebugVector("Q", Q);
 
@@ -433,7 +436,25 @@ public:
 
         //   vector<int> xy = c_
         } else { // not 2-connected => use Lemma 4
+            auto bicomponents = c_minus_r_graph.GetBiconnectedComponents();
+            auto anodes = c_minus_r_graph.GetArticulationNodes();
+            assert(anodes.size() > 0);
+            int v = anodes[0];
 
+            vector<int> Z1,Z2;
+            for (auto component : bicomponents) {
+                if (find(component.begin(), component.end(), v) != component.end()) {
+                    if (Z1.empty()) Z1 = component;
+                    else if (Z2.empty()) { Z2 = component; break; }
+                }
+            }
+
+            assert(!Z2.empty());
+            OutputDebugLog("Cut vertex v = " + to_string(v));
+            OutputDebugVector("Z1", Z1);
+            OutputDebugVector("Z2", Z2);
+
+            // continue on 2.
         }
 
         return vector<int>();
@@ -479,6 +500,10 @@ public:
         if (!bicomponents_computed) ComputeArticulationAndBiconnected();
 
         return biconnected_components;
+    }
+
+    vector<int> GetMarkedVerticesByOneWayRules() const {
+        return paper_S;
     }
 
     double GetEdwardsErdosBound() {

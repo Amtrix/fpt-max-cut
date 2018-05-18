@@ -44,14 +44,6 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
     r = component[r];
     OutputDebugLog("r = " + to_string(r) + ", X = Component " + to_string(selected_block_dx));
 
-    /*
-    // PRINT-CHECK FOR VALUE X and r AS IN PAPER
-    cout << "r: " << r << endl;
-    cout << "X: " << " ";
-    for (int i = 0; i < component.size(); ++i)
-        cout << component[i] << " " ; cout << endl;
-    */
-
     // ############## TRY RULE 5 ##############
     if (G.IsClique(component)) { 
         G.ApplyRule5(component, r);
