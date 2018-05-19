@@ -269,6 +269,18 @@ public:
         return before.size() != (after.size() + num_deleted_whole_components);
     }
 
+    bool Breaks2Connected(vector<int> selection_rem) {
+        if (!bicomponents_computed) ComputeArticulationAndBiconnected();
+        assert(biconnected_components.size() == 1);
+
+        auto vset = GetAllExistingNodes();
+        auto subvset = SetSubstract(vset, selection_rem);
+        MaxCutGraph nwg(*this, subvset);
+        nwg.ComputeArticulationAndBiconnected();
+
+        return nwg.GetBiconnectedComponents().size() != 1;
+    }
+
     int GetSingleSourceDistance(int dest) {
         return single_source_dist[dest];
     }
@@ -360,8 +372,81 @@ public:
         assert(GetBiconnectedComponents().size() == 1);
 
         auto component_minus_r = SetSubstract(component, vector<int>{r});
-       // MaxCutGraph c_minus_r_graph(c_graph, component_minus_r);
-      //  MaxCutGraph minus_r
+        MaxCutGraph c_graph(*this, component);
+        MaxCutGraph c_minus_r_graph(c_graph, component_minus_r);
+
+        OutputDebugLog("Computing induced path for Rule 6 by using Lemma, since X - r not 2-connected.");
+
+        // 1.
+        auto bicomponents = c_minus_r_graph.GetBiconnectedComponents();
+        auto anodes = c_minus_r_graph.GetArticulationNodes();
+        assert(anodes.size() > 0);
+        int v = anodes[0];
+
+        vector<int> Z[3];
+        for (auto component : bicomponents) {
+            if (find(component.begin(), component.end(), v) != component.end()) {
+                if (Z[1].empty()) Z[1] = component;
+                else if (Z[2].empty()) { Z[2] = component; break; }
+            }
+        }
+
+        assert(!Z[2].empty());
+        OutputDebugLog("Cut vertex v = " + to_string(v));
+        OutputDebugVector("Z1", Z[1]);
+        OutputDebugVector("Z2", Z[2]);
+
+        // 2.
+        auto component_minus_v = SetSubstract(component, vector<int>{v});
+        MaxCutGraph c_minus_v_graph(c_graph, component_minus_v);
+        c_minus_v_graph.CalculateSingleSourceDistance(r);
+        OutputDebugLog("X - v graph computed.");
+
+        int u_dist[3] = {-1, 1 << 30, 1 << 30};
+        int u[3] = {-1, -1, -1};
+        for (unsigned int i = 1; i <= 2; ++i) {
+            for (auto node : Z[i]) {
+                if (node == v) continue;
+                int d = c_minus_v_graph.GetSingleSourceDistance(node);
+                if (d < u_dist[i]) {
+                    u_dist[i] = d;
+                    u[i] = node;
+                }
+            }
+        }
+
+        assert(u[1] != -1 && u[2] != -1);
+        assert(u_dist[1] != -1 && u_dist[2] != -1);
+
+        vector<int> P[3] = {(vector<int>{}), c_minus_v_graph.GetSingleSourcePathFromRoot(u[1]),
+            c_minus_v_graph.GetSingleSourcePathFromRoot(u[2])};
+        
+        // 3.
+        MaxCutGraph T[3];
+        for (unsigned int i = 1; i <= 2; ++i) {
+            T[i] = MaxCutGraph(c_graph, Z[i]);
+            T[i].CalculateLemma4DFSTree(v, u[i]);
+        }
+
+        // 4.
+        int w[3] = {-1, -1, -1};
+        int w_depth[3] = {-1, -1, -1};
+        for (unsigned int i = 1; i <= 2; ++i) {
+            const auto& adj_v = T[i].GetAdjacency(v);
+            for (auto w_candidate : adj_v) {
+                int depth = T[i].GetDfsTreeDepthFromRoot(w_candidate);
+                if (depth > w_depth[i]) { // I ASSUME!!!!!!!!! lowest in dfs tree => largest depth.
+                    w_depth[i] = depth;
+                    w[i] = w_candidate;
+                }
+            }
+        }
+
+        assert(w[1] != -1 && w[2] != -1);
+        OutputDebugLog("(w1,w2) = (" + to_string(w[1]) + "," + to_string(w[2]) + ")");
+
+        // 5.
+        return vector<int>{w[1], v, w[2]};
     }
 
     vector<int> FindInducedPathForRule6(const vector<int>& component, const int r) {
@@ -423,93 +508,65 @@ public:
             MaxCutGraph G_CmQmx(c_graph, C_minus_Q_minus_x);
             G_CmQmx.CalculateSingleSourceDistance(selected_x);
             auto P = G_CmQmx.GetSingleSourcePathFromRoot(selected_y);
+            OutputDebugVector("P", P);
             
+            vector<int> PP;
             if (P.size() >= 3) {
                 assert(P[0] == selected_x);
 
-                vector<int> PP;
                 for (unsigned int i = 0; i < 3; ++i)
                     PP.push_back(P[i]);
                 
+                OutputDebugVector("PP", PP);
                 if(!DoesDisconnect(PP)) return PP; // G!
             } else {
-                assert(false);
+                // just comsmetic comment here
+                // if P.size() < 3, then P doesn't exist.
+                // P.size() >= 3 has to hold because of the way we selected x,y
+                // {x,y} != L[1]
             }
+
+            // We still didn't succeed => we do lemma 2 now.
+
+            vector<int> QPP = Q; // Q.size <= 3
+            for (unsigned int i = 1; i < PP.size(); ++i) // we start at 1 because of the overlap between end of Q and start of PP
+                QPP.push_back(PP[i]); // PP.size <= 3, therefore QPP.size <= 6
+            
+            assert(QPP.size() <= 6);
+            assert(QPP[0] == r);
+            //assert(DoesDisconnect(QPP));
+
+            vector<int> prefix_that_disconnects;
+            for (unsigned int i = 0; i < QPP.size(); ++i) {
+                prefix_that_disconnects.push_back(QPP[i]);
+
+                if (c_graph.Breaks2Connected(prefix_that_disconnects))
+                    break;
+            }
+
+            assert(c_graph.Breaks2Connected(prefix_that_disconnects));
+
+            OutputDebugVector("Prefix that disconnects", prefix_that_disconnects);
+
+            auto vertex_that_disconnected = prefix_that_disconnects.back();
+            prefix_that_disconnects.pop_back(); // doesn't make != 2 connected anymore
+            auto new_component = SetSubstract(component, prefix_that_disconnects);
+            prefix_that_disconnects.push_back(vertex_that_disconnected); // to keep it meaningful
+            
+            MaxCutGraph graph_for_lemma(*this, new_component);
+            graph_for_lemma.ComputeArticulationAndBiconnected();
+            assert(graph_for_lemma.GetBiconnectedComponents().size() == 1);
+
+            auto new_component2 = SetSubstract(component, prefix_that_disconnects);
+            MaxCutGraph graph_for_lemma2(*this, new_component2);
+            graph_for_lemma.ComputeArticulationAndBiconnected();
+            assert(graph_for_lemma.GetBiconnectedComponents().size() != 1);
+
+            return GetInducedPathByLemma2(new_component, vertex_that_disconnected);
 
         //   vector<int> xy = c_
         } else { // not 2-connected => use Lemma 4
-            OutputDebugLog("Computing induced path for Rule 6 by using Lemma, since X - r not 2-connected.");
-
-            // 1.
-            auto bicomponents = c_minus_r_graph.GetBiconnectedComponents();
-            auto anodes = c_minus_r_graph.GetArticulationNodes();
-            assert(anodes.size() > 0);
-            int v = anodes[0];
-
-            vector<int> Z[3];
-            for (auto component : bicomponents) {
-                if (find(component.begin(), component.end(), v) != component.end()) {
-                    if (Z[1].empty()) Z[1] = component;
-                    else if (Z[2].empty()) { Z[2] = component; break; }
-                }
-            }
-
-            assert(!Z[2].empty());
-            OutputDebugLog("Cut vertex v = " + to_string(v));
-            OutputDebugVector("Z1", Z[1]);
-            OutputDebugVector("Z2", Z[2]);
-
-            // 2.
-            auto component_minus_v = SetSubstract(component, vector<int>{v});
-            MaxCutGraph c_minus_v_graph(c_graph, component_minus_v);
-            c_minus_v_graph.CalculateSingleSourceDistance(r);
-            OutputDebugLog("X - v graph computed.");
-
-            int u_dist[3] = {-1, 1 << 30, 1 << 30};
-            int u[3] = {-1, -1, -1};
-            for (unsigned int i = 1; i <= 2; ++i) {
-                for (auto node : Z[i]) {
-                    if (node == v) continue;
-                    int d = c_minus_v_graph.GetSingleSourceDistance(node);
-                    if (d < u_dist[i]) {
-                        u_dist[i] = d;
-                        u[i] = node;
-                    }
-                }
-            }
-
-            assert(u[1] != -1 && u[2] != -1);
-            assert(u_dist[1] != -1 && u_dist[2] != -1);
-
-            vector<int> P[3] = {(vector<int>{}), c_minus_v_graph.GetSingleSourcePathFromRoot(u[1]),
-                c_minus_v_graph.GetSingleSourcePathFromRoot(u[2])};
-            
-            // 3.
-            MaxCutGraph T[3];
-            for (unsigned int i = 1; i <= 2; ++i) {
-                T[i] = MaxCutGraph(c_graph, Z[i]);
-                T[i].CalculateLemma4DFSTree(v, u[i]);
-            }
-
-            // 4.
-            int w[3] = {-1, -1, -1};
-            int w_depth[3] = {-1, -1, -1};
-            for (unsigned int i = 1; i <= 2; ++i) {
-                const auto& adj_v = T[i].GetAdjacency(v);
-                for (auto w_candidate : adj_v) {
-                    int depth = T[i].GetDfsTreeDepthFromRoot(w_candidate);
-                    if (depth > w_depth[i]) { // I ASSUME!!!!!!!!! lowest in dfs tree => largest depth.
-                        w_depth[i] = depth;
-                        w[i] = w_candidate;
-                    }
-                }
-            }
-
-            assert(w[1] != -1 && w[2] != -1);
-            OutputDebugLog("(w1,w2) = (" + to_string(w[1]) + "," + to_string(w[2]) + ")");
-
-            // 5.
-            return vector<int>{w[1], v, w[2]};
+            return GetInducedPathByLemma2(component, r);
         }
 
         return vector<int>();
