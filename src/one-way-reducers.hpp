@@ -18,6 +18,10 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
     for (unsigned int dx = 0; dx < bicomponents.size(); ++dx) {
         const auto& component = bicomponents[dx];
         OutputDebugVector("Component " + to_string(dx), component);
+#ifdef DEBUG
+        MaxCutGraph cg(G, component);
+        OutputDebugVector("  edges", cg.GetAllExistingEdges());
+#endif
     }
     OutputDebugLog("-- END-COMPONENTS --");
     

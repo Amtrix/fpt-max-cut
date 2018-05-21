@@ -24,6 +24,34 @@ void OutputDebugLogX_(const string str) {
 #endif
 }
 
+void OutputDebugVector_(const string file, const int line_num, const string name, const vector<int> vec) {
+    (void)file;
+    (void)line_num;
+    (void)name;
+    (void)vec;
+
+#ifdef DEBUG
+    OutputDebugLog_(file, line_num, name + ": ", NO_LINE_BREAK);
+    for (unsigned int i = 0; i < vec.size(); ++i)
+        OutputDebugLogRaw(to_string(vec[i]) + " ");
+    OutputDebugLogRaw("\n");
+#endif
+}
+
+void OutputDebugVector_(const string file, const int line_num, const string name, const vector<pair<int,int>> vec) {
+    (void)file;
+    (void)line_num;
+    (void)name;
+    (void)vec;
+
+#ifdef DEBUG
+    OutputDebugLog_(file, line_num, name + ": ", NO_LINE_BREAK);
+    for (unsigned int i = 0; i < vec.size(); ++i)
+        OutputDebugLogRaw("(" + to_string(vec[i].first) + "," + to_string(vec[i].second) + ") ");
+    OutputDebugLogRaw("\n");
+#endif
+}
+
 
 vector<int> SetSubstract(const vector<int>& source, const vector<int>& target) {
     vector<int> ret;

@@ -326,6 +326,17 @@ public:
                 ret.push_back(i);
         return ret;
     }
+    vector<pair<int,int>> GetAllExistingEdges() {
+        vector<pair<int,int>> ret;
+        for (int i = 0; i < num_nodes; ++i) {
+            if (removed_node[i]) continue;
+            for (int w : g_adj_list[i]) {
+                if (removed_node[w] || i > w) continue;
+                ret.push_back(make_pair(i, w));
+            }
+        }
+        return ret;
+    }
 
     bool IsClique(const vector<int>& vertex_set) {
         for (unsigned int i = 0; i < vertex_set.size(); ++i)
