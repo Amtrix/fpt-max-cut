@@ -544,6 +544,17 @@ public:
                     break;
             }
 
+            if (!c_graph.Breaks2Connected(prefix_that_disconnects)) {
+                prefix_that_disconnects.clear();
+
+                for (unsigned int i = 1; i < QPP.size(); ++i) {
+                    prefix_that_disconnects.push_back(QPP[i]);
+
+                    if (c_graph.Breaks2Connected(prefix_that_disconnects))
+                        break;
+                }
+            }
+
             assert(c_graph.Breaks2Connected(prefix_that_disconnects));
 
             OutputDebugVector("Prefix that disconnects", prefix_that_disconnects);
@@ -557,16 +568,11 @@ public:
             graph_for_lemma.ComputeArticulationAndBiconnected();
             assert(graph_for_lemma.GetBiconnectedComponents().size() == 1);
 
-            auto new_component2 = SetSubstract(component, prefix_that_disconnects);
-            MaxCutGraph graph_for_lemma2(*this, new_component2);
-            graph_for_lemma.ComputeArticulationAndBiconnected();
-            assert(graph_for_lemma.GetBiconnectedComponents().size() != 1);
-
-            return GetInducedPathByLemma2(new_component, vertex_that_disconnected);
+            return graph_for_lemma.GetInducedPathByLemma2(new_component, vertex_that_disconnected);
 
         //   vector<int> xy = c_
         } else { // not 2-connected => use Lemma 4
-            return GetInducedPathByLemma2(component, r);
+            return c_graph.GetInducedPathByLemma2(component, r);
         }
 
         return vector<int>();
