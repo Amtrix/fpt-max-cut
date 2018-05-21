@@ -6,6 +6,7 @@ cmake_minimum_required (VERSION 2.8)
 
 include_directories(.)
 
+set (CMAKE_CXX_COMPILER /usr/bin/g++-7)
 set (CMAKE_CXX_FLAGS "-std=c++1z -msse4.2 -Wall -Wextra -O3 -g -fopenmp")
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -23,8 +24,12 @@ list(APPEND ALL_CPP_FILES
 
 add_executable(benchmark executables/benchmark.cpp)
 target_sources(benchmark PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(benchmark Threads::Threads)
-target_compile_definitions(benchmark PRIVATE DEBUG)
+target_link_libraries(benchmark PRIVATE Threads::Threads -lstdc++fs)
+
+add_executable(benchmark-debug executables/benchmark.cpp)
+target_sources(benchmark-debug PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(benchmark-debug PRIVATE Threads::Threads -lstdc++fs)
+target_compile_definitions(benchmark-debug PRIVATE DEBUG)
 
 add_executable(test-articulation-and-biconnected executables/test-articulation-and-biconnected.cpp)
 target_sources(test-articulation-and-biconnected PRIVATE ${ALL_CPP_FILES})
