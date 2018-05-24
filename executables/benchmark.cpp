@@ -39,6 +39,7 @@ int main(int argc, char **argv){
         }
     }
 
+    vector<int> tot_used_rules(10, 0);
     for (string data_filepath : all_sets_to_evaluate) {
         cout << endl;
         cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
@@ -48,9 +49,11 @@ int main(int argc, char **argv){
         int k = 0;
         int rule_taken;
         OutputDebugLog("----------- START APPLYING ONE-WAY REDUCTION RULES -----------");
-        while ((rule_taken = TryOneWayReduce(G, k)) != -1) {
+        MaxCutGraph Gp = G; // ! make sure no pointers in G !
+        while ((rule_taken = TryOneWayReduce(Gp, k)) != -1) {
             OutputDebugLog("RULE: " + to_string(rule_taken));
             OutputDebugLog("-----------");
+            tot_used_rules[rule_taken]++;
         }
 
         cout << "|V| = " << G.GetNumNodes() << endl;
@@ -58,10 +61,39 @@ int main(int argc, char **argv){
         cout << "EE = " << EE << endl;
         cout << "k' = " << k << endl;
 
-        auto S = G.GetMarkedVerticesByOneWayRules();
+        auto S = Gp.GetMarkedVerticesByOneWayRules();
         cout << "|S| = " << S.size() << endl;
         cout << "S: " << " ";
         for (auto node : S) cout << node << " ";
         cout << endl;
+
+        
+    
+#ifdef DEBUG
+        auto G_minus_S_vertex_set = SetSubstract(G.GetAllExistingNodes(), S);
+        MaxCutGraph G_minus_S(G, G_minus_S_vertex_set);
+        assert(G_minus_S.IsCliqueForest());
+#endif
+
+        if (input.cmdOptionExists("-cc")) { // temp flag since this is very slow
+            int mx_sol = 0;
+            for (int mask = 0; mask < (1 << S.size()); ++mask) {
+                vector<int> s_color;
+                for (unsigned int i = 0; i < S.size(); ++i)
+                    if (mask & (1<<i)) s_color.push_back(1);
+                    else s_color.push_back(0);
+                
+                int sol = G.ComputeCut(S, s_color);
+                mx_sol = max(mx_sol, sol);
+            }
+
+            OutputDebugLog("mx_sol = " + to_string(mx_sol));
+        }
     }
+
+    cout << endl;
+    cout << " ================ Analysis over all rules commulative ================ " << endl;
+    for (int r = 1; r <= 7; ++r)
+        cout << "Rule " << r << " was used " << tot_used_rules[r] << " times." << endl;
+    cout << " ===================================================================== " << endl << endl;
 }

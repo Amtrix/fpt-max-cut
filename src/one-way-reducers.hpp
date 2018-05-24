@@ -3,87 +3,37 @@
 #include "mc-graph.hpp"
 #include "utils.hpp"
 
-/*
- * Difference from the paper:
- * - vertices are not being deleted, but just made disconnected from the rest of the graph.
- * 
-**/
-int TryOneWayReduce(MaxCutGraph& G, int &k) {
-    // First, find leaf block.
-    int selected_block_dx = -1;
-    auto bicomponents = G.GetBiconnectedComponents();
-
-    
-    OutputDebugLog("Number of biconnected components in graph: " + to_string(bicomponents.size()) + ", all components:");
-    for (unsigned int dx = 0; dx < bicomponents.size(); ++dx) {
-        const auto& component = bicomponents[dx];
-        OutputDebugVector("Component " + to_string(dx), component);
-#ifdef DEBUG
-        MaxCutGraph cg(G, component);
-        OutputDebugVector("  edges", cg.GetAllExistingEdges());
-#endif
-    }
-    OutputDebugLog("-- END-COMPONENTS --");
-    
-
-    for (unsigned int i = 0; i < bicomponents.size(); ++i) {
-        const auto& component = bicomponents[i];
-        if (component.size() == 1) continue; // We ignore 1-vertex components
-
-        int articulation_count = 0;
-        for (const int node : component) articulation_count += G.IsArticulation(node);
-        if (articulation_count <= 1 && (selected_block_dx == -1 || component.size() < bicomponents[selected_block_dx].size()))
-            selected_block_dx = i;
-    }
-
-    // No leaf block with more than one vertex found => graph contains only isolated vertices.
-    if (selected_block_dx == -1) return -1;
-    const auto& component = bicomponents[selected_block_dx];
-
-    // Find r as outlined in paper. r is cut vertex if exists, or arbitrary vertex if not.
-    int r = 0;
-    for (unsigned int i = 1; i < component.size(); ++i)
-        if (G.IsArticulation(component[i]))
-            r = i;
-    r = component[r];
-    OutputDebugLog("r = " + to_string(r) + ", X = Component " + to_string(selected_block_dx));
-
-    // ############## TRY RULE 5 ##############
-    if (G.IsClique(component)) { 
-        G.ApplyRule5(component, r);
-        if (component.size() % 2 == 0) k--; // We do even instead odd, because here C = component U r
+int TryRule5(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k) {
+    if (G.IsClique(leaf_block)) { 
+        G.ApplyRule5(leaf_block, r);
+        if (leaf_block.size() % 2 == 0) k--; // We do even instead odd, because here C = component U r
         return 5;
     }
-    // #########################################
+    return -1;
+}
 
-    // ############## TRY RULE 3 ##############
-    auto component_minus_r = SetSubstract(component, vector<int>{r});
+int TryRule3(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k) {
+    auto component_minus_r = SetSubstract(leaf_block, vector<int>{r});
     if (G.IsClique(component_minus_r)) {
-        /*for (auto node : component) {
-            cout << "adjacent to " << node << " = ";
-            MaxCutGraph sub(G, component);
-            auto adj = sub.GetAdjacency(node);
-            for (auto w : adj)
-                cout << w << " ";
-            cout << endl;
-        }*/
-        G.ApplyRule3(component, r);
+        G.ApplyRule3(leaf_block, r); // TODO(): Make sure leaf_block is right here.
         k -= 2;
         return 3;
     }
-    // #########################################
+    return -1;
+}
 
-    // ############## TRY RULE 7 ##############
+int TryRule7(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k) {
     auto adj_to_r = G.GetAdjacency(r);
     vector<int> inside_component;
-    for (const int node : component)
+
+    for (const int node : leaf_block)
         if (G.AreAdjacent(node, r))
             inside_component.push_back(node);
     
     if (inside_component.size() == 2) {
-        vector<int> s1 = SetSubstract(component, {r, inside_component[0]});
-        vector<int> s2 = SetSubstract(component, {r, inside_component[1]});
-        vector<int> intersect = SetSubstract(component, {r, inside_component[0], inside_component[1]});
+        vector<int> s1 = SetSubstract(leaf_block, {r, inside_component[0]});
+        vector<int> s2 = SetSubstract(leaf_block, {r, inside_component[1]});
+        vector<int> intersect = SetSubstract(leaf_block, {r, inside_component[0], inside_component[1]});
 
         if (G.IsClique(s1) && G.IsClique(s2)) {
             G.ApplyRule7(intersect, inside_component[0], inside_component[1]);
@@ -91,11 +41,13 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
             return 7;
         }
     }
-    // #########################################
 
+    return -1;
+}
 
-    // ############## TRY RULE 6 ##############
-    vector<int> induced_path = G.FindInducedPathForRule6(component, r);
+int TryRule6(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k) {
+    vector<int> induced_path = G.FindInducedPathForRule6(leaf_block, r);
+
     if (induced_path.size() > 0) {
         OutputDebugVector("Induced path for rule 6", induced_path);
 
@@ -107,8 +59,39 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
         k--;
         return 6;
     }
-    
-    
+
+    return -1;
+}
+
+/*
+ * Difference from the paper:
+ * - vertices are not being deleted, but just made disconnected from the rest of the graph.
+ * 
+**/
+int TryOneWayReduce(MaxCutGraph& G, int &k) {
+    // First, find leaf block.
+    vector<int> component;
+    int r;
+
+    std::tie(component, r) = G.GetLeafBlockAndArticulation(true);
+
+    if (r == -1) return -1;
+
+    // ############## TRY RULE 5 ##############
+    if (TryRule5(G, component, r, k) != -1) return 5;
     // #########################################
+
+    // ############## TRY RULE 3 ##############
+    if (TryRule3(G, component, r, k) != -1) return 3;
+    // #########################################
+
+    // ############## TRY RULE 7 ##############
+    if (TryRule7(G, component, r, k) != -1) return 7;
+    // #########################################
+
+    // ############## TRY RULE 6 ##############
+    if (TryRule6(G, component, r, k) != -1) return 6;
+    // #########################################
+
     return -1;
 }
