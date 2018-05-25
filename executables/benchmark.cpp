@@ -67,7 +67,38 @@ int main(int argc, char **argv){
         for (auto node : S) cout << node << " ";
         cout << endl;
 
+        /*
+        S.erase(std::remove(S.begin(), S.end(), 9), S.end());
+        S.erase(std::remove(S.begin(), S.end(), 8), S.end());
+        auto vvv = SetSubstract(G.GetAllExistingNodes(), S);
+        MaxCutGraph newG(G, vvv);
+        assert(newG.IsCliqueForest());
         
+        newG.GetLeafBlockAndArticulation(true);*/
+
+        // Try reduce size of S
+        while (1) {
+            bool was_possible = false;
+            for (int node : S) {
+                auto G_minus_S_vertex_set = SetSubstract(G.GetAllExistingNodes(), S);
+                auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
+                MaxCutGraph G_minus_newS(G, when_node_added);
+                
+                if (G_minus_newS.IsCliqueForest()) {
+                    S.erase(std::remove(S.begin(), S.end(), node), S.end());
+                    was_possible = true;
+                    break;
+                }
+            }
+
+            if (!was_possible) break;
+        }
+
+
+        cout << "new |S| = " << S.size() << endl;
+        cout << "new S: " << " ";
+        for (auto node : S) cout << node << " ";
+        cout << endl;
     
 #ifdef DEBUG
         auto G_minus_S_vertex_set = SetSubstract(G.GetAllExistingNodes(), S);

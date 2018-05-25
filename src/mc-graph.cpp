@@ -359,18 +359,96 @@ int MaxCutGraph::ComputeCut(const vector<int>& S, const vector<int>& S_color) {
     }
 
 
-
+    auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
+    MaxCutGraph G_minus_S(*this, G_minus_S_vertex_set);
     while(1) {
-        auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
-        MaxCutGraph G_minus_S(*this, G_minus_S_vertex_set);
-
         vector<int> leaf_block;
         int r;
 
-        tie(leaf_block, r) = GetLeafBlockAndArticulation(false);
+        tie(leaf_block, r) = G_minus_S.GetLeafBlockAndArticulation(true);
         
-        // todo
+        if (r == -1)
+            break;
+
+        leaf_block = SetSubstract(leaf_block, vector<int>{r}); // make X U {r} represent whole block as in paper. X U {r} is clique (!!!!!!).
+        const int block_size = leaf_block.size();
+
+        vector<pair<int,int>> eps;
+        int w0_sum, w1_sum;
+        ////////////////////////////// REDUCE CODE BELLOW ?//////////////////////////////
+        // try color(r) == 1
+        w0_sum  = 0;
+        for (int node : leaf_block) {
+            int w0 = weight[0][node], w1 = weight[1][node];
+            eps.push_back(make_pair(w1 - w0, node));
+            w0_sum += w0;
+           // cout << "leaf " << node << " = " << weight[0][node] << " " << weight[1][node] << endl;
+        }
+        sort(eps.rbegin(), eps.rend());
+
+        int V1 = weight[1][r] + w0_sum + block_size; // assume all in X are set to 0
+        int all_to_all_flip_add = 0;
+       // cout << "pre_v1 = " << V1 << endl;
+        w1_sum = 0;
+        for (unsigned int i = 0; i < eps.size(); ++i) {
+            auto entry = eps[i];
+            int w0 = weight[0][entry.second], w1 = weight[1][entry.second];
+            
+            // we now color entry.second to '1'
+            w0_sum -= w0;
+            w1_sum += w1;
+
+            all_to_all_flip_add += block_size - (i + 1);
+            int V1_check = weight[1][r] + w1_sum + w0_sum + (block_size - (i + 1)) + all_to_all_flip_add;
+           // cout << weight[1][r] << " " << w1_sum << " " << w0_sum << " " << block_size << " " << (i+1) << " = " << V1_check << " ( " << eps.size() << endl;
+            V1 = max(V1_check, V1);
+        }
+        ////////////////// done with color(r) == 1
+
+        // try color(r) == 0
+        w1_sum = 0;
+        eps.clear();
+        for (int node : leaf_block) {
+            int w0 = weight[0][node], w1 = weight[1][node];
+            eps.push_back(make_pair(w0 - w1, node));
+            w1_sum += w1;
+        }
+        sort(eps.rbegin(), eps.rend());
+
+        int V0 = weight[0][r] + w1_sum + block_size; // assume all in X are set to 1
+       // cout << "pre_v0 = " << V0 << endl;
+        w0_sum = 0;
+        all_to_all_flip_add = 0;
+        for (unsigned int i = 0; i < eps.size(); ++i) {
+            auto entry = eps[i];
+            int w0 = weight[0][entry.second], w1 = weight[1][entry.second];
+            
+            // we now color entry.second to '1'
+            w0_sum += w0;
+            w1_sum -= w1;
+
+            all_to_all_flip_add += block_size - (i + 1);
+            int V0_check = weight[0][r] + w1_sum + w0_sum + (block_size - (i + 1)) + all_to_all_flip_add;
+            //cout << entry.second << ". " << weight[0][r] << " " << w1_sum << " " << w0_sum << " " << block_size << " " << (i+1) << " = " << V0_check << " ( " << eps.size() << endl;
+            V0 = max(V0_check, V0);
+        }
+        ////////////////// done with color(r) == 0
+       // cout << "prv: " << weight[0][r] << " " << weight[1][r] << endl;
+        weight[0][r] = V0;
+        weight[1][r] = V1;
+        //cout << r << " = " << V0 << " " << V1 << endl;
+        auto allv = G_minus_S.GetAllExistingNodes();
+        auto nextv = SetSubstract(allv, leaf_block);
+        G_minus_S = MaxCutGraph(G_minus_S, nextv);
     }
 
-    return 0;
+    int sol = 0;
+    auto bicomponents = G_minus_S.GetBiconnectedComponents();
+    for (auto component : bicomponents) {
+        assert(component.size() == 1);
+        int u = component[0];
+        sol += max(weight[0][u], weight[1][u]);
+    }
+
+    return sol + p;
 }
