@@ -73,25 +73,21 @@ int TryOneWayReduce(MaxCutGraph& G, int &k) {
     vector<int> component;
     int r;
 
-    std::tie(component, r) = G.GetLeafBlockAndArticulation(true);
+    std::tie(component, r) = G.GetLeafBlockAndArticulation(false);
 
     if (r == -1) return -1;
 
     // ############## TRY RULE 5 ##############
     if (TryRule5(G, component, r, k) != -1) return 5;
-    // #########################################
 
     // ############## TRY RULE 3 ##############
     if (TryRule3(G, component, r, k) != -1) return 3;
-    // #########################################
 
     // ############## TRY RULE 7 ##############
     if (TryRule7(G, component, r, k) != -1) return 7;
-    // #########################################
 
     // ############## TRY RULE 6 ##############
     if (TryRule6(G, component, r, k) != -1) return 6;
-    // #########################################
 
     return -1;
 }

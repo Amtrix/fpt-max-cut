@@ -24,6 +24,7 @@ vector<string> GetAllDatasets(const string path) {
 }
 
 int main(int argc, char **argv){
+    ios_base::sync_with_stdio(false);
     InputParser input(argc, argv);
 
     vector<string> all_sets_to_evaluate;
@@ -61,38 +62,16 @@ int main(int argc, char **argv){
         cout << "EE = " << EE << endl;
         cout << "k' = " << k << endl;
 
-        auto S = Gp.GetMarkedVerticesByOneWayRules();
+        G.SetMarkedVertices(Gp.GetMarkedVerticesByOneWayRules());
+        auto S = G.GetMarkedVerticesByOneWayRules();
         cout << "|S| = " << S.size() << endl;
         cout << "S: " << " ";
         for (auto node : S) cout << node << " ";
         cout << endl;
 
-        /*
-        S.erase(std::remove(S.begin(), S.end(), 9), S.end());
-        S.erase(std::remove(S.begin(), S.end(), 8), S.end());
-        auto vvv = SetSubstract(G.GetAllExistingNodes(), S);
-        MaxCutGraph newG(G, vvv);
-        assert(newG.IsCliqueForest());
-        
-        newG.GetLeafBlockAndArticulation(true);*/
-
         // Try reduce size of S
-        while (1) {
-            bool was_possible = false;
-            for (int node : S) {
-                auto G_minus_S_vertex_set = SetSubstract(G.GetAllExistingNodes(), S);
-                auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
-                MaxCutGraph G_minus_newS(G, when_node_added);
-                
-                if (G_minus_newS.IsCliqueForest()) {
-                    S.erase(std::remove(S.begin(), S.end(), node), S.end());
-                    was_possible = true;
-                    break;
-                }
-            }
-
-            if (!was_possible) break;
-        }
+        G.ReduceMarksetVertexSet();
+        S = G.GetMarkedVerticesByOneWayRules();
 
 
         cout << "new |S| = " << S.size() << endl;
@@ -106,18 +85,8 @@ int main(int argc, char **argv){
         assert(G_minus_S.IsCliqueForest());
 #endif
 
-        if (input.cmdOptionExists("-cc")) { // temp flag since this is very slow
-            int mx_sol = 0;
-            for (int mask = 0; mask < (1 << S.size()); ++mask) {
-                vector<int> s_color;
-                for (unsigned int i = 0; i < S.size(); ++i)
-                    if (mask & (1<<i)) s_color.push_back(1);
-                    else s_color.push_back(0);
-                
-                int sol = G.ComputeCut(S, s_color);
-                mx_sol = max(mx_sol, sol);
-            }
-
+        if (input.cmdOptionExists("-cc-brute")) { // temp flag since this is very slow
+            int mx_sol = G.ComputeOptimalColoringBruteforce(S);
             OutputDebugLog("mx_sol = " + to_string(mx_sol));
         }
     }
