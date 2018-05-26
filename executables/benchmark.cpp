@@ -88,6 +88,11 @@ int main(int argc, char **argv){
         if (input.cmdOptionExists("-cc-brute")) { // temp flag since this is very slow
             int mx_sol = G.ComputeOptimalColoringBruteforce(S);
             OutputDebugLog("mx_sol = " + to_string(mx_sol));
+            OutputDebugVector("Coloring", G.GetMaxCutColoring());
+
+            auto allv = G.GetAllExistingNodes();
+            auto sss = G.MaxCutExtension(allv, G.GetMaxCutColoring());
+            cout << (get<0>(sss)) << endl;
         }
     }
 

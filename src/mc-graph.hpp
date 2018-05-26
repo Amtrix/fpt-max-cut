@@ -93,7 +93,7 @@ public:
 
     vector<int> GetMarkedVerticesByOneWayRules() const;
 
-    void SetMarkedVertices(const vector<int>& S) { paper_S = S; };
+    void SetMarkedVertices(const vector<int>& S) { paper_S = S; }
 
     double GetEdwardsErdosBound() const;
 
@@ -101,13 +101,15 @@ public:
     tuple<vector<int>, int> GetLeafBlockAndArticulation(bool print_components = false);
 
     // Makes assumption(!) that S is subset of G. We can't check this, as this is time-critical.
-    int MaxCutExtension(const vector<int>& S, const vector<int>& S_color);
+    tuple<int, vector<int>> MaxCutExtension(const vector<int>& S, const vector<int>& S_color);
 
     void ReduceMarksetVertexSet();
 
     int ComputeOptimalColoringBruteforce(const vector<int>& S);
 
     int ComputeOptimalColoring(const vector<int>& S, const vector<int>& S_color = {});
+
+    vector<int> GetMaxCutColoring() { return computed_maxcut_coloring; }
 private:
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,
@@ -146,4 +148,7 @@ private:
     // Used inside CalculateSingleSourceDistance
     vector<int> single_source_dist;
     vector<int> single_source_prev;
+
+    // Used by MaxCutExtension
+    vector<int> computed_maxcut_coloring;
 };

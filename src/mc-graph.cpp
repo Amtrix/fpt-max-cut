@@ -638,7 +638,7 @@ tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_comp
     return make_tuple(component, r);
 }
 
-int MaxCutGraph::MaxCutExtension(const vector<int>& S, const vector<int>& S_color) {
+tuple<int, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const vector<int>& S_color) {
     vector<int> weight[2] = {vector<int>(num_nodes, 0), vector<int>(num_nodes, 0)};
     unordered_map<int,int> S_to_color;
 
@@ -662,52 +662,60 @@ int MaxCutGraph::MaxCutExtension(const vector<int>& S, const vector<int>& S_colo
 
     auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
     MaxCutGraph G_minus_S(*this, G_minus_S_vertex_set);
+
+    vector<tuple<int, int, int, vector<int>, vector<pair<int,int>>, vector<pair<int,int>> >> all_dp_substraction_steps;
     while(1) {
         vector<int> leaf_block;
         int r;
 
         tie(leaf_block, r) = G_minus_S.GetLeafBlockAndArticulation(false);
         
-        if (r == -1)
-            break;
-
+        if (r == -1) break;
         leaf_block = SetSubstract(leaf_block, vector<int>{r}); // make X U {r} represent whole block as in paper. X U {r} is clique (!!!!!!).
         const int block_size = leaf_block.size();
 
-        vector<pair<int,int>> eps;
+        vector<pair<int,int>> eps[2];
         int w_sum[2];
         int V[2];
+        int V_step[2] = {-1, -1};
+
         for (int dx = 0; dx < 2; ++dx) {
             w_sum[0]  = 0, w_sum[1] = 0;
             for (int node : leaf_block) {
                 int w[2] = {weight[0][node], weight[1][node]};
-                eps.push_back(make_pair(dx == 0 ? w[1] - w[0] : w[0] - w[1], node));
+                eps[!dx].push_back(make_pair(dx == 0 ? w[1] - w[0] : w[0] - w[1], node));
                 w_sum[dx] += w[dx];
             }
-            sort(eps.rbegin(), eps.rend());
+            sort(eps[!dx].rbegin(), eps[!dx].rend());
 
             V[!dx] = weight[!dx][r] + w_sum[dx] + block_size; // assume all in X are set to dx
-            int all_to_all_flip_add = 0;
-            for (unsigned int i = 0; i < eps.size(); ++i) {
-                auto entry = eps[i];
+            int all_to_all_flip_add = block_size;
+            for (unsigned int i = 0; i < eps[!dx].size(); ++i) {
+                auto entry = eps[!dx][i];
                 int w[2] = {weight[0][entry.second], weight[1][entry.second]};
                 
                 w_sum[0] += dx == 0 ? -w[0] : w[0];
                 w_sum[1] += dx == 0 ? w[1] : -w[1];
 
-                all_to_all_flip_add += block_size - (i + 1);
-                int v_check = weight[!dx][r] + w_sum[!dx] + w_sum[dx] + (block_size - (i + 1)) + all_to_all_flip_add;
+                all_to_all_flip_add += (block_size - (i + 1)) - (i + 1);
+                int v_check = weight[!dx][r] + w_sum[!dx] + w_sum[dx] + all_to_all_flip_add;
                 V[!dx] = max(v_check, V[!dx]);
+                if (V[!dx] == v_check) V_step[!dx] = i;
             }
         }
 
         weight[0][r] = V[0];
         weight[1][r] = V[1];
 
+        all_dp_substraction_steps.push_back(make_tuple(r, V_step[0], V_step[1], leaf_block, eps[0], eps[1]));
         auto allv = G_minus_S.GetAllExistingNodes();
         auto nextv = SetSubstract(allv, leaf_block);
         G_minus_S = MaxCutGraph(G_minus_S, nextv);
     }
+
+    vector<int>computed_maxcut_coloring_tmp(num_nodes, -1);
+    for (unsigned int i = 0; i < S.size(); ++i)
+        computed_maxcut_coloring_tmp[S[i]] = S_color[i];
 
     int sol = 0;
     auto bicomponents = G_minus_S.GetBiconnectedComponents();
@@ -715,9 +723,29 @@ int MaxCutGraph::MaxCutExtension(const vector<int>& S, const vector<int>& S_colo
         assert(component.size() == 1);
         int u = component[0];
         sol += max(weight[0][u], weight[1][u]);
+
+        if (weight[0][u] > weight[1][u]) computed_maxcut_coloring_tmp[u] = 0;
+        else computed_maxcut_coloring_tmp[u] = 1;
     }
 
-    return sol + p;
+    reverse(all_dp_substraction_steps.begin(), all_dp_substraction_steps.end());
+    for (unsigned int i = 0; i < all_dp_substraction_steps.size(); ++i) {
+        auto entry = all_dp_substraction_steps[i];
+        auto component = get<3>(entry);
+
+        int dx = computed_maxcut_coloring_tmp[get<0>(entry)];
+        assert(dx != -1);
+
+        int idx = -1;
+        vector<pair<int,int>> eps;
+        if (dx == 0) idx = get<1>(entry), eps = get<4>(entry);
+        else if (dx == 1 ) idx = get<2>(entry), eps = get<5>(entry);
+
+        for (int i = 0; i <= idx; ++i) computed_maxcut_coloring_tmp[eps[i].second] = dx;
+        for (int i = idx + 1; i < (int)eps.size(); ++i) computed_maxcut_coloring_tmp[eps[i].second] = !dx;
+    }
+
+    return make_tuple(sol + p, computed_maxcut_coloring_tmp);
 }
 
 void MaxCutGraph::CalculateLemma4DFSTree_(int node) {
@@ -776,8 +804,10 @@ int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S) {
             if (mask & (1<<i)) s_color.push_back(1);
             else s_color.push_back(0);
         
-        int sol = MaxCutExtension(S, s_color);
-        mx_sol = max(mx_sol, sol);
+        auto sol = MaxCutExtension(S, s_color);
+        mx_sol = max(mx_sol, get<0>(sol));
+        if (mx_sol == get<0>(sol))
+            computed_maxcut_coloring = get<1>(sol);
     }
     return mx_sol;
 }
