@@ -796,6 +796,35 @@ void MaxCutGraph::ReduceMarksetVertexSet() {
     }
 }
 
+int MaxCutGraph::Algorithm2MarkedComputation() {
+    vector<pair<int,int>> vorder;
+    for (int i = 0; i < num_nodes; ++i)
+        vorder.push_back(make_pair(g_adj_list[i].size(), i));
+    
+    sort(vorder.begin(), vorder.end());
+    vector<int> selection;
+
+    while(1) {
+        bool was_possible = false;
+
+        for (unsigned int i = 0; i < vorder.size(); ++i) {
+            auto nGvset = SetUnion(selection, vector<int>{vorder[i].second});
+            MaxCutGraph nG(*this, nGvset);
+
+            if (nG.IsCliqueForest()) {
+                selection = nGvset;
+                vorder.erase(std::remove(vorder.begin(), vorder.end(), vorder[i]), vorder.end());
+                was_possible = true;
+                break;
+            }
+        }
+
+        if (!was_possible) break;
+    }
+    
+    return num_nodes - (int)selection.size();
+}
+
 int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S) {
     int mx_sol = 0;
     for (int mask = 0; mask < (1 << S.size()); ++mask) {
@@ -815,56 +844,22 @@ int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S) {
 int MaxCutGraph::ComputeOptimalColoring(const vector<int>& S, const vector<int>& S_color) {
     (void) S;
     (void) S_color;
+
+    for (unsigned i = 0; i < S.size(); ++i) {
+        auto adj = g_adj_list[S[i]];
+        
+
+        vector<int> adjs;
+        for (unsigned i = 0; i < adj.size(); ++i)
+            if (std::find(S.begin(), S.end(), adj[i]) != S.end()) adjs.push_back(adj[i]);
+
+        int adjsz  = adjs.size();
+        cout << S[i] << " = " << adjsz << " ::: ";
+        
+        for (unsigned j = 0; j < adjs.size(); ++j)
+            cout << adjs[j] << " ";
+        cout << endl;
+    }
+
     return -1;
 }
-
-/*
-// gives even better |S|:
-void MaxCutGraph::ReduceMarksetVertexSet() {
-    if (paper_S.size() == 0) return; // already optimal
-
-    srand((unsigned)time(0));
-    vector<int> save_start_S = paper_S;
-    save_start_S.clear();
-    for (int i = 0; i < num_nodes; ++i)
-        save_start_S.push_back(i);
-
-   // cout << "START TRYING: " << endl;
-    for (int i = 0; i < 5; ++i) {
-        vector<int> S = save_start_S;
-        while (S.size() > 0) {
-            bool was_possible = false;
-            for (int i = 0; i < 10; ++i) {
-                auto node = S[rand()%S.size()];
-                auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
-                auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
-                MaxCutGraph G_minus_newS(*this, when_node_added);
-                
-                if (G_minus_newS.IsCliqueForest()) {
-                    S.erase(std::remove(S.begin(), S.end(), node), S.end());
-                    was_possible = true;
-                    break;
-                }
-            }
-
-            for (int node : S) {
-                auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
-                auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
-                MaxCutGraph G_minus_newS(*this, when_node_added);
-                
-                if (G_minus_newS.IsCliqueForest()) {
-                    S.erase(std::remove(S.begin(), S.end(), node), S.end());
-                    was_possible = true;
-                    break;
-                }
-            }
-
-            if (!was_possible) break;
-        }
-
-        if (S.size() < paper_S.size()) paper_S = S;
-
-     //   cout << S.size() << " ";
-    }//cout<<endl;
-}
-*/

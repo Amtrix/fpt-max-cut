@@ -105,8 +105,11 @@ public:
 
     void ReduceMarksetVertexSet();
 
+    int Algorithm2MarkedComputation();
+
     int ComputeOptimalColoringBruteforce(const vector<int>& S);
 
+    // TODO: A more efficient way to color the graph.
     int ComputeOptimalColoring(const vector<int>& S, const vector<int>& S_color = {});
 
     vector<int> GetMaxCutColoring() { return computed_maxcut_coloring; }

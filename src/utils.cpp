@@ -81,3 +81,10 @@ vector<int> SetUnion(const vector<int>& s1, const vector<int>& s2) {
 bool IsASubsetOfB(const vector<int>& A, const vector<int>& B) {
     return SetSubstract(B, A).size() == (B.size() - A.size());
 }
+
+vector<pair<int, string>> ZipVec(const vector<int> A, const vector<string> B) {
+    vector<pair<int, string>> ret;
+    for (unsigned int i = 0; i < min(A.size(), B.size()); ++i)
+        ret.push_back(make_pair(A[i], B[i]));
+    return ret;
+}
