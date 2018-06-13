@@ -1,3 +1,7 @@
+/**
+ * It might be possible to improve here the set size of S!
+ * **/
+
 #pragma once
 
 #include "mc-graph.hpp"

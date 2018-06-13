@@ -825,6 +825,53 @@ int MaxCutGraph::Algorithm2MarkedComputation() {
     return num_nodes - (int)selection.size();
 }
 
+int MaxCutGraph::Algorithm3MarkedComputation_Randomized() {
+    if (paper_S.size() == 0) return 0; // already optimal
+    srand((unsigned)time(0));
+    vector<int> save_start_S = paper_S;
+    save_start_S.clear();
+    for (int i = 0; i < num_nodes; ++i)
+        save_start_S.push_back(i);
+   
+    unsigned int ret = (unsigned int)1e9;
+    for (int i = 0; i < 20; ++i) {
+        vector<int> S = save_start_S;
+
+        while (S.size() > 0) {
+            bool was_possible = false;
+            for (int i = 0; i < 10; ++i) {
+                auto node = S[rand()%S.size()];
+                auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
+                auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
+                MaxCutGraph G_minus_newS(*this, when_node_added);
+                
+                if (G_minus_newS.IsCliqueForest()) {
+                    S.erase(std::remove(S.begin(), S.end(), node), S.end());
+                    was_possible = true;
+                    break;
+                }
+            }
+            for (int node : S) {
+                auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
+                auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
+                MaxCutGraph G_minus_newS(*this, when_node_added);
+                
+                if (G_minus_newS.IsCliqueForest()) {
+                    S.erase(std::remove(S.begin(), S.end(), node), S.end());
+                    was_possible = true;
+                    break;
+                }
+            }
+            if (!was_possible) break;
+        }
+
+
+        if (S.size() < ret) ret = S.size();
+     //   cout << S.size() << " ";
+    }//cout<<endl;
+    return ret;
+}
+
 int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S) {
     int mx_sol = 0;
     for (int mask = 0; mask < (1 << S.size()); ++mask) {

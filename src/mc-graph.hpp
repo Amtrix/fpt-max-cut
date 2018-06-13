@@ -107,6 +107,8 @@ public:
 
     int Algorithm2MarkedComputation();
 
+    int Algorithm3MarkedComputation_Randomized();
+
     int ComputeOptimalColoringBruteforce(const vector<int>& S);
 
     // TODO: A more efficient way to color the graph.

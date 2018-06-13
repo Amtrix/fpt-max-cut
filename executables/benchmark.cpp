@@ -1,5 +1,6 @@
 #include "src/mc-graph.hpp"
 #include "src/one-way-reducers.hpp"
+#include "src/two-way-reducers.hpp"
 #include "src/input-parser.hpp"
 #include "src/utils.hpp"
 #include "src/output-filter.hpp"
@@ -24,7 +25,6 @@ vector<string> GetAllDatasets(const string path) {
     return ret;
 }
 
-vector<int> tot_used_rules(10, 0);
 
 void EvaluateMarkedVertices(InputParser& input, const string data_filepath) {
     MaxCutGraph G(data_filepath);
@@ -34,7 +34,6 @@ void EvaluateMarkedVertices(InputParser& input, const string data_filepath) {
     while ((rule_taken = TryOneWayReduce(G_processing_oneway, k)) != -1) {
         OutputDebugLog("RULE: " + to_string(rule_taken));
         OutputDebugLog("-----------");
-        tot_used_rules[rule_taken]++;
     }
 
     G.SetMarkedVertices(G_processing_oneway.GetMarkedVerticesByOneWayRules());
@@ -44,19 +43,13 @@ void EvaluateMarkedVertices(InputParser& input, const string data_filepath) {
     // Try reduce size of S
     G.ReduceMarksetVertexSet();
     const int s_size_oneway_with_reverse = G.GetMarkedVerticesByOneWayRules().size();
-    const int s_size_adhoc = G.Algorithm2MarkedComputation();
+    const int s_size_adhoc = G.Algorithm3MarkedComputation_Randomized();
 
 
-    OutputFilterMarkedVertices(input, G.GetNumNodes(), G.GetNumEdges(), s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc);
-/*
-#ifdef DEBUG
-    auto G_minus_S_vertex_set = SetSubstract(G.GetAllExistingNodes(), S);
-    MaxCutGraph G_minus_S(G, G_minus_S_vertex_set);
-    assert(G_minus_S.IsCliqueForest());
-#endif
-*/
+    OutputFilterMarkedVertices(input, data_filepath, G.GetNumNodes(), G.GetNumEdges(), s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc);
 }
 
+vector<int> tot_used_rules(10, 0);
 void EvaluateDataset(InputParser& input, const string data_filepath) {
     cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
     MaxCutGraph G(data_filepath);
@@ -85,17 +78,13 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
     OutputDebugLog("----------- DONE: APPLYING ONE-WAY REDUCTION RULES TO COMPUTE S -----------");
 
     // Try reduce size of S
-    G.ReduceMarksetVertexSet();
-    S = G.GetMarkedVerticesByOneWayRules();
+    //G.ReduceMarksetVertexSet();
+    //S = G.GetMarkedVerticesByOneWayRules();
 
 
-    cout << "new |S| = " << S.size() << endl;
-    cout << "new S: " << " ";
-    for (auto node : S) cout << node << " ";
-    cout << endl;
+    cout << "reduced |S| = " << S.size() << endl;
 
-    cout << "algo2 |S| = " << G.Algorithm2MarkedComputation() << endl;
-
+    sort(S.begin(), S.end());
 
 #ifdef DEBUG
     auto G_minus_S_vertex_set = SetSubstract(G.GetAllExistingNodes(), S);
@@ -113,10 +102,12 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
         auto allv = G.GetAllExistingNodes();
         auto sss = G.MaxCutExtension(allv, G.GetMaxCutColoring());
         cout << (get<0>(sss)) << endl;
-    } else {
+    } else if (input.cmdOptionExists("-cc-brute-with-prunning")) {
         sort(S.begin(), S.end());
         int mx_sol = G.ComputeOptimalColoring(S);
         cout << "mx_sol = " + to_string(mx_sol) << endl;
+    } else {
+        ExhaustiveTwoWayReduce(G, S);
     }
 }
 
@@ -140,8 +131,8 @@ int main(int argc, char **argv){
 
     
     for (string data_filepath : all_sets_to_evaluate) {
-        //EvaluateDataset(input, data_filepath);
-        EvaluateMarkedVertices(input, data_filepath);
+        EvaluateDataset(input, data_filepath);
+        ///EvaluateMarkedVertices(input, data_filepath);
     }
 
     cout << endl;
