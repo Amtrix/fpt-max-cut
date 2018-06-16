@@ -25,6 +25,9 @@ public:
     int GetNumNodes() const { return num_nodes; }
     int GetNumEdges() const { return num_edges; }
 
+    int GetRealNumNodes() { return GetAllExistingNodes().size(); }
+    int GetRealNumEdges() { return GetAllExistingEdges().size(); }
+
     void AddEdge(int a, int b) {
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);

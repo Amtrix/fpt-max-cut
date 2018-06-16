@@ -78,6 +78,17 @@ vector<int> SetUnion(const vector<int>& s1, const vector<int>& s2) {
     return ret;
 }
 
+vector<int> SetIntersection(const vector<int>& s1, const vector<int>& s2) {
+    unordered_map<int,int> exist;
+    for (auto e : s1) exist[e]++;
+    for (auto e : s2) exist[e]++;
+
+    vector<int> ret;
+    for (auto e : s1) if (exist[e] == 2) { ret.push_back(e); exist[e] = 0; }
+    for (auto e : s2) if (exist[e] == 2) { ret.push_back(e); exist[e] = 0; }
+    return ret;
+}
+
 bool IsASubsetOfB(const vector<int>& A, const vector<int>& B) {
     return SetSubstract(B, A).size() == (B.size() - A.size());
 }

@@ -49,9 +49,10 @@ vector<bool> WhichComponentIsTriag(MaxCutGraph& G_minus_S, vector<vector<int>>& 
     return is_triag_block;
 }
 
-void ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
+int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
     auto G_minus_S_vertex_set = SetSubstract(G_0.GetAllExistingNodes(), S);
     MaxCutGraph G_minus_S(G_0, G_minus_S_vertex_set);
+    assert(G_minus_S.IsCliqueForest());
 
     auto bicomponents = G_minus_S.GetBiconnectedComponents();
     auto is_special = WhichComponentsAreSpecial(G_0, G_minus_S, bicomponents, S);
@@ -68,5 +69,50 @@ void ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
                 arti_to_triag[node].push_back(i);
     }
 
+    for (unsigned int i = 0; i < bicomponents.size(); ++i) {
+        cout << "COMPONENT " << i << " : " << is_special[i] << " " << is_triag_block[i] << endl;
+        auto component = bicomponents[i];
 
+        unordered_map<string, vector<int>> partition;
+        for (auto node : component) {
+            if (G_minus_S.IsArticulation(node)) continue;
+
+            auto adj = G_0.GetAdjacency(node);
+            adj.push_back(node); // we need self here, otherwise we just partition in n x 1-node sets.
+            sort(adj.begin(), adj.end());
+
+            string key = "";
+            for (auto w : adj) key += to_string(w) + "|";
+            partition[key].push_back(node);
+        //    cout << key << " => " << node << endl;
+        }
+
+        string largest_key = "";
+        for (auto entry : partition)
+            if (largest_key == "" || (partition[largest_key].size() < entry.second.size()))
+                largest_key = entry.first;
+        
+        if (largest_key == "") continue;
+
+       // cout << largest_key << " " << partition[largest_key].size() << endl;
+
+        auto S_intersect_NX = SetIntersection(partition[largest_key], S);
+
+        cout << "intersection: " << endl;
+        for (auto node : S_intersect_NX)
+            cout << node << " ";
+        cout << endl;
+
+        double sz = (component.size() + S_intersect_NX.size()) / 2.0;
+
+        cout << partition[largest_key].size() << " " << sz << endl;
+        if (partition[largest_key].size() > sz && sz >= 1 - 1e-9) {
+            cout << "REMOVE: " << partition[largest_key][0] << " " << partition[largest_key][1] << endl;
+            G_0.RemoveNode(partition[largest_key][0]);
+            G_0.RemoveNode(partition[largest_key][1]);
+            return 9;
+        }
+    }
+    
+    return -1;
 }

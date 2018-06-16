@@ -78,8 +78,8 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
     OutputDebugLog("----------- DONE: APPLYING ONE-WAY REDUCTION RULES TO COMPUTE S -----------");
 
     // Try reduce size of S
-    //G.ReduceMarksetVertexSet();
-    //S = G.GetMarkedVerticesByOneWayRules();
+    G.ReduceMarksetVertexSet();
+    S = G.GetMarkedVerticesByOneWayRules();
 
 
     cout << "reduced |S| = " << S.size() << endl;
@@ -107,7 +107,9 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
         int mx_sol = G.ComputeOptimalColoring(S);
         cout << "mx_sol = " + to_string(mx_sol) << endl;
     } else {
-        ExhaustiveTwoWayReduce(G, S);
+        while (ExhaustiveTwoWayReduce(G, S) != -1) {
+            cout << "New G. Stats: " << "|V| = " << G.GetRealNumNodes() << " , |E| = " << G.GetRealNumEdges() << endl;
+        }
     }
 }
 

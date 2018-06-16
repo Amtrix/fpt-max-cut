@@ -27,6 +27,7 @@ void OutputDebugVector_(const string file, const int line_num, const string name
 
 vector<int> SetSubstract(const vector<int>& source, const vector<int>& target);
 vector<int> SetUnion(const vector<int>& s1, const vector<int>& s2);
+vector<int> SetIntersection(const vector<int>& s1, const vector<int>& s2);
 bool IsASubsetOfB(const vector<int>& A, const vector<int>& B);
 
 vector<pair<int, string>> ZipVec(const vector<int> A, const vector<string> B);
