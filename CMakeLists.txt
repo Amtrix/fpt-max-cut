@@ -38,3 +38,6 @@ target_link_libraries(test-articulation-and-biconnected Threads::Threads)
 add_executable(test-graph-functionality executables/test-graph-functionality.cpp)
 target_sources(test-graph-functionality PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(test-graph-functionality Threads::Threads)
+
+add_executable(unweight-an-instance executables/utils/unweight-an-instance.cpp)
+target_link_libraries(unweight-an-instance Threads::Threads)

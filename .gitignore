@@ -7,3 +7,6 @@ exercise1/pq/build/
 .vs/
 .vscode/
 ext-localsolver/maxcut
+
+utils/build
+!utils/built/.keep

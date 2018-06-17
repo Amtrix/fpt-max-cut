@@ -910,3 +910,14 @@ int MaxCutGraph::ComputeOptimalColoring(const vector<int>& S, const vector<int>&
 
     return -1;
 }
+
+void MaxCutGraph::PrintGraph(std::ostream& out)
+{
+    out << num_nodes << " " << GetRealNumEdges() << endl;
+
+    for (int i = 0; i < num_nodes; ++i) {
+        for (auto node : g_adj_list[i]) {
+            out << i << " " << node << " " << 1 << endl;
+        }
+    }
+}

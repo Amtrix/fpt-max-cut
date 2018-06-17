@@ -12,3 +12,5 @@ FLAGS:
 
     -cc-brute
     Execute brute force algorithm over marked vertices set right after one-way reduction rules are done.
+
+    -print-kernalized-graph [output-file-path]

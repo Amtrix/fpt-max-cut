@@ -98,10 +98,10 @@ int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
 
         auto S_intersect_NX = SetIntersection(partition[largest_key], S);
 
-        cout << "intersection: " << endl;
-        for (auto node : S_intersect_NX)
-            cout << node << " ";
-        cout << endl;
+        //cout << "intersection: " << endl;
+        //for (auto node : S_intersect_NX)
+        //    cout << node << " ";
+        //cout << endl;
 
         double sz = (component.size() + S_intersect_NX.size()) / 2.0;
 

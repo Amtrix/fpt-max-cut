@@ -110,6 +110,14 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
         while (ExhaustiveTwoWayReduce(G, S) != -1) {
             cout << "New G. Stats: " << "|V| = " << G.GetRealNumNodes() << " , |E| = " << G.GetRealNumEdges() << endl;
         }
+
+        if (input.cmdOptionExists("-print-kernalized-graph")) {
+            const string output_filepath = input.getCmdOption("-print-kernalized-graph");
+            ofstream out(output_filepath);
+            G.PrintGraph(out);
+            out.close();
+            OutputDebugLog("Kernalized graph output is done.");
+        }
     }
 }
 

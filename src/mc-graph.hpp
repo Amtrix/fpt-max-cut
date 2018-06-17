@@ -10,13 +10,14 @@ using namespace std;
 
 // Undirected, Unweighted.
 // pointers not allowed due to usage of default copy in benchmark.cpp !!!!
+// All node indices are 0-based.
 class MaxCutGraph {
 public:
     MaxCutGraph();
 
     MaxCutGraph(int n, int m);
 
-    // File based input is 1-index based.
+    // File based input is 1-index based. Transformed to 0-based while reading in.
     MaxCutGraph(const string path);
 
     // Create induced subgraph
@@ -118,6 +119,10 @@ public:
     int ComputeOptimalColoring(const vector<int>& S, const vector<int>& S_color = {});
 
     vector<int> GetMaxCutColoring() { return computed_maxcut_coloring; }
+
+    // As of now, doesn't print the actual nodes. Some single nodes available.
+    void PrintGraph(std::ostream& out);
+
 private:
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,

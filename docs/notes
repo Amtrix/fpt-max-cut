@@ -1,0 +1,2 @@
+18/06/2018: Lots of bigmaq instance do no admit any kernelization rule to be executed. Prevalent in cases where |S| is large and thus, cliques are small in G - S.
+18/06/2018: http://www-lipn.univ-paris13.fr/BiqCrunch/solver/ doesn't take typical input-format. Special format required for the input to be accepted.
