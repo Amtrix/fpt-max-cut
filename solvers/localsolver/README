@@ -1,2 +1,2 @@
-to execute:
-    ./maxcut instancesg05_60.0
+Execution example:
+    ./maxcut ../../data/custom/input0

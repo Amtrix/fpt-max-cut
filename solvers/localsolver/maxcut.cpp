@@ -47,11 +47,33 @@ public:
         dest.resize(m);
         w.resize(m);
 
-        for(int e = 0; e < m; e++){
+        string wstr;
+        getline(infile, wstr); // previous EOL
+        for (int i = 0; i < m; ++i) {
+            getline(infile, wstr);
+
+            vector<int> params;
+            stringstream line_in(wstr);
+            while (line_in.eof() == false) {
+                int val; line_in >> val;
+                params.push_back(val);
+            }
+
+            if (params.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
+
+           // AddEdge(params[0] - 1, params[1] - 1);
+            //cout << i << " , " << n << " " << m << " : " << params.size() << " : " <<  params[0] << " " << params[1] << endl;
+            origin[i] = params[0];
+            dest[i] = params[1];
+            w[i] = 1;
+        }
+        
+        /*for(int e = 0; e < m; e++){
             infile >> origin[e];
             infile >> dest[e];
             infile >> w[e];
-        }
+            w[e] = 1;
+        }*/
     }
 
     void solve(int limit){

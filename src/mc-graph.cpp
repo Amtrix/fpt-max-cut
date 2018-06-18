@@ -917,7 +917,7 @@ void MaxCutGraph::PrintGraph(std::ostream& out)
 
     for (int i = 0; i < num_nodes; ++i) {
         for (auto node : g_adj_list[i]) {
-            out << i << " " << node << " " << 1 << endl;
+            out << i + 1<< " " << node + 1<< " " << 1 << endl;
         }
     }
 }
