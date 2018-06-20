@@ -590,8 +590,8 @@ vector<int> MaxCutGraph::GetMarkedVerticesByOneWayRules() const {
     return paper_S;
 }
 
-double MaxCutGraph::GetEdwardsErdosBound() const {
-    return (num_edges / 2.0) + (num_nodes - 1) / 4.0;
+double MaxCutGraph::GetEdwardsErdosBound() {
+    return (GetRealNumEdges() / 2.0) + (GetRealNumNodes() - 1) / 4.0;
 }
 
 tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_components) {
@@ -917,7 +917,8 @@ void MaxCutGraph::PrintGraph(std::ostream& out)
 
     for (int i = 0; i < num_nodes; ++i) {
         for (auto node : g_adj_list[i]) {
-            out << i + 1<< " " << node + 1<< " " << 1 << endl;
+            if (i < node)
+                out << i + 1<< " " << node + 1<< " " << 1 << endl;
         }
     }
 }

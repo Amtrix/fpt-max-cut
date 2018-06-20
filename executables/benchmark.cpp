@@ -89,7 +89,9 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
 #ifdef DEBUG
     auto G_minus_S_vertex_set = SetSubstract(G.GetAllExistingNodes(), S);
     MaxCutGraph G_minus_S(G, G_minus_S_vertex_set);
-    assert(G_minus_S.IsCliqueForest());
+    bool debug_iscliquef = G_minus_S.IsCliqueForest();
+    OutputDebugLog("Is clique forest G - S: " + to_string(debug_iscliquef));
+    assert(debug_iscliquef);
 #endif
 
     if (input.cmdOptionExists("-cc-brute")) { // temp flag since this is very slow
@@ -108,7 +110,7 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
         cout << "mx_sol = " + to_string(mx_sol) << endl;
     } else {
         while (ExhaustiveTwoWayReduce(G, S) != -1) {
-            cout << "New G. Stats: " << "|V| = " << G.GetRealNumNodes() << " , |E| = " << G.GetRealNumEdges() << endl;
+            cout << "New G. Stats: " << "|V| = " << G.GetRealNumNodes() << " , |E| = " << G.GetRealNumEdges() << " , EE = " << G.GetEdwardsErdosBound() << endl;
         }
 
         if (input.cmdOptionExists("-print-kernalized-graph")) {

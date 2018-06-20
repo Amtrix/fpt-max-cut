@@ -55,11 +55,13 @@ int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
     assert(G_minus_S.IsCliqueForest());
 
     auto bicomponents = G_minus_S.GetBiconnectedComponents();
-    auto is_special = WhichComponentsAreSpecial(G_0, G_minus_S, bicomponents, S);
 
+    // RULE 9x
+    auto is_special = WhichComponentsAreSpecial(G_0, G_minus_S, bicomponents, S);
     auto is_triag_block = WhichComponentIsTriag(G_minus_S, bicomponents, is_special);
     
-    vector<vector<int>> arti_to_triag;
+    const unsigned int num_nodes = G_minus_S.GetNumNodes();
+    vector<vector<int>> arti_to_triag(num_nodes);
     for (unsigned int i = 0; i < bicomponents.size(); ++i) {
         if (is_triag_block[i] == false) continue;
 
@@ -69,11 +71,18 @@ int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
                 arti_to_triag[node].push_back(i);
     }
 
+    for (unsigned int i = 0; i < num_nodes; ++i) {
+        if (arti_to_triag[i].size() >= 2) {
+            cout << "RULE 9x" << endl;
+        }
+    }
+
+    /// RULE 8x FROM HERE ON:
     for (unsigned int i = 0; i < bicomponents.size(); ++i) {
-        cout << "COMPONENT " << i << " : " << is_special[i] << " " << is_triag_block[i] << endl;
         auto component = bicomponents[i];
 
         unordered_map<string, vector<int>> partition;
+        unordered_map<string, vector<int>> key_descr;
         for (auto node : component) {
             if (G_minus_S.IsArticulation(node)) continue;
 
@@ -84,7 +93,10 @@ int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
             string key = "";
             for (auto w : adj) key += to_string(w) + "|";
             partition[key].push_back(node);
-        //    cout << key << " => " << node << endl;
+
+            // just utility, helps to split the string key into a vector of its parts
+            if (key_descr.find(key) == key_descr.end())
+                key_descr[key] = adj;
         }
 
         string largest_key = "";
@@ -94,23 +106,51 @@ int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
         
         if (largest_key == "") continue;
 
-       // cout << largest_key << " " << partition[largest_key].size() << endl;
+        auto S_intersect_NX = SetIntersection(S, key_descr[largest_key]); // S operator(intersect) N_{G}(X)
 
-        auto S_intersect_NX = SetIntersection(partition[largest_key], S);
-
-        //cout << "intersection: " << endl;
-        //for (auto node : S_intersect_NX)
-        //    cout << node << " ";
-        //cout << endl;
+#ifdef DEBUG
+        for (auto node : partition[largest_key])
+            assert(G_minus_S.IsArticulation(node) == false);
+#endif
 
         double sz = (component.size() + S_intersect_NX.size()) / 2.0;
-
-        cout << partition[largest_key].size() << " " << sz << endl;
+        cout << partition[largest_key].size() << " " << component.size() << " " << S_intersect_NX.size() << " = " << sz << endl;
         if (partition[largest_key].size() > sz && sz >= 1 - 1e-9) {
-            cout << "REMOVE: " << partition[largest_key][0] << " " << partition[largest_key][1] << endl;
+            cout << "RULE 8x -- REMOVE: " << partition[largest_key][0] << " " << partition[largest_key][1] << endl;
+            cout << "WHAAAAAAAAAAAAAAAAAAT" << endl;
             G_0.RemoveNode(partition[largest_key][0]);
             G_0.RemoveNode(partition[largest_key][1]);
-            return 9;
+           // return 19;
+        }
+    }
+
+    // RULE 9 here
+    unordered_map<int,bool> in_S;
+    for (auto node : S) in_S[node] = true;
+
+    for (unsigned int i = 0; i < bicomponents.size(); ++i) {
+        auto component = bicomponents[i];
+
+        if (component.size() % 2 == 0) continue;
+
+        vector<int> X;
+        for (auto node : component) {
+            auto& adj = G_0.GetAdjacency(node);
+            bool ok = true;
+
+            for (auto w : adj) {
+                if (in_S[w]) {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok) X.push_back(node);
+        }
+
+        if (X.size() == component.size() / 2) {
+            cout << "RULE 9" << endl;
+            //return 9;
         }
     }
     

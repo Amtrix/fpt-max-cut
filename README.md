@@ -1,6 +1,6 @@
 make && ./benchmark -f ../data/custom/input0
 make && ./benchmark -f ../data/biqmac/rudy/g05_60.0
-
+make benchmark-debug && ./benchmark-debug -f ../data/biqmac/rudy/pm1d_80.7 -print-kernalized-graph ../data/output/pm1d_80.7-kernalized
 
 
 FLAGS:

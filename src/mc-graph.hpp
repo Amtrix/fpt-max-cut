@@ -99,7 +99,7 @@ public:
 
     void SetMarkedVertices(const vector<int>& S) { paper_S = S; }
 
-    double GetEdwardsErdosBound() const;
+    double GetEdwardsErdosBound();
 
     // Returns -1 if no component of size >= 1 was found.
     tuple<vector<int>, int> GetLeafBlockAndArticulation(bool print_components = false);
