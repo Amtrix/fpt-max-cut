@@ -591,7 +591,15 @@ vector<int> MaxCutGraph::GetMarkedVerticesByOneWayRules() const {
 }
 
 double MaxCutGraph::GetEdwardsErdosBound() {
-    return (GetRealNumEdges() / 2.0) + (GetRealNumNodes() - 1) / 4.0;
+    auto ccomponents = GetAllConnectedComponents();
+    
+    double res = 0;
+    for (auto component : ccomponents) {
+        MaxCutGraph ng(*this, component);
+        res += (ng.GetRealNumEdges() / 2.0) + (ng.GetRealNumNodes() - 1) / 4.0;
+    } 
+
+    return res;
 }
 
 tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_components) {

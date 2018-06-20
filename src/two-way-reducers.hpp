@@ -49,35 +49,39 @@ vector<bool> WhichComponentIsTriag(MaxCutGraph& G_minus_S, vector<vector<int>>& 
     return is_triag_block;
 }
 
-int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
-    auto G_minus_S_vertex_set = SetSubstract(G_0.GetAllExistingNodes(), S);
-    MaxCutGraph G_minus_S(G_0, G_minus_S_vertex_set);
-    assert(G_minus_S.IsCliqueForest());
-
-    auto bicomponents = G_minus_S.GetBiconnectedComponents();
-
-    // RULE 9x
-    auto is_special = WhichComponentsAreSpecial(G_0, G_minus_S, bicomponents, S);
-    auto is_triag_block = WhichComponentIsTriag(G_minus_S, bicomponents, is_special);
-    
+int TryRule9(MaxCutGraph& G_0, MaxCutGraph& G_minus_S, const vector<vector<int>>& bicomponents, vector<bool>& is_triag_block) {
     const unsigned int num_nodes = G_minus_S.GetNumNodes();
     vector<vector<int>> arti_to_triag(num_nodes);
     for (unsigned int i = 0; i < bicomponents.size(); ++i) {
-        if (is_triag_block[i] == false) continue;
+        auto& component = bicomponents[i];
 
-        auto component = bicomponents[i];
+        if (is_triag_block[i] == false) continue;
+        
         for (auto& node : component)
-            if (G_minus_S.IsArticulation(node) == false)
+            if (G_minus_S.IsArticulation(node))
                 arti_to_triag[node].push_back(i);
     }
 
     for (unsigned int i = 0; i < num_nodes; ++i) {
         if (arti_to_triag[i].size() >= 2) {
-            cout << "RULE 9x" << endl;
+
+            // apply here:
+            for (auto x1 : arti_to_triag[0]) {
+                for (auto x2 : arti_to_triag[1]) {
+                    if (x1 == (int)i || x2 == (int)i) continue;
+                    G_0.AddEdge(x1, x2);
+                }
+            }
+
+            assert(false); // not yet implemented as it hasn't been really triggered yet...
+            return 9;
         }
     }
 
-    /// RULE 8x FROM HERE ON:
+    return -1;
+}
+
+int TryRule8(MaxCutGraph& G_0, MaxCutGraph& G_minus_S, const vector<vector<int>>& bicomponents, const vector<int>& S) {
     for (unsigned int i = 0; i < bicomponents.size(); ++i) {
         auto component = bicomponents[i];
 
@@ -114,17 +118,19 @@ int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
 #endif
 
         double sz = (component.size() + S_intersect_NX.size()) / 2.0;
-        cout << partition[largest_key].size() << " " << component.size() << " " << S_intersect_NX.size() << " = " << sz << endl;
+        
         if (partition[largest_key].size() > sz && sz >= 1 - 1e-9) {
-            cout << "RULE 8x -- REMOVE: " << partition[largest_key][0] << " " << partition[largest_key][1] << endl;
-            cout << "WHAAAAAAAAAAAAAAAAAAT" << endl;
             G_0.RemoveNode(partition[largest_key][0]);
             G_0.RemoveNode(partition[largest_key][1]);
-           // return 19;
+            return 8;
         }
     }
 
-    // RULE 9 here
+    return -1;
+}
+
+// Rule 9 in origin paper: https://arxiv.org/abs/1212.6848
+int TryRule10(MaxCutGraph& G_0, const vector<vector<int>>& bicomponents, const vector<int>& S) {
     unordered_map<int,bool> in_S;
     for (auto node : S) in_S[node] = true;
 
@@ -149,10 +155,34 @@ int ExhaustiveTwoWayReduce(MaxCutGraph &G_0, const vector<int>& S) {
         }
 
         if (X.size() == component.size() / 2) {
-            cout << "RULE 9" << endl;
-            //return 9;
+            G_0.RemoveNode(X[0]);
+            return 10;
         }
     }
+
+    return -1;
+}
+
+int ExhaustiveTwoWayReduce(MaxCutGraph& G_0, const vector<int>& S) {
+    auto G_minus_S_vertex_set = SetSubstract(G_0.GetAllExistingNodes(), S);
+    MaxCutGraph G_minus_S(G_0, G_minus_S_vertex_set);
+
+#ifdef DEBUG
+    assert(G_minus_S.IsCliqueForest());
+#endif
+
+    auto bicomponents = G_minus_S.GetBiconnectedComponents();
+    auto is_special = WhichComponentsAreSpecial(G_0, G_minus_S, bicomponents, S);
+    auto is_triag_block = WhichComponentIsTriag(G_minus_S, bicomponents, is_special);
+    
+    int res;
+
+    if ((res = TryRule9(G_0, G_minus_S, bicomponents, is_triag_block)) > -1) return res;
+
+    if ((res = TryRule8(G_0, G_minus_S, bicomponents, S)) > -1) return res;
+
+    if ((res = TryRule10(G_0, bicomponents, S)) > -1) return res;
+    
     
     return -1;
 }
