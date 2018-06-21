@@ -24,12 +24,14 @@ public:
     MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset);
 
     int GetNumNodes() const { return num_nodes; }
-    int GetNumEdges() const { return num_edges; }
+//    int GetNumEdges() const { return num_edges; }
 
     int GetRealNumNodes() { return GetAllExistingNodes().size(); }
     int GetRealNumEdges() { return GetAllExistingEdges().size(); }
 
     void AddEdge(int a, int b) {
+        assert(edge_exists_lookup[make_pair(a,b)] == false);
+
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);
         edge_exists_lookup[make_pair(a,b)] = true;
@@ -37,6 +39,7 @@ public:
 
         bicomponents_computed = false;
         articulations_computed = false;
+        bridges_computed = false;
     }
 
     const vector<int>& GetAdjacency(int node) const { return g_adj_list[node]; }
@@ -90,6 +93,8 @@ public:
 
         return is_articulation[node];
     }
+
+    bool IsBridgeBetween(int nodeA, int nodeB);
 
     bool IsCliqueForest();
 
@@ -147,9 +152,12 @@ private:
 
     bool bicomponents_computed = false;
     bool articulations_computed = false;
+    bool bridges_computed = false;
 
     // Invariant: no edges should exist from/to removed_nodes.
     unordered_map<int, bool> removed_node;
+
+    map<pair<int,int>, bool> is_bridge_between;
 
     map<pair<int,int>, bool> edge_exists_lookup; // IMPROVE TO O(1)!!!!
     vector<vector<int>> g_adj_list;

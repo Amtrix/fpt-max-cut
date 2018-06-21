@@ -241,6 +241,7 @@ vector<int> MaxCutGraph::GetSingleSourcePathFromRoot(int dest) {
 void MaxCutGraph::RemoveNode(int node) {
     articulations_computed = false;
     bicomponents_computed = false;
+    bridges_computed = false;
 
     g_adj_list[node].clear();
 
@@ -567,6 +568,26 @@ vector<int> MaxCutGraph::GetArticulationNodes() {
             ret.push_back(i);
             
     return ret;
+}
+
+bool MaxCutGraph::IsBridgeBetween(int nodeA, int nodeB) {
+    if (bridges_computed == false) {
+        is_bridge_between.clear();
+
+        if (bicomponents_computed == false) ComputeArticulationAndBiconnected();
+
+        auto components = GetBiconnectedComponents();
+        for (auto& component : components) {
+            if (component.size() != 2) continue;
+
+            is_bridge_between[make_pair(component[0], component[1])] = true;
+            is_bridge_between[make_pair(component[1], component[0])] = true;
+        }
+
+        bridges_computed = true;
+    }
+
+    return is_bridge_between[make_pair(nodeA, nodeB)];
 }
 
 bool MaxCutGraph::IsCliqueForest() {

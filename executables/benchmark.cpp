@@ -17,11 +17,15 @@ const string paths[] = {
     "../data/custom"
 };
 
+// ignores README.md !
 vector<string> GetAllDatasets(const string path) {
     vector<string> ret;
     for (auto & p : filesystem::directory_iterator(path))
-        if (filesystem::is_regular_file(p))
+        if (filesystem::is_regular_file(p)) {
+            string fname = filesystem::path(p.path().u8string()).filename();
+            if (fname == "README.md") continue;
             ret.push_back(p.path().u8string());
+        }
     return ret;
 }
 
@@ -46,7 +50,7 @@ void EvaluateMarkedVertices(InputParser& input, const string data_filepath) {
     const int s_size_adhoc = G.Algorithm3MarkedComputation_Randomized();
 
 
-    OutputFilterMarkedVertices(input, data_filepath, G.GetNumNodes(), G.GetNumEdges(), s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc);
+    OutputFilterMarkedVertices(input, data_filepath, G.GetNumNodes(), G.GetRealNumEdges(), s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc);
 }
 
 vector<int> tot_used_rules(10, 0);
@@ -65,7 +69,7 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
     }
 
     cout << "|V| = " << G.GetNumNodes() << endl;
-    cout << "|E| = " << G.GetNumEdges() << endl; 
+    cout << "|E| = " << G.GetRealNumEdges() << endl; 
     cout << "EE = " << G.GetEdwardsErdosBound() << endl;
     cout << "k' = " << k << endl;
 
@@ -109,7 +113,9 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
         int mx_sol = G.ComputeOptimalColoring(S);
         cout << "mx_sol = " + to_string(mx_sol) << endl;
     } else {
-        while (ExhaustiveTwoWayReduce(G, S) != -1) {
+        int res;
+        while ((res = ExhaustiveTwoWayReduce(G, S)) > -1) {
+            cout << "Kernelization rule: " << res << " was applied." << endl;
             cout << "New G. Stats: " << "|V| = " << G.GetRealNumNodes() << " , |E| = " << G.GetRealNumEdges() << " , EE = " << G.GetEdwardsErdosBound() << endl;
         }
 

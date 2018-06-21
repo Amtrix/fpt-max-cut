@@ -64,6 +64,15 @@ std::function<void()> suite[] = {
         VERIFY(anodes[2], 6);
         VERIFY(anodes[3], 7);
 
+        VERIFY(G.IsBridgeBetween(0,1), false);
+        VERIFY(G.IsBridgeBetween(1,2), true);
+        VERIFY(G.IsBridgeBetween(2,3), true);
+        VERIFY(G.IsBridgeBetween(3,4), true);
+        VERIFY(G.IsBridgeBetween(4,5), false);
+        VERIFY(G.IsBridgeBetween(5,6), true);
+        VERIFY(G.IsBridgeBetween(6,7), true);
+        VERIFY(G.IsBridgeBetween(7,8), true);
+        VERIFY(G.IsBridgeBetween(8,9), false);
         
         VERIFY(bicomponents.size(), 8);
     },
@@ -94,6 +103,9 @@ std::function<void()> suite[] = {
         VERIFY(anodes[0], 0);
         VERIFY(anodes[1], 1);
         VERIFY(anodes[2], 2);
+
+        VERIFY(G.IsBridgeBetween(0, 1), true);
+        VERIFY(G.IsBridgeBetween(1, 2), true);
         VERIFY(bicomponents.size(), 5);
 
         // More spice:
@@ -108,6 +120,8 @@ std::function<void()> suite[] = {
         VERIFY(anodes[0], 0);
         VERIFY(anodes[1], 1);
         VERIFY(anodes[2], 2);
+        VERIFY(G.IsBridgeBetween(0, 1), false);
+        VERIFY(G.IsBridgeBetween(1, 2), false);
         VERIFY_RETURN_ON_FAIL(bicomponents.size(), 4);
 
         /*
