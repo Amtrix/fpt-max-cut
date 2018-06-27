@@ -940,6 +940,45 @@ int MaxCutGraph::ComputeOptimalColoring(const vector<int>& S, const vector<int>&
     return -1;
 }
 
+vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bool make_maximum) {
+    vector<int> max_clique;
+    for (int r = 0; r < runs; ++r) {
+        vector<int> current_v = GetAllExistingNodes();
+        vector<int> clique;
+
+        while (current_v.size() > 0 && (make_maximum || (int)clique.size() < min_size)) {
+            int w = current_v[rand()%current_v.size()];
+            clique.push_back(w);
+            auto adj = GetAdjacency(w);
+            current_v = SetIntersection(current_v, adj);
+        }
+
+        if ((int)clique.size() > min_size && min_size != -1) return clique;
+        else if (clique.size() > max_clique.size()) max_clique = clique;
+    }
+
+    return max_clique;
+}
+
+vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {
+    vector<vector<int>> ret;
+    vector<int> current;
+    while ((int)current.size() != num_nodes) {
+        vector<int> clique = GetAClique(-1, 10, true);
+
+        vector<int> new_add = SetIntersection(clique, current);
+
+        if (new_add.size() == clique.size()) continue;
+
+        cout << "ADD " << clique.size() << " , " << new_add.size() << endl;
+        ret.push_back(clique);
+        current = SetUnion(current, clique);
+        
+    }
+
+    return ret;
+}
+
 void MaxCutGraph::PrintGraph(std::ostream& out)
 {
     out << num_nodes << " " << GetRealNumEdges() << endl;

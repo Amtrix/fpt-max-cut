@@ -125,6 +125,10 @@ public:
 
     vector<int> GetMaxCutColoring() { return computed_maxcut_coloring; }
 
+    vector<int> GetAClique(const int min_size, const int runs, const bool make_maximum = false);
+
+    vector<vector<int>> DecomposeIntoCliques();
+
     // As of now, doesn't print the actual nodes. Some single nodes available.
     void PrintGraph(std::ostream& out);
 

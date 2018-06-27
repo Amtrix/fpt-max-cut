@@ -1,7 +1,9 @@
 #pragma once
 
 #include <bits/stdc++.h>
+#include <experimental/filesystem>
 using namespace std;
+using namespace std::experimental;
 
 #ifndef __FUNCTION_NAME__
     #ifdef WIN32   //WINDOWS
@@ -31,3 +33,6 @@ vector<int> SetIntersection(const vector<int>& s1, const vector<int>& s2);
 bool IsASubsetOfB(const vector<int>& A, const vector<int>& B);
 
 vector<pair<int, string>> ZipVec(const vector<int> A, const vector<string> B);
+
+// ignores README.md !
+vector<string> GetAllDatasets(const string path);

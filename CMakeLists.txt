@@ -33,11 +33,15 @@ target_compile_definitions(benchmark-debug PRIVATE DEBUG)
 
 add_executable(test-articulation-and-biconnected executables/test-articulation-and-biconnected.cpp)
 target_sources(test-articulation-and-biconnected PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(test-articulation-and-biconnected Threads::Threads)
+target_link_libraries(test-articulation-and-biconnected Threads::Threads -lstdc++fs)
 
 add_executable(test-graph-functionality executables/test-graph-functionality.cpp)
 target_sources(test-graph-functionality PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(test-graph-functionality Threads::Threads)
+target_link_libraries(test-graph-functionality Threads::Threads -lstdc++fs)
 
 add_executable(unweight-an-instance executables/utils/unweight-an-instance.cpp)
-target_link_libraries(unweight-an-instance Threads::Threads)
+target_link_libraries(unweight-an-instance Threads::Threads -lstdc++fs)
+
+add_executable(double-clique-solver executables/double-clique-solver.cpp)
+target_sources(double-clique-solver PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(double-clique-solver PRIVATE Threads::Threads -lstdc++fs)

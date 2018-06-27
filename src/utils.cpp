@@ -1,4 +1,7 @@
 #include "./utils.hpp"
+#include <experimental/filesystem>
+using namespace std;
+using namespace std::experimental;
 
 void OutputDebugLog_(const string file, const int line_num, const string str, const int flags) {
     (void)str;
@@ -91,4 +94,15 @@ vector<int> SetIntersection(const vector<int>& s1, const vector<int>& s2) {
 
 bool IsASubsetOfB(const vector<int>& A, const vector<int>& B) {
     return SetSubstract(B, A).size() == (B.size() - A.size());
+}
+
+vector<string> GetAllDatasets(const string path) {
+    vector<string> ret;
+    for (auto & p : filesystem::directory_iterator(path))
+        if (filesystem::is_regular_file(p)) {
+            string fname = filesystem::path(p.path().u8string()).filename();
+            if (fname == "README.md") continue;
+            ret.push_back(p.path().u8string());
+        }
+    return ret;
 }

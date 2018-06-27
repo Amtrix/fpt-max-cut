@@ -109,9 +109,15 @@ int TryRule8(MaxCutGraph& G_0, MaxCutGraph& G_minus_S, const vector<int>& S) {
         }
 
         string largest_key = "";
-        for (auto entry : partition)
+        for (auto entry : partition) {
+            cout << entry.first << " = ";
+            for (auto node : partition[entry.first])
+                cout << node << " ";
+            cout << endl;
+
             if (largest_key == "" || (partition[largest_key].size() < entry.second.size()))
                 largest_key = entry.first;
+        }
         
         if (largest_key == "") continue;
 
@@ -124,6 +130,7 @@ int TryRule8(MaxCutGraph& G_0, MaxCutGraph& G_minus_S, const vector<int>& S) {
 
         double sz = (component.size() + S_intersect_NX.size()) / 2.0;
         
+        cout << partition[largest_key].size() << " " << sz << "( = (" << component.size() << " " << S_intersect_NX.size() << ") / 2.0" <<  endl;
         if (partition[largest_key].size() > sz && sz >= 1 - 1e-9) {
             G_0.RemoveNode(partition[largest_key][0]);
             G_0.RemoveNode(partition[largest_key][1]);

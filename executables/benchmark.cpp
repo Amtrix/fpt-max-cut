@@ -6,9 +6,7 @@
 #include "src/output-filter.hpp"
 
 #include <iostream>
-#include <experimental/filesystem>
 using namespace std;
-using namespace std::experimental;
 
 const int kDataSetCount = 3;
 const string paths[] = {
@@ -17,17 +15,7 @@ const string paths[] = {
     "../data/custom"
 };
 
-// ignores README.md !
-vector<string> GetAllDatasets(const string path) {
-    vector<string> ret;
-    for (auto & p : filesystem::directory_iterator(path))
-        if (filesystem::is_regular_file(p)) {
-            string fname = filesystem::path(p.path().u8string()).filename();
-            if (fname == "README.md") continue;
-            ret.push_back(p.path().u8string());
-        }
-    return ret;
-}
+
 
 
 void EvaluateMarkedVertices(InputParser& input, const string data_filepath) {
@@ -129,7 +117,89 @@ void EvaluateDataset(InputParser& input, const string data_filepath) {
     }
 }
 
+void EvaluateDatasetNew(InputParser& input, const string data_filepath) {
+    (void) input;
+    cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
+    MaxCutGraph G(data_filepath);
+
+    unordered_map<string, bool> visited;
+    for (int sz = 70; sz <= 90; ++sz) {
+        vector<int> previous;
+        for (int r = 0; r < 200; ++r) {
+            auto clique = G.GetAClique(sz, 2000);
+            sort(clique.begin(), clique.end());
+            string key = "";
+            for (auto node : clique) key = key + to_string(node) + ",";
+            if (visited[key]) continue;
+            visited[key] = true;
+
+            int isz = SetIntersection(clique, previous).size();
+            cout << "Intersect with previous(" << previous.size() <<") size: " << isz << " (total: " << previous.size() + clique.size() - isz << ")" << endl;
+            previous = clique;
+            cout << "SZ: " << clique.size() << " = ";
+            for (auto node : clique)
+                cout << node << " ";
+            cout << endl;
+
+            vector<int> S = G.GetAllExistingNodes();
+            S = SetSubstract(S, clique);
+
+            cout << "|S| = " << S.size() << endl;
+            G.SetMarkedVertices(S);
+/*            G.ReduceMarksetVertexSet();
+            S = G.GetMarkedVerticesByOneWayRules();
+            cout << "|S| = " << S.size() << endl;*/
+            
+
+            MaxCutGraph wG = G;
+            int res;
+            while ((res = ExhaustiveTwoWayReduce(wG, S)) > -1) {
+                cout << "Kernelization rule: " << res << " was applied." << endl;
+                cout << "New G. Stats: " << "|V| = " << G.GetRealNumNodes() << " , |E| = " << wG.GetRealNumEdges() << " , EE = " << wG.GetEdwardsErdosBound() << endl;
+                assert(false);
+            }
+        }
+    }
+}
+
+void EvaluateDatasetCliqueDecomposition(InputParser& input, const string data_filepath) {
+    (void) input;
+    cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
+    MaxCutGraph G(data_filepath);
+
+    auto cdecomposition = G.DecomposeIntoCliques();
+    cout << cdecomposition.size() << endl;
+
+    vector<int> cnt(G.GetNumNodes(), 0); // how many times node i contained in a clique
+    for (auto component : cdecomposition) {
+        for (auto node : component)
+            cnt[node]++;
+    }
+
+    int mxcnt = 0;
+    vector<int> cntrev(G.GetNumNodes(), 0); // how many times is a node contained in only i cliques.
+    vector<vector<int>> cntrev_content(G.GetNumNodes()); // all nodes contained in only i cliques.
+    for (int i = 0; i < G.GetNumNodes(); ++i) {
+        cntrev[cnt[i]]++;
+        cntrev_content[cnt[i]].push_back(i);
+        mxcnt = max(mxcnt, cnt[i]);
+    }
+
+    int fac = 1;
+    for (int i = 1; i <= mxcnt; ++i) {
+        MaxCutGraph newG(G, cntrev_content[i]);
+        auto connected_components = newG.GetAllConnectedComponents();
+        cout << "There are " << cntrev[i] << " nodes shared among " << i << " cliques. They are spread out into " << connected_components.size() << " connected components." << endl;
+
+        for (auto component : connected_components)
+            fac *= component.size();
+    }
+
+    cout << "Estimated calculation steps: " << fac << endl;
+}
+
 int main(int argc, char **argv){
+    srand((unsigned)time(0));
     ios_base::sync_with_stdio(false);
     InputParser input(argc, argv);
     InitOutputFiles(input);
@@ -149,7 +219,8 @@ int main(int argc, char **argv){
 
     
     for (string data_filepath : all_sets_to_evaluate) {
-        EvaluateDataset(input, data_filepath);
+      //  EvaluateDataset(input, data_filepath);
+        EvaluateDatasetCliqueDecomposition(input, data_filepath);
         ///EvaluateMarkedVertices(input, data_filepath);
     }
 

@@ -4,6 +4,8 @@
 #include <fstream>
 #include <vector>
 #include "localsolver.h"
+#include "../../src/utils.hpp"
+#include "../../src/mc-graph.hpp"
 
 using namespace localsolver;
 using namespace std;
@@ -120,6 +122,17 @@ public:
         for (unsigned int i = 0; i < n; ++i)
             outfile << i+1 << " " << x[i].getValue() << endl;
     }
+
+    int getCutSize() {
+        return cutWeight.getValue();
+    }
+};
+
+const int kDataSetCount = 3;
+const string paths[] = {
+    "../../data/biqmac/ising",
+    "../../data/biqmac/rudy",
+    "../../data/custom"
 };
 
 int main(int argc, char** argv) {
@@ -128,15 +141,52 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    const char* instanceFile = argv[1];
+    const char* instanceFile = argc > 1 ? argv[1] : NULL;
     const char* solFile = argc > 2 ? argv[2] : NULL;
     const char* strTimeLimit = argc > 3 ? argv[3] : "10";
 
     try {
-        Maxcut model;
-        model.readInstance(instanceFile);
-        model.solve(atoi(strTimeLimit));
-        if(solFile != NULL) model.writeSolution(solFile);
+        if (instanceFile != NULL) {
+            Maxcut model;
+            model.readInstance(instanceFile);
+            model.solve(atoi(strTimeLimit));
+            if(solFile != NULL) model.writeSolution(solFile);
+        } else {
+            cerr << "No input file" << endl;
+        }
+
+        /* UNCOMMENT THIS WHEN WANTING TO COMPUTE CUT FOR ALL DATASETS 
+        ofstream out("../../data/output/localsolver-lower-bound-cut-size/output-5sec");
+        for (unsigned int i = 0; i < kDataSetCount; ++i) {
+            auto sets = GetAllDatasets(paths[i]);
+            for (unsigned int i = 0; i < sets.size(); ++i) {
+                cout << sets[i] << endl;
+                string datapath = sets[i];
+            
+                Maxcut model;
+                model.readInstance(datapath);
+                model.solve(atoi("5"));
+                int cutsize = model.getCutSize();
+
+                MaxCutGraph G(datapath);
+
+                out.width(40);
+                out << datapath.substr(6) << " ";
+                out.width(15);
+                out << G.GetNumNodes() << " ";
+                out.width(15);
+                out << G.GetRealNumEdges() << " ";
+                out.width(15);
+                out << G.GetEdwardsErdosBound() << " ";
+                out.width(15);
+                out << cutsize << " ";
+                out.width(15);
+                out << cutsize - G.GetEdwardsErdosBound() << endl;
+                out.flush();
+            }
+        }
+        */
+
         return 0;
     } catch (const exception& e){
         cerr << "Error occurred: " << e.what() << endl;
