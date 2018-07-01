@@ -22,6 +22,9 @@ list(APPEND ALL_CPP_FILES
     "src/utils.cpp"
 )
 
+#list(APPEND OUTPUT_NAME "benchmark-kernelization-by-clique")
+#list(APPEND FLAGS "BENCH_KERNELIZATION_CLIQUE")
+
 add_executable(benchmark executables/benchmark.cpp)
 target_sources(benchmark PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(benchmark PRIVATE Threads::Threads -lstdc++fs)
@@ -45,3 +48,7 @@ target_link_libraries(unweight-an-instance Threads::Threads -lstdc++fs)
 add_executable(double-clique-solver executables/double-clique-solver.cpp)
 target_sources(double-clique-solver PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(double-clique-solver PRIVATE Threads::Threads -lstdc++fs)
+
+add_executable(random-playground executables/random-playground.cpp)
+target_sources(random-playground PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(random-playground PRIVATE Threads::Threads -lstdc++fs)

@@ -29,6 +29,9 @@ void print_row(std::ostream& out, vector<int> column_size, const char* format, .
             print(out, va_arg(args, double), column_size[col_dx++]);
         } else if (*format == 's') {
             print(out, va_arg(args, char*), column_size[col_dx++]);
+        } else if (*format == 'l') {
+            long long i = va_arg(args, long long);
+            print(out, i, column_size[col_dx++]);
         }
         ++format;
     }
@@ -41,12 +44,19 @@ void print_row(std::ostream& out, vector<int> column_size, const char* format, .
 
 
 vector<int> kMarkedSizeColumnDescriptor = {10, 10, 15, 22, 15, 50};
+vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
 
 void InitOutputFiles(const InputParser& input) {
     if (input.cmdOptionExists("-oneway-reduce-marked-size")) {
         const string output_path = input.getCmdOption("-oneway-reduce-marked-size");
         ofstream out(output_path);
         print_row(out, kMarkedSizeColumnDescriptor, "ssssss", "#|V|", "#|E|", "#oneway-|S|", "#oneway-reduced-|S|", "#adhoc-|S|", "#file");
+    }
+
+    if (input.cmdOptionExists("-clique-decomposition-intersection")) {
+        const string output_path = input.getCmdOption("-clique-decomposition-intersection");
+        ofstream out(output_path);
+        print_row(out, kMarkedSizeColumnDescriptor, "ssss", "#|V|", "#|E|", "#computation-steps", "#file");
     }
 }
 
@@ -62,5 +72,19 @@ void OutputFilterMarkedVertices(const InputParser& input,
         const string output_path = input.getCmdOption("-oneway-reduce-marked-size");
         ofstream out(output_path, fstream::app);
         print_row(out, kMarkedSizeColumnDescriptor, "ddddds", num_nodes, num_edges, marked_size_oneway, marked_size_oneway_reduce, marked_size_adhoc, dataset.c_str());
+    }
+}
+
+void OutputCliqueDecompositionIntersection(
+                                const InputParser& input,
+                                const string dataset,
+                                const int num_nodes,
+                                const int num_edges,
+                                const long long csteps) {
+
+    if (input.cmdOptionExists("-clique-decomposition-intersection")) {
+        const string output_path = input.getCmdOption("-clique-decomposition-intersection");
+        ofstream out(output_path, fstream::app);
+        print_row(out, cliqueDecompositionDescriptor, "ddls", num_nodes, num_edges, csteps, dataset.c_str());
     }
 }

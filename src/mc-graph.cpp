@@ -953,7 +953,7 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
             current_v = SetIntersection(current_v, adj);
         }
 
-        if ((int)clique.size() > min_size && min_size != -1) return clique;
+        if ((int)clique.size() >= min_size && min_size != -1) return clique;
         else if (clique.size() > max_clique.size()) max_clique = clique;
     }
 
@@ -963,18 +963,67 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
 vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {
     vector<vector<int>> ret;
     vector<int> current;
+
+    int cnt_extra_edges = 0;
+    unordered_map<int,int> is_current;
+    int cdx = 1;
+    int sz = 50;
     while ((int)current.size() != num_nodes) {
-        vector<int> clique = GetAClique(-1, 10, true);
+        vector<int> clique = GetAClique(max(sz--,2), 10, false);
 
-        vector<int> new_add = SetIntersection(clique, current);
+        cout << clique.size() << " : ";
+        for (auto node : clique)
+            cout << node << " ";
+        cout << endl;
 
-        if (new_add.size() == clique.size()) continue;
+        vector<int> clique_intersect = SetIntersection(clique, current);
 
-        cout << "ADD " << clique.size() << " , " << new_add.size() << endl;
+        if (clique_intersect.size() == clique.size()) continue;
+
+        unordered_map<int,bool> is_intersect;
+        
+        for (auto node : clique_intersect) {
+            is_intersect[node] = true;
+        }
+
+        int mem_cnt_extra_edges = cnt_extra_edges;
+        int typec = 0;
+        for (auto node : clique) {
+            if (is_intersect[node]) continue;
+
+            auto adj = GetAdjacency(node);
+            for (auto w : adj) {
+                if (is_current[w] != 0) {
+                    cnt_extra_edges ++;
+                    if (typec == 0) typec = is_current[w];
+                    else if (typec != is_current[w]) typec = -1;
+                }
+            }
+        }
+
+        //if (cnt_extra_edges > 0) {
+        //    cnt_extra_edges = 0;
+        //    continue;
+        //}
+        if (typec == -1 || cnt_extra_edges > 0) {
+            cnt_extra_edges = mem_cnt_extra_edges;
+            continue;
+        }
+
         ret.push_back(clique);
         current = SetUnion(current, clique);
-        
+        cout << "ADD " << clique.size() << " , intersecting @ " << clique_intersect.size() << " vertices. New cover size: " << current.size() << endl;
+        for (auto node : clique)
+            cout << node << " ";
+        cout << endl;
+        cout << "Extra edges between cliques: " << cnt_extra_edges << endl;
+
+        for (auto node : clique)
+            is_current[node] = cdx;
+        cdx++;
+        cout << endl;
     }
+    
 
     return ret;
 }

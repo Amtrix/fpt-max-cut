@@ -96,6 +96,16 @@ bool IsASubsetOfB(const vector<int>& A, const vector<int>& B) {
     return SetSubstract(B, A).size() == (B.size() - A.size());
 }
 
+vector<int> VectorsAdd(const vector<int> A, const vector<int> B) {
+    if (A.size() != B.size())
+        throw std::logic_error("Can't add vectors of different sizes!");
+    
+    vector<int> ret;
+    for (int i = 0; i < (int)A.size(); ++i)
+        ret.push_back(A[i] + B[i]);
+    return ret;
+}
+
 vector<string> GetAllDatasets(const string path) {
     vector<string> ret;
     for (auto & p : filesystem::directory_iterator(path))
