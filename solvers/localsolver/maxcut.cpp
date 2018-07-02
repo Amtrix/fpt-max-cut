@@ -41,32 +41,26 @@ public:
         ifstream infile;
         infile.exceptions(ifstream::failbit | ifstream::badbit);
         infile.open(fileName.c_str());
-        
-        infile >> n;
-        infile >> m;
+
+        vector<string> sparams = ReadLine(infile);
+        int lsz = sparams.size();
+        n = stoi(sparams[0 + (sparams[0]=="p")]);
+        m = stoi(sparams[1 + (sparams[0]=="p")]);
 
         origin.resize(m);
         dest.resize(m);
         w.resize(m);
 
-        string wstr;
-        getline(infile, wstr); // previous EOL
         for (int i = 0; i < m; ++i) {
-            getline(infile, wstr);
+            sparams = ReadLine(infile);
+            lsz = sparams.size();
 
-            vector<int> params;
-            stringstream line_in(wstr);
-            while (line_in.eof() == false) {
-                int val; line_in >> val;
-                params.push_back(val);
-            }
-
-            if (params.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
+            if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
 
            // AddEdge(params[0] - 1, params[1] - 1);
             //cout << i << " , " << n << " " << m << " : " << params.size() << " : " <<  params[0] << " " << params[1] << endl;
-            origin[i] = params[0];
-            dest[i] = params[1];
+            origin[i] = stoi(sparams[0 + (sparams[0]=="e")]);
+            dest[i] = stoi(sparams[1 + (sparams[0]=="e")]);
             w[i] = 1;
         }
         

@@ -17,24 +17,19 @@ MaxCutGraph::MaxCutGraph(const string path) {
         throw std::logic_error("File doesn't exist.");
     }
 
-    in >> num_nodes >> num_edges;
+    vector<string> sparams = ReadLine(in);
+    int isz = sparams.size();
+    // we take last two entries as dimacs prefixes each line with type of line
+    num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
+    num_edges = stoi(sparams[0 + (sparams[0]=="p")]);
     g_adj_list.resize(num_nodes);
 
-    string w;
-    getline(in, w); // previous EOL
     for (int i = 0; i < num_edges; ++i) {
-        getline(in, w);
+        sparams = ReadLine(in);
+        if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
 
-        vector<int> params;
-        stringstream line_in(w);
-        while (line_in.eof() == false) {
-            int val; line_in >> val;
-            params.push_back(val);
-        }
-
-        if (params.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
-
-        AddEdge(params[0] - 1, params[1] - 1);
+        isz = ((int)sparams.size());
+        AddEdge(stoi(sparams[0 + (sparams[0]=="e")]) - 1, stoi(sparams[1 + (sparams[0]=="e")]) - 1);
     }
 }
 

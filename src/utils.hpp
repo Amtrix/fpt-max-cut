@@ -37,3 +37,6 @@ vector<int> VectorsAdd(const vector<int> A, const vector<int> B);
 
 // ignores README.md !
 vector<string> GetAllDatasets(const string path);
+
+
+vector<string> ReadLine(std::istream& in);

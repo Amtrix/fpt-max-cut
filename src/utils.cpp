@@ -116,3 +116,18 @@ vector<string> GetAllDatasets(const string path) {
         }
     return ret;
 }
+
+vector<string> ReadLine(std::istream& in) {
+    vector<string> ret;
+
+    string w;
+    getline(in, w);
+
+    stringstream line_in(w);
+    while (line_in.eof() == false) {
+        string val; line_in >> val;
+        ret.push_back(val);
+    }
+
+    return ret;
+}
