@@ -8,6 +8,7 @@
 #include "src/benchmarks/benchmark-marked-set.hpp"
 #include "src/benchmarks/benchmark-kernelization.hpp"
 #include "src/benchmarks/benchmark-kernelization-by-clique.hpp"
+#include "src/benchmarks/benchmark-applicability-count.hpp"
 
 #include <iostream>
 using namespace std;
@@ -50,6 +51,8 @@ int main(int argc, char **argv){
             benchmark_action.reset(new Benchmark_Kernelization());
         } else if (action == "eval-marked-set") {
             benchmark_action.reset(new Benchmark_MarkedSet());
+        } else if (action == "kernelization-applicability-count") {
+            benchmark_action.reset(new Benchmark_ApplicabilityCount());
         }
         else throw std::logic_error("Action flag not defined.");
         

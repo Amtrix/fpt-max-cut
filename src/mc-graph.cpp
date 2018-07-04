@@ -957,9 +957,9 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
 }
 
 
-vector<int> MaxCutGraph::GetAnyR8Clique() {
-    vector<int> current_v = GetAllExistingNodes();
-
+vector<vector<int>> MaxCutGraph::GetAllR8Candidates() {
+    vector<vector<int>> ret;
+    
     auto prune_candidates = [&](vector<int> marked, vector<int> candidates) {
         vector<int> ret;
         for (auto node : candidates) {
@@ -973,16 +973,84 @@ vector<int> MaxCutGraph::GetAnyR8Clique() {
         return ret;
     };
 
+    vector<int> current_v = GetAllExistingNodes();
     for (auto root : current_v) {
         vector<int> marked = vector<int>{root};
         vector<int> candidates = prune_candidates(marked, GetAdjacency(root));
         
         marked = SetUnion(marked, candidates);
         
-        if (marked.size() > 1 && marked.size() > GetAdjacency(root).size() - marked.size()) return marked;
+        if (marked.size() > 1 && marked.size() > GetAdjacency(root).size() - marked.size())
+            ret.push_back(marked);
     }
 
-    return vector<int>();
+    return ret;
+}
+
+vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
+    vector<pair<int,vector<pair<int,int>>>> ret;
+    vector<int> current_v = GetAllExistingNodes();
+    vector<bool> makes_nonspecial(num_nodes + 1, false);
+
+    for (auto root : current_v) {
+        auto adj = GetAdjacency(root);
+        if (adj.size() == 2) {
+            makes_nonspecial[root] = true;
+        }
+    }
+
+    vector<vector<pair<int,int>>> pairing(num_nodes + 1);
+    for (auto root : current_v) {
+        auto adj = GetAdjacency(root);
+        for (auto na : adj) {
+            for (auto nb : adj) {
+                if (na >= nb || edge_exists_lookup[make_pair(na,nb)] == false)
+                    continue;
+                
+                if (!makes_nonspecial[na] && !makes_nonspecial[nb])
+                    continue;
+                
+                pairing[root].push_back(make_pair(na, nb));
+            }
+        }
+    }
+
+    for (auto root : current_v) {
+        auto& tris = pairing[root];
+        for (int i = 0; i < (int)tris.size(); ++i) {
+            for (int j = i + 1; j < (int)tris.size(); ++j) {
+                auto  &b1 = tris[i], &b2 = tris[j];
+                ret.push_back(make_pair(root, vector<pair<int,int>>{b1,b2}));
+            }
+        }
+    }
+
+    return ret;
+}
+
+vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
+    vector<pair<vector<int>, vector<int>>> ret;
+
+    vector<int> current_v = GetAllExistingNodes();
+    for (auto root : current_v) {
+        vector<int> clique = GetAdjacency(root);
+        clique.push_back(root);
+
+        if (IsClique(clique) == false) continue;
+
+        vector<int> X;
+        for (auto x : clique) {
+            auto adj = GetAdjacency(x);
+            auto inter = SetIntersection(clique, adj);
+            if (adj.size() == inter.size()) {
+                X.push_back(x);
+            }
+        }
+
+        ret.push_back(make_pair(clique, X));
+    }
+
+    return ret;
 }
 
 vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {

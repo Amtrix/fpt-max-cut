@@ -125,7 +125,15 @@ public:
 
     vector<int> GetMaxCutColoring() { return computed_maxcut_coloring; }
 
-    vector<int> GetAnyR8Clique();
+    // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
+    vector<vector<int>> GetAllR8Candidates();
+
+    // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second) and
+    // (x,pair2.first,pair2.second).
+    vector<pair<int,vector<pair<int,int>>>> GetAllR9Candidates();
+
+    // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
+    vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates();
 
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 

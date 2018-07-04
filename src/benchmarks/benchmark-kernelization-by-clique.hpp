@@ -23,11 +23,12 @@ public:
             vector<int> previous;
             for (int r = 0; r < 10000; ++r) {
                 //auto clique = G.GetAClique(sz, 2000);
-                auto clique = G.GetAnyR8Clique();
-                if (clique.size() == 0) {
+                auto cliques = G.GetAllR8Candidates();
+                if (cliques.size() == 0) {
                     cout << "RULE 8 NOT APPLICABLE" << endl;
                     return;
                 }
+                auto clique = cliques[0];
               //  clique = vector<int>{ 55,60 ,54, 79, 66, 50, 72 ,78 ,45 ,76 ,40, 63, 38, 62, 37, 39, 59, 32, 31, 30, 33, 36, 21, 22, 19, 77, 70, 14, 13, 26, 20, 10, 9, 48, 8, 7, 44, 3 ,28, 2, 57, 1};
                 sort(clique.begin(), clique.end());
                 string key = "";
