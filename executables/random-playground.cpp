@@ -4,13 +4,13 @@
 using namespace std;
 
 int C_sz = 9;
-vector<int> partition_a = {10, 10, 30};
-vector<int> partition_b = {2, 2, 3};
+vector<int> partition_a = {2};
+vector<int> partition_b = {3};
 vector<pair<int,int>> add_sx = {
   //  {2, 0}
 };
 
-vector<int> Sx = {0, 3, 1};
+vector<int> Sx = {1};
 
 
 bool SatisfiesRule8(vector<int> partition, int dx) {
@@ -19,6 +19,7 @@ bool SatisfiesRule8(vector<int> partition, int dx) {
 
     double rval = (csz + Sx[dx]) / 2.0;
     double lval = partition[dx];
+    cout << lval << " > " << rval << endl;
     return lval > rval;
 }
 
@@ -81,6 +82,7 @@ bool match(vector<int> p1, vector<int> p2, vector<int> Sx) {
 int main() {
     cout << "NOTE: These are absolute differences in cut size. Papers use above edwards erdos value." << endl;
     assert(partition_b.size() == partition_a.size() && partition_a.size() == Sx.size());
+    cout << "Satisfies? " << SatisfiesRule8(partition_a, 0) << endl;
 
     unordered_map<string, bool> visited;
     while(1) {

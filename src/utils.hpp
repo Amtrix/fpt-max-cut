@@ -33,10 +33,9 @@ vector<int> SetIntersection(const vector<int>& s1, const vector<int>& s2);
 bool IsASubsetOfB(const vector<int>& A, const vector<int>& B);
 
 vector<pair<int, string>> ZipVec(const vector<int> A, const vector<string> B);
-vector<int> VectorsAdd(const vector<int> A, const vector<int> B);
+vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_smaller = false);
 
 // ignores README.md !
 vector<string> GetAllDatasets(const string path);
-
 
 vector<string> ReadLine(std::istream& in);

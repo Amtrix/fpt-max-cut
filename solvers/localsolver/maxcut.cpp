@@ -141,6 +141,9 @@ int main(int argc, char** argv) {
 
     try {
         if (instanceFile != NULL) {
+            MaxCutGraph G(instanceFile);
+            cout << "Edwards Erdos bound: " << G.GetEdwardsErdosBound() << endl;
+
             Maxcut model;
             model.readInstance(instanceFile);
             model.solve(atoi(strTimeLimit));

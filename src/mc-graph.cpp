@@ -18,19 +18,20 @@ MaxCutGraph::MaxCutGraph(const string path) {
     }
 
     vector<string> sparams = ReadLine(in);
-    int isz = sparams.size();
+
     // we take last two entries as dimacs prefixes each line with type of line
     num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
-    num_edges = stoi(sparams[0 + (sparams[0]=="p")]);
+    num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
     g_adj_list.resize(num_nodes);
 
     for (int i = 0; i < num_edges; ++i) {
         sparams = ReadLine(in);
         if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
 
-        isz = ((int)sparams.size());
         AddEdge(stoi(sparams[0 + (sparams[0]=="e")]) - 1, stoi(sparams[1 + (sparams[0]=="e")]) - 1);
     }
+    
+    OutputDebugLog("Reading from file done.");
 }
 
 MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {
@@ -953,6 +954,35 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
     }
 
     return max_clique;
+}
+
+
+vector<int> MaxCutGraph::GetAnyR8Clique() {
+    vector<int> current_v = GetAllExistingNodes();
+
+    auto prune_candidates = [&](vector<int> marked, vector<int> candidates) {
+        vector<int> ret;
+        for (auto node : candidates) {
+            auto adj = GetAdjacency(node);
+            auto adj_goal = GetAdjacency(marked[0]);
+            adj_goal = SetSubstract(adj_goal, vector<int>{node});
+            adj_goal = SetUnion(adj_goal, vector<int>{marked[0]});
+            if (adj.size() == adj_goal.size() && SetIntersection(adj, adj_goal).size() == adj.size())
+                ret.push_back(node);
+        }
+        return ret;
+    };
+
+    for (auto root : current_v) {
+        vector<int> marked = vector<int>{root};
+        vector<int> candidates = prune_candidates(marked, GetAdjacency(root));
+        
+        marked = SetUnion(marked, candidates);
+        
+        if (marked.size() > 1 && marked.size() > GetAdjacency(root).size() - marked.size()) return marked;
+    }
+
+    return vector<int>();
 }
 
 vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {

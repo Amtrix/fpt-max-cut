@@ -22,7 +22,7 @@ const string paths[] = {
 vector<int> tot_used_rules(10, 0);
 int main(int argc, char **argv){
     srand((unsigned)time(0));
-    ios_base::sync_with_stdio(false);
+    //ios_base::sync_with_stdio(false);
     InputParser input(argc, argv);
     InitOutputFiles(input);
 
@@ -55,7 +55,7 @@ int main(int argc, char **argv){
         
         benchmark_action->Evaluate(input, data_filepath);
 
-        tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules);
+        tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
     }
 
     cout << endl;

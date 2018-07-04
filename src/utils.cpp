@@ -96,12 +96,13 @@ bool IsASubsetOfB(const vector<int>& A, const vector<int>& B) {
     return SetSubstract(B, A).size() == (B.size() - A.size());
 }
 
-vector<int> VectorsAdd(const vector<int> A, const vector<int> B) {
-    if (A.size() != B.size())
+vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_smaller) {
+    if (!cut_at_smaller && A.size() != B.size())
         throw std::logic_error("Can't add vectors of different sizes!");
     
+    int sz = min(A.size(), B.size());
     vector<int> ret;
-    for (int i = 0; i < (int)A.size(); ++i)
+    for (int i = 0; i < sz; ++i)
         ret.push_back(A[i] + B[i]);
     return ret;
 }

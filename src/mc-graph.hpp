@@ -125,6 +125,8 @@ public:
 
     vector<int> GetMaxCutColoring() { return computed_maxcut_coloring; }
 
+    vector<int> GetAnyR8Clique();
+
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 
     // WRONG AS OF NOW, AS IT WORKS WITH VERTEX COVER, BUT SHOULD USE EDGE COVER
