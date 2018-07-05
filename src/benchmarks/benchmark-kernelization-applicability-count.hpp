@@ -11,7 +11,7 @@
 #include <iostream>
 using namespace std;
 
-class Benchmark_ApplicabilityCount : public BenchmarkAction {
+class Benchmark_KernelizationApplicabilityCount : public BenchmarkAction {
 public:
     void Evaluate(InputParser& input, const string data_filepath) {
         (void) input;
@@ -23,5 +23,7 @@ public:
         auto res_r10 = G.GetAllR10Candidates();
 
         cout << "(r8, r9, r9x, r10) = " << res_r8.size() << " " << res_r9.size() << " " << res_r9x.size() << " " << res_r10.size() << endl;
+        OutputKernelizationApplicabilityCount(input, data_filepath, G.GetNumNodes(), G.GetRealNumEdges(),
+            res_r8.size(), res_r9.size(), res_r9x.size(), res_r10.size());
     }
 };

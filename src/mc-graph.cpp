@@ -6,8 +6,8 @@
 
  }
 
- MaxCutGraph::MaxCutGraph(int n, int m) {
-    num_nodes = n, num_edges = m;
+ MaxCutGraph::MaxCutGraph(int n, int /* not used m */) {
+    num_nodes = n;//, num_edges = m;
     g_adj_list.resize(num_nodes);
 }
 
@@ -21,7 +21,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
 
     // we take last two entries as dimacs prefixes each line with type of line
     num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
-    num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
+    int num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
     g_adj_list.resize(num_nodes);
 
     for (int i = 0; i < num_edges; ++i) {
@@ -43,7 +43,7 @@ MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) :
     for (const int node : subset)
         removed_node[node] = false;
 
-    num_edges = 0;
+  //  num_edges = 0;
     for (const int node : subset) {
         auto adj = source.GetAdjacency(node);
         for (const int w : adj) {
@@ -51,7 +51,7 @@ MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) :
                 continue;
 
             AddEdge(node, w);
-            num_edges++;
+          //  num_edges++;
         }
     }
 }
@@ -975,7 +975,7 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates() {
 
     vector<bool> visited(num_nodes, false);
     vector<int> current_v = GetAllExistingNodes();
-    
+
     for (auto root : current_v) {
         if (visited[root]) continue;
 
@@ -983,8 +983,7 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates() {
         vector<int> candidates = prune_candidates(marked, GetAdjacency(root));
         
         marked = SetUnion(marked, candidates);
-        
-        if (marked.size() > 1 && marked.size() > GetAdjacency(root).size() - marked.size()) {
+        if (marked.size() > 1 && marked.size() > ((int)GetAdjacency(root).size()) - (marked.size() - 1)) { // -1 since root included here.
             ret.push_back(marked);
             for (auto node : marked)
                 visited[node] = true;
@@ -1038,8 +1037,11 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
 vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
     vector<pair<vector<int>, vector<int>>> ret;
 
+    vector<bool> visited(num_nodes, false);
     vector<int> current_v = GetAllExistingNodes();
     for (auto root : current_v) {
+        if (visited[root]) continue;
+
         vector<int> clique = GetAdjacency(root);
         clique.push_back(root);
 
@@ -1054,8 +1056,11 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
             }
         }
 
-        if (clique.size() % 2 == 0 && clique.size() / 2 <= X.size())
+        if (clique.size() % 2 == 0 && clique.size() / 2 <= X.size()) {
+            for (auto x : X)
+                visited[x] = true;
             ret.push_back(make_pair(clique, X));
+        }
     }
 
     return ret;

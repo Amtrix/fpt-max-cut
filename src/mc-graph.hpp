@@ -30,7 +30,10 @@ public:
     int GetRealNumEdges() { return GetAllExistingEdges().size(); }
 
     void AddEdge(int a, int b) {
-        assert(edge_exists_lookup[make_pair(a,b)] == false);
+        if(edge_exists_lookup[make_pair(a,b)] || a == b) {
+            cout << "Warning: Edge added already or loop: " << a << " " << b << ". Ignored." << endl;
+            return;
+        }
 
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);
@@ -167,7 +170,7 @@ private:
     vector<int> dfs_tree_depth;
     int dfs_tree_ui;
 
-    int num_nodes, num_edges;
+    int num_nodes;//, num_edges;
 
     bool bicomponents_computed = false;
     bool articulations_computed = false;

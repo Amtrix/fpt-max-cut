@@ -45,6 +45,7 @@ void print_row(std::ostream& out, vector<int> column_size, const char* format, .
 
 vector<int> kMarkedSizeColumnDescriptor = {10, 10, 15, 22, 15, 50};
 vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
+vector<int> kernelizationCountDescriptor = {10, 10, 10, 10, 10, 10, 60};
 
 void InitOutputFiles(const InputParser& input) {
     if (input.cmdOptionExists("-oneway-reduce-marked-size")) {
@@ -57,6 +58,16 @@ void InitOutputFiles(const InputParser& input) {
         const string output_path = input.getCmdOption("-clique-decomposition-intersection");
         ofstream out(output_path);
         print_row(out, kMarkedSizeColumnDescriptor, "ssss", "#|V|", "#|E|", "#computation-steps", "#file");
+    }
+
+    if (input.cmdOptionExists("-benchmark-output")) {
+        const string action = input.getCmdOption("-action");
+
+        if (action == "kernelization-applicability-count") {
+            const string output_path = input.getCmdOption("-benchmark-output");
+            ofstream out(output_path);
+            print_row(out, kernelizationCountDescriptor, "sssssss", "#|V|", "#|E|", "#|R8|", "#|R9|", "#|R9x|", "#|R10|", "#file");
+        }
     }
 }
 
@@ -86,5 +97,21 @@ void OutputCliqueDecompositionIntersection(
         const string output_path = input.getCmdOption("-clique-decomposition-intersection");
         ofstream out(output_path, fstream::app);
         print_row(out, cliqueDecompositionDescriptor, "ddls", num_nodes, num_edges, csteps, dataset.c_str());
+    }
+}
+
+void OutputKernelizationApplicabilityCount(
+                                const InputParser& input,
+                                const string dataset,
+                                const int num_nodes,
+                                const int num_edges,
+                                const int r8_cnt,
+                                const int r9_cnt,
+                                const int r9x_cnt,
+                                const int r10_cnt) {
+    if (input.cmdOptionExists("-benchmark-output")) {
+        const string output_path = input.getCmdOption("-benchmark-output");
+        ofstream out(output_path, fstream::app);
+        print_row(out, kernelizationCountDescriptor, "dddddds", num_nodes, num_edges, r8_cnt, r9_cnt, r9x_cnt, r10_cnt, dataset.c_str());
     }
 }

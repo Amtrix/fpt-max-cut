@@ -8,16 +8,19 @@
 #include "src/benchmarks/benchmark-marked-set.hpp"
 #include "src/benchmarks/benchmark-kernelization.hpp"
 #include "src/benchmarks/benchmark-kernelization-by-clique.hpp"
-#include "src/benchmarks/benchmark-applicability-count.hpp"
+#include "src/benchmarks/benchmark-kernelization-applicability-count.hpp"
 
 #include <iostream>
 using namespace std;
 
-const int kDataSetCount = 3;
+const int kDataSetCount = 6;
 const string paths[] = {
     "../data/biqmac/ising",
     "../data/biqmac/rudy",
-    "../data/custom"
+    "../data/custom",
+    "../data/KaGen/ba",
+    "../data/KaGen/gnp_undirected",
+    "../data/KaGen/rhg"
 };
 
 vector<int> tot_used_rules(10, 0);
@@ -44,7 +47,7 @@ int main(int argc, char **argv){
 
     for (string data_filepath : all_sets_to_evaluate) {
         cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
-        
+
         std::unique_ptr<BenchmarkAction> benchmark_action;
         
         if (action == "clique-kernelization") {
@@ -54,7 +57,7 @@ int main(int argc, char **argv){
         } else if (action == "eval-marked-set") {
             benchmark_action.reset(new Benchmark_MarkedSet());
         } else if (action == "kernelization-applicability-count") {
-            benchmark_action.reset(new Benchmark_ApplicabilityCount());
+            benchmark_action.reset(new Benchmark_KernelizationApplicabilityCount());
         }
         else throw std::logic_error("Action flag not defined.");
         
