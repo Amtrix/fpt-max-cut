@@ -42,6 +42,10 @@ add_executable(test-graph-functionality executables/test-graph-functionality.cpp
 target_sources(test-graph-functionality PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(test-graph-functionality Threads::Threads -lstdc++fs)
 
+add_executable(test-kernelization-all executables/test-kernelization-all.cpp)
+target_sources(test-kernelization-all PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(test-kernelization-all Threads::Threads -lstdc++fs)
+
 add_executable(unweight-an-instance executables/utils/unweight-an-instance.cpp)
 target_link_libraries(unweight-an-instance Threads::Threads -lstdc++fs)
 

@@ -973,15 +973,22 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates() {
         return ret;
     };
 
+    vector<bool> visited(num_nodes, false);
     vector<int> current_v = GetAllExistingNodes();
+    
     for (auto root : current_v) {
+        if (visited[root]) continue;
+
         vector<int> marked = vector<int>{root};
         vector<int> candidates = prune_candidates(marked, GetAdjacency(root));
         
         marked = SetUnion(marked, candidates);
         
-        if (marked.size() > 1 && marked.size() > GetAdjacency(root).size() - marked.size())
+        if (marked.size() > 1 && marked.size() > GetAdjacency(root).size() - marked.size()) {
             ret.push_back(marked);
+            for (auto node : marked)
+                visited[node] = true;
+        }
     }
 
     return ret;
@@ -1047,7 +1054,8 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
             }
         }
 
-        ret.push_back(make_pair(clique, X));
+        if (clique.size() % 2 == 0 && clique.size() / 2 <= X.size())
+            ret.push_back(make_pair(clique, X));
     }
 
     return ret;
