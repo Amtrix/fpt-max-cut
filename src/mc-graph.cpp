@@ -1053,6 +1053,30 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
     return ret;
 }
 
+vector<pair<int,pair<int,int>>> MaxCutGraph::GetAllR10Candidates() {
+    vector<pair<int,pair<int,int>>> ret;
+
+    vector<int> current_v = GetAllExistingNodes();
+    for (auto u : current_v) {
+        auto adj = GetAdjacency(u);
+
+        if (adj.size() != 2) continue;
+
+        int nodex = adj[0], nodey = adj[1];
+
+        if (AreAdjacent(nodex, nodey) == false) continue;
+
+        auto new_v = SetSubstract(current_v, vector<int>{u});
+        MaxCutGraph newG(*this, new_v);
+
+        if (newG.IsBridgeBetween(nodex, nodey)) {
+            ret.push_back(make_pair(u, make_pair(nodex, nodey)));
+        }
+    }
+    
+    return ret;
+}
+
 vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {
     vector<vector<int>> ret;
     vector<int> current;

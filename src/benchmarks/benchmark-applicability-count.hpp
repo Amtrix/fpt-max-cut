@@ -15,13 +15,13 @@ class Benchmark_ApplicabilityCount : public BenchmarkAction {
 public:
     void Evaluate(InputParser& input, const string data_filepath) {
         (void) input;
-        cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
         MaxCutGraph G(data_filepath);
 
         auto res_r9 = G.GetAllR9Candidates();
         auto res_r9x = G.GetAllR9XCandidates();
         auto res_r8 = G.GetAllR8Candidates();
+        auto res_r10 = G.GetAllR10Candidates();
 
-        cout << "(r8, r9, r9x) = " << res_r8.size() << " " << res_r9.size() << " " << res_r9x.size() << endl;
+        cout << "(r8, r9, r9x, r10) = " << res_r8.size() << " " << res_r9.size() << " " << res_r9x.size() << " " << res_r10.size() << endl;
     }
 };

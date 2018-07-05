@@ -15,7 +15,6 @@ class Benchmark_KernelizationByClique : public BenchmarkAction {
 public:
     void Evaluate(InputParser& input, const string data_filepath) {
         (void) input;
-        cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
         MaxCutGraph G(data_filepath);
 
         unordered_map<string, bool> visited;

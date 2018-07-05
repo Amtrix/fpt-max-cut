@@ -14,7 +14,6 @@ using namespace std;
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
     void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
-        cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
         MaxCutGraph G(data_filepath);
 
         int k = 0;

@@ -43,6 +43,8 @@ int main(int argc, char **argv){
     const string action = input.getCmdOption("-action");
 
     for (string data_filepath : all_sets_to_evaluate) {
+        cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
+        
         std::unique_ptr<BenchmarkAction> benchmark_action;
         
         if (action == "clique-kernelization") {

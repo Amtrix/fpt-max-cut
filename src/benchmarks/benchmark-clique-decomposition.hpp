@@ -15,7 +15,6 @@ using namespace std;
 // WRONG AS OF NOW, AS IT WORKS WITH VERTEX COVER, BUT SHOULD USE EDGE COVER
 void EvaluateDatasetCliqueDecomposition(InputParser& input, const string data_filepath) {
     (void) input;
-    cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
     MaxCutGraph G(data_filepath);
 
     auto cdecomposition = G.DecomposeIntoCliques();

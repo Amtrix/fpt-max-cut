@@ -135,6 +135,9 @@ public:
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates();
 
+    // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 
+    vector<pair<int,pair<int,int>>> GetAllR10Candidates();
+
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 
     // WRONG AS OF NOW, AS IT WORKS WITH VERTEX COVER, BUT SHOULD USE EDGE COVER
