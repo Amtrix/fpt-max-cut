@@ -6,6 +6,7 @@
 #include "localsolver.h"
 #include "../../src/utils.hpp"
 #include "../../src/mc-graph.hpp"
+#include "../../src/one-way-reducers.hpp"
 
 using namespace localsolver;
 using namespace std;
@@ -122,24 +123,29 @@ public:
     }
 };
 
-const int kDataSetCount = 3;
+const int kDataSetCount = 6;
 const string paths[] = {
     "../../data/biqmac/ising",
     "../../data/biqmac/rudy",
-    "../../data/custom"
+    "../../data/custom",
+    "../../data/KaGen/ba",
+    "../../data/KaGen/gnp_undirected",
+    "../../data/KaGen/rhg"
 };
 
+
 int main(int argc, char** argv) {
-    if (argc < 2) {
+    if (argc < 1) {
         cerr << "Usage: maxcut inputFile [outputFile] [timeLimit] " << endl;
         return 1;
     }
 
     const char* instanceFile = argc > 1 ? argv[1] : NULL;
     const char* solFile = argc > 2 ? argv[2] : NULL;
-    const char* strTimeLimit = argc > 3 ? argv[3] : "10";
+    const char* strTimeLimit = argc > 3 ? argv[3] : "3";
 
     try {
+        /*
         if (instanceFile != NULL) {
             MaxCutGraph G(instanceFile);
             cout << "Edwards Erdos bound: " << G.GetEdwardsErdosBound() << endl;
@@ -151,9 +157,11 @@ int main(int argc, char** argv) {
         } else {
             cerr << "No input file" << endl;
         }
+        */
 
-        /* UNCOMMENT THIS WHEN WANTING TO COMPUTE CUT FOR ALL DATASETS 
-        ofstream out("../../data/output/localsolver-lower-bound-cut-size/output-5sec");
+        // UNCOMMENT THIS WHEN WANTING TO COMPUTE CUT FOR ALL DATASETS 
+        
+        ofstream out("../../data/output/localsolver-lower-bound-cut-size/output_2.0-3sec");
         for (unsigned int i = 0; i < kDataSetCount; ++i) {
             auto sets = GetAllDatasets(paths[i]);
             for (unsigned int i = 0; i < sets.size(); ++i) {
@@ -167,7 +175,18 @@ int main(int argc, char** argv) {
 
                 MaxCutGraph G(datapath);
 
-                out.width(40);
+                int k = 0;
+                int rule_taken;
+                OutputDebugLog("----------- START: APPLYING ONE-WAY REDUCTION RULES TO COMPUTE S -----------");
+                MaxCutGraph G_processing_oneway = G; // ! make sure no pointers in G !
+                while ((rule_taken = TryOneWayReduce(G_processing_oneway, k)) != -1) {
+                    OutputDebugLog("RULE: " + to_string(rule_taken));
+                    OutputDebugLog("-----------");
+                }
+
+                double k_dest = cutsize - G.GetEdwardsErdosBound();
+
+                out.width(50);
                 out << datapath.substr(6) << " ";
                 out.width(15);
                 out << G.GetNumNodes() << " ";
@@ -178,11 +197,15 @@ int main(int argc, char** argv) {
                 out.width(15);
                 out << cutsize << " ";
                 out.width(15);
-                out << cutsize - G.GetEdwardsErdosBound() << endl;
+                out << k_dest << " ";
+                out.width(17);
+                out << k << " ";
+                out.width(17);
+                out << k_dest + k << endl;
                 out.flush();
             }
         }
-        */
+        
 
         return 0;
     } catch (const exception& e){
