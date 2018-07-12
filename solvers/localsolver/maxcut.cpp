@@ -199,9 +199,9 @@ int main(int argc, char** argv) {
                 out.width(15);
                 out << k_dest << " ";
                 out.width(17);
-                out << k << " ";
+                out << (k/4.0) << " ";
                 out.width(17);
-                out << k_dest + k << endl;
+                out << k_dest + (k/4.0) << endl;
                 out.flush();
             }
         }
