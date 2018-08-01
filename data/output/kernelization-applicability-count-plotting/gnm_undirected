@@ -1,0 +1,12 @@
+      #|V|       #|E|      #|R8|      #|R9|     #|R9x|     #|R10|                                                        #file 
+       129          2          2          0          2          0              ../data/KaGen-2/gnm_undirected/n124_m01_seed123 
+       129          4          4          0          4          0              ../data/KaGen-2/gnm_undirected/n124_m02_seed123 
+       129          8          6          0          8          0              ../data/KaGen-2/gnm_undirected/n124_m03_seed123 
+       129         16          5          0         15          0              ../data/KaGen-2/gnm_undirected/n124_m04_seed123 
+       129         32          7          0         20          0              ../data/KaGen-2/gnm_undirected/n124_m05_seed123 
+       129         64          7          0         37          0              ../data/KaGen-2/gnm_undirected/n124_m06_seed123 
+       129        128          3          0         36          0              ../data/KaGen-2/gnm_undirected/n124_m07_seed123 
+       129        256          0          0         13          0              ../data/KaGen-2/gnm_undirected/n124_m08_seed123 
+       129        512          0          0          0          0              ../data/KaGen-2/gnm_undirected/n124_m09_seed123 
+       129       1024          0          0          0          0              ../data/KaGen-2/gnm_undirected/n124_m10_seed123 
+       129       2048          0          0          0          0              ../data/KaGen-2/gnm_undirected/n124_m11_seed123 

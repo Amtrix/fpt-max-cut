@@ -13,14 +13,15 @@
 #include <iostream>
 using namespace std;
 
-const int kDataSetCount = 6;
+const int kDataSetCount = 1;
 const string paths[] = {
-    "../data/biqmac/ising",
-    "../data/biqmac/rudy",
-    "../data/custom",
-    "../data/KaGen/ba",
-    "../data/KaGen/gnp_undirected",
-    "../data/KaGen/rhg"
+ //   "../data/biqmac/ising",
+ //   "../data/biqmac/rudy",
+  //  "../data/custom",
+  //  "../data/KaGen/ba",
+  //  "../data/KaGen/gnp_undirected",
+  //  "../data/KaGen/rhg",
+    "../data/KaGen-2/gnm_undirected"//,
 };
 
 vector<int> tot_used_rules(10, 0);
@@ -58,6 +59,20 @@ int main(int argc, char **argv){
             benchmark_action.reset(new Benchmark_MarkedSet());
         } else if (action == "kernelization-applicability-count") {
             benchmark_action.reset(new Benchmark_KernelizationApplicabilityCount());
+        } else if (action == "test-cschulz-to-normalized") {
+            ifstream in(data_filepath);
+            int n,m;
+            vector<string> sparams = ReadLine(in);
+            n = stoi(sparams[0]), m = stoi(sparams[1]);
+            cout << "CURR: " << m << endl;
+            while (in.eof() == false) {
+                int a,b; in >> a >> b;
+                m--;
+            }
+
+            cout << "M-check: " << m << endl;
+
+            continue;
         }
         else throw std::logic_error("Action flag not defined.");
         

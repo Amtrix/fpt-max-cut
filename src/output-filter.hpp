@@ -111,6 +111,7 @@ void OutputKernelizationApplicabilityCount(
                                 const int r10_cnt) {
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output");
+        cout << "OUT: "<< output_path<<endl;
         ofstream out(output_path, fstream::app);
         print_row(out, kernelizationCountDescriptor, "dddddds", num_nodes, num_edges, r8_cnt, r9_cnt, r9x_cnt, r10_cnt, dataset.c_str());
     }

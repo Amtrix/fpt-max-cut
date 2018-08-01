@@ -20,15 +20,38 @@ MaxCutGraph::MaxCutGraph(const string path) {
     vector<string> sparams = ReadLine(in);
 
     // we take last two entries as dimacs prefixes each line with type of line
-    num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
-    int num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
-    g_adj_list.resize(num_nodes);
+    if (sparams[0] != "#edge-list-0") {
+        num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
+        // bug in kagen? 
+        // ./build/app/kagen -gen gnm_undirected -n 7 -m 11 -seed 123 -output ../../data/KaGen-2/gnm_undirected/n124_m11_seed12
+        num_nodes++;
 
-    for (int i = 0; i < num_edges; ++i) {
-        sparams = ReadLine(in);
-        if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
+        int num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
+        g_adj_list.resize(num_nodes);
 
-        AddEdge(stoi(sparams[0 + (sparams[0]=="e")]) - 1, stoi(sparams[1 + (sparams[0]=="e")]) - 1);
+        for (int i = 0; i < num_edges; ++i) {
+            sparams = ReadLine(in);
+            cout << sparams[0] << " " << sparams[1] << " " << sparams[2] << endl;
+            if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
+
+            AddEdge(stoi(sparams[0 + (sparams[0]=="e")]) - 1, stoi(sparams[1 + (sparams[0]=="e")]) - 1);
+        }
+        cout << "END" << endl;
+    } else {
+        num_nodes = 0;// = num_edges = 0;
+        g_adj_list.resize(2000);
+        while (in.eof() == false) {
+            sparams = ReadLine(in);
+            if (sparams.size() == 0) continue;
+            if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(-1));
+            cout << sparams[0] << " " << sparams[1] << endl;
+            int a = stoi(sparams[0]);
+            int b = stoi(sparams[1]);
+            if (a >= 5000 || b >= 5000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
+            num_nodes = max(num_nodes, max(a+1, b+1));
+           // num_edges++;
+            AddEdge(a, b);
+        }
     }
     
     OutputDebugLog("Reading from file done.");
