@@ -65,6 +65,9 @@ public:
     vector<int> GetSingleSourcePathFromRoot(int dest);
 
     void RemoveNode(int node);
+    // Does not add the previously removed edges with the RemoveNode function!
+    void ReAddNode(int node);
+    void RemoveEdgesBetween(int nodex, int nodey);
 
     vector<int> GetAllExistingNodes();
 
@@ -130,17 +133,21 @@ public:
 
     // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
     vector<vector<int>> GetAllR8Candidates();
+    void ApplyR8Candidate(const vector<int> &clique);
 
-    // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second) and
+    // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
     // (x,pair2.first,pair2.second).
     vector<pair<int,vector<pair<int,int>>>> GetAllR9Candidates();
+    void ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates);
 
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     // Warning! X >= C/2, therefore, deletion of some vertices in X is necessary when applying the rule.
     vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates();
+    void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate, int &k);
 
     // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 
-    vector<pair<int,pair<int,int>>> GetAllR10Candidates();
+    vector<tuple<bool, int, int, int>> GetAllR10Candidates();
+    void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate, int &k);
 
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 

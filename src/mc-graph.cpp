@@ -275,6 +275,22 @@ void MaxCutGraph::RemoveNode(int node) {
 
     removed_node[node] = true;
 }
+void MaxCutGraph::ReAddNode(int node) {
+    removed_node[node] = false;
+}
+
+void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
+    auto it = std::find(g_adj_list[nodex].cbegin(), g_adj_list[nodex].cend(), nodey);
+    if (it != g_adj_list[nodex].end())
+        g_adj_list[nodex].erase(it);
+    
+    it = std::find(g_adj_list[nodey].cbegin(), g_adj_list[nodey].cend(), nodex);
+    if (it != g_adj_list[nodey].end())
+        g_adj_list[nodey].erase(it);
+    
+    edge_exists_lookup.erase(make_pair(nodex, nodey));
+    edge_exists_lookup.erase(make_pair(nodey, nodex));
+}
 
 vector<int> MaxCutGraph::GetAllExistingNodes() {
     vector<int> ret;
@@ -1016,6 +1032,13 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates() {
     return ret;
 }
 
+void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
+    assert(clique.size() >= 2);
+
+    RemoveNode(clique[0]);
+    RemoveNode(clique[1]);
+}
+
 vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
     vector<pair<int,vector<pair<int,int>>>> ret;
     vector<int> current_v = GetAllExistingNodes();
@@ -1057,6 +1080,16 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
     return ret;
 }
 
+void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates) {
+    const pair<int,int> &triag1 = candidates.second[0];
+    const pair<int,int> &triag2 = candidates.second[1];
+    AddEdge(triag1.first, triag2.first);
+    AddEdge(triag1.first, triag2.second);
+
+    AddEdge(triag1.second, triag2.first);
+    AddEdge(triag1.second, triag2.second);
+}
+
 vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
     vector<pair<vector<int>, vector<int>>> ret;
 
@@ -1088,9 +1121,14 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
 
     return ret;
 }
+void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate, int &k) {
+    assert(candidate.second.size() >= 1);
+    RemoveNode(candidate.second[0]);
+    k--;
+}
 
-vector<pair<int,pair<int,int>>> MaxCutGraph::GetAllR10Candidates() {
-    vector<pair<int,pair<int,int>>> ret;
+vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates() {
+    vector<tuple<bool, int, int, int>> ret;
 
     vector<int> current_v = GetAllExistingNodes();
     for (auto u : current_v) {
@@ -1106,11 +1144,37 @@ vector<pair<int,pair<int,int>>> MaxCutGraph::GetAllR10Candidates() {
         MaxCutGraph newG(*this, new_v);
 
         if (newG.IsBridgeBetween(nodex, nodey)) {
-            ret.push_back(make_pair(u, make_pair(nodex, nodey)));
+            ret.push_back(make_tuple(true, u, nodex, nodey));
+        } else {
+            ret.push_back(make_tuple(false, u, nodex, nodey));
         }
     }
     
     return ret;
+}
+void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate, int &k) {
+    bool bridge_case = get<0>(candidate);
+    int u = get<1>(candidate);
+    int nodex = get<2>(candidate);
+    int nodey = get<3>(candidate);
+
+    if (bridge_case) {
+        vector<int> adj_nodex = GetAdjacency(nodex);
+        vector<int> adj_nodey = GetAdjacency(nodey);
+        vector<int> adj = SetUnion(adj_nodex, adj_nodey);
+        RemoveNode(u);
+        RemoveNode(nodex);
+        RemoveNode(nodey);
+        ReAddNode(u);
+
+        for (auto v : adj)
+            if (v != u && v != nodex && v != nodey)
+                AddEdge(u, v);
+    } else {
+        RemoveNode(u);
+        RemoveEdgesBetween(nodex, nodey);
+        k--;
+    }
 }
 
 vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {

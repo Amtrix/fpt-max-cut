@@ -61,9 +61,9 @@ int main(int argc, char **argv){
             benchmark_action.reset(new Benchmark_KernelizationApplicabilityCount());
         } else if (action == "test-cschulz-to-normalized") {
             ifstream in(data_filepath);
-            int n,m;
             vector<string> sparams = ReadLine(in);
-            n = stoi(sparams[0]), m = stoi(sparams[1]);
+            int n = stoi(sparams[0]), m = stoi(sparams[1]);
+            (void)n;
             cout << "CURR: " << m << endl;
             while (in.eof() == false) {
                 int a,b; in >> a >> b;
