@@ -15,75 +15,68 @@ class Benchmark_Kernelization : public BenchmarkAction {
 public:
     void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
         MaxCutGraph G(data_filepath);
+        MaxCutGraph kernelized = G;
+        kernelized.SaveNumOfComponentsForEdwardsErdosBound();
+        G.SaveNumOfComponentsForEdwardsErdosBound();
 
-        int k = 0;
-        int rule_taken;
-        OutputDebugLog("----------- START: APPLYING ONE-WAY REDUCTION RULES TO COMPUTE S -----------");
-        MaxCutGraph G_processing_oneway = G; // ! make sure no pointers in G !
-        while ((rule_taken = TryOneWayReduce(G_processing_oneway, k)) != -1) {
-            OutputDebugLog("RULE: " + to_string(rule_taken));
-            OutputDebugLog("-----------");
-            tot_used_rules[rule_taken]++;
+        srand(123);
+        double k_change = 0;
+        vector<int> case_coverage_cnt(10, 0);
+        while (true) {
+            auto res_r9 = kernelized.GetAllR9Candidates();
+            if (!res_r9.empty()) {
+                kernelized.ApplyR9Candidate(res_r9[0]);
+                case_coverage_cnt[0]++;
+                continue;
+            }
+
+            auto res_r8 = kernelized.GetAllR8Candidates();
+            if (!res_r8.empty()) {
+                kernelized.ApplyR8Candidate(res_r8[0]);
+                case_coverage_cnt[1]++;
+                continue;
+            }
+
+            auto res_r9x = kernelized.GetAllR9XCandidates();
+            if (!res_r9x.empty()) {
+                kernelized.ApplyR9XCandidate(res_r9x[0], k_change);
+                case_coverage_cnt[2]++;
+                continue;
+            }
+
+            auto res_r10 = kernelized.GetAllR10Candidates();
+            if (!res_r10.empty()) {
+                kernelized.ApplyR10Candidate(res_r10[0], k_change);
+                case_coverage_cnt[3]++;
+                continue;
+            }
+
+            break;
         }
 
-        cout << "|V| = " << G.GetNumNodes() << endl;
-        cout << "|E| = " << G.GetRealNumEdges() << endl; 
-        cout << "EE = " << G.GetEdwardsErdosBound() << endl;
-        cout << "k' = " << k << endl;
+        double local_search_cut_size = G.ComputeLocalSearchCut().first;
+        double local_search_cut_size_k = kernelized.ComputeLocalSearchCut().first;
+        auto heur_sol = G.ComputeMaxCutHeuristically();
+        auto heur_sol_k = kernelized.ComputeMaxCutHeuristically();
+        double EE = G.GetEdwardsErdosBound();
+        double EE_k = kernelized.GetEdwardsErdosBound();
+        double k = (heur_sol.first - EE);
+        double k_k = (heur_sol_k.first - EE_k) - k_change/4.0;
 
-        G.SetMarkedVertices(G_processing_oneway.GetMarkedVerticesByOneWayRules());
-        auto S = G.GetMarkedVerticesByOneWayRules();
-        cout << "|S| = " << S.size() << endl;
-        cout << "S: " << " ";
-        for (auto node : S) cout << node << " ";
+        cout << k << " --- " << k_k << " same value proves correctness! (But different does not incorrectness!)" << endl;
+        cout << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
+        cout << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
+        cout << "Case coverage (=number of applications) = ";
+        for (int r = 0; r < 4; ++r) cout << case_coverage_cnt[r] << " ";
         cout << endl;
-        OutputDebugLog("----------- DONE: APPLYING ONE-WAY REDUCTION RULES TO COMPUTE S -----------");
 
-        // Try reduce size of S
-        G.ReduceMarksetVertexSet();
-        S = G.GetMarkedVerticesByOneWayRules();
+        
 
+        cout << "G  = " << local_search_cut_size << " <= " << heur_sol.first << " (something weird if not)." << endl;
+        cout << "Gk = " << local_search_cut_size_k << " <= " << heur_sol_k.first << " (something weird if not)." << endl;
+        
 
-        cout << "reduced |S| = " << S.size() << endl;
-
-        sort(S.begin(), S.end());
-
-    #ifdef DEBUG
-        auto G_minus_S_vertex_set = SetSubstract(G.GetAllExistingNodes(), S);
-        MaxCutGraph G_minus_S(G, G_minus_S_vertex_set);
-        bool debug_iscliquef = G_minus_S.IsCliqueForest();
-        OutputDebugLog("Is clique forest G - S: " + to_string(debug_iscliquef));
-        assert(debug_iscliquef);
-    #endif
-
-        if (input.cmdOptionExists("-cc-brute")) { // temp flag since this is very slow
-            int mx_sol = G.ComputeOptimalColoringBruteforce(S);
-            cout << "mx_sol = " + to_string(mx_sol) << endl;
-            cout << "Coloring: ";
-            for (int color : G.GetMaxCutColoring()) cout << color << " ";
-            cout << endl;
-
-            auto allv = G.GetAllExistingNodes();
-            auto sss = G.MaxCutExtension(allv, G.GetMaxCutColoring());
-            cout << (get<0>(sss)) << endl;
-        } else if (input.cmdOptionExists("-cc-brute-with-prunning")) {
-            sort(S.begin(), S.end());
-            int mx_sol = G.ComputeOptimalColoring(S);
-            cout << "mx_sol = " + to_string(mx_sol) << endl;
-        } else {
-            int res;
-            while ((res = ExhaustiveTwoWayReduce(G, S)) > -1) {
-                cout << "Kernelization rule: " << res << " was applied." << endl;
-                cout << "New G. Stats: " << "|V| = " << G.GetRealNumNodes() << " , |E| = " << G.GetRealNumEdges() << " , EE = " << G.GetEdwardsErdosBound() << endl;
-            }
-
-            if (input.cmdOptionExists("-print-kernalized-graph")) {
-                const string output_filepath = input.getCmdOption("-print-kernalized-graph");
-                ofstream out(output_filepath);
-                G.PrintGraph(out);
-                out.close();
-                OutputDebugLog("Kernalized graph output is done.");
-            }
-        }
+        OutputKernelization(input, data_filepath, G.GetRealNumNodes(), G.GetRealNumEdges(),
+            kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), k, k_k, heur_sol.first, heur_sol_k.first, local_search_cut_size, local_search_cut_size_k, local_search_cut_size_k + (EE - (EE_k + k_change/4.0)), EE, EE_k, -k_change/4.0);
     }
 };

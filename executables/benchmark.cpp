@@ -21,12 +21,12 @@ const string paths[] = {
   //  "../data/KaGen/ba",
   //  "../data/KaGen/gnp_undirected",
   //  "../data/KaGen/rhg",
-    "../data/KaGen-2/gnm_undirected"//,
+    "../data/KaGen-2/rhg/instance2"//,
 };
 
 vector<int> tot_used_rules(10, 0);
 int main(int argc, char **argv){
-    srand((unsigned)time(0));
+    //srand((unsigned)time(0));
     //ios_base::sync_with_stdio(false);
     InputParser input(argc, argv);
     InitOutputFiles(input);

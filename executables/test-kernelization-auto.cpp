@@ -12,32 +12,10 @@ const string paths[] = {
     "../data/auto-tests",
 };
 
-/*
-                auto res_r9 = kernelized.GetAllR9Candidates();
-                if (!res_r9.empty()) {
-                    kernelized.ApplyR9Candidate(res_r9[0]);
-                    cout << "Applied Rule 9" << endl;
-                    continue;
-                }
-
-                auto res_r9x = kernelized.GetAllR9XCandidates();
-                if (!res_r9x.empty()) {
-                    kernelized.ApplyR9XCandidate(res_r9x[0], k_change);
-                    cout << "Applied Rule 9x" << endl;
-                    continue;
-                }
-                
-
-                auto res_r10 = kernelized.GetAllR10Candidates();
-                if (!res_r10.empty()) {
-                    kernelized.ApplyR10Candidate(res_r10[0], k_change);
-                    cout << "Applied Rule 10" << endl;
-                    continue;
-                }*/
-
 std::function<void()> suite[] = {
     []{ // Test rules on two triangles sharing a common vertex.
-
+        srand((unsigned)time(0));
+        
         vector<string> all_sets_to_evaluate;
         for (unsigned int i = 0; i < kDataSetCount; ++i) {
             auto sets = GetAllDatasets(paths[i]);

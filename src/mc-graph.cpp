@@ -1030,8 +1030,10 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates() {
 void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     assert(clique.size() >= 2);
 
-    RemoveNode(clique[0]);
-    RemoveNode(clique[1]);
+    int frem = rand() % clique.size();
+    int srem = (frem + 1) % clique.size();
+    RemoveNode(clique[frem]);
+    RemoveNode(clique[srem]);
 }
 
 vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
@@ -1068,7 +1070,7 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
         for (int i = 0; i < (int)tris.size(); ++i) {
             for (int j = i + 1; j < (int)tris.size(); ++j) {
                 auto  &b1 = tris[i], &b2 = tris[j];
-                
+
                 bool ok = true;
                 for (int x1 : {b1.first, b1.second})
                     for (int x2: {b2.first, b2.second})
@@ -1127,7 +1129,7 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
 }
 void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate, double &k) {
     assert(candidate.second.size() >= 1);
-    RemoveNode(candidate.second[0]);
+    RemoveNode(candidate.second[rand() % candidate.second.size()]);
     k--;
 }
 
@@ -1336,7 +1338,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutHeuristically() {
     }
 
     MaxCutInstance mi(edgeList, num_nodes + 1);
-    Burer2002 heur(mi, 0.5, false, NULL);
+    Burer2002 heur(mi, 1, false, NULL);
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
     return make_pair(mcSol.get_weight(), mcSol.get_assignments());

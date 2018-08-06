@@ -43,9 +43,10 @@ void print_row(std::ostream& out, vector<int> column_size, const char* format, .
 }
 
 
-vector<int> kMarkedSizeColumnDescriptor = {10, 10, 15, 22, 15, 50};
+vector<int> kMarkedSizeColumnDescriptor =   {10, 10, 15, 22, 15, 50};
 vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
-vector<int> kernelizationCountDescriptor = {10, 10, 10, 10, 10, 10, 60};
+vector<int> kernelizationCountDescriptor =  {10, 10, 10, 10, 10, 10, 60};
+vector<int> kernelizationDescriptor =       {10, 10, 10, 10, 10, 10, 15, 15, 15, 15, 20, 10, 10, 10, 60};
 
 void InitOutputFiles(const InputParser& input) {
     if (input.cmdOptionExists("-oneway-reduce-marked-size")) {
@@ -67,6 +68,12 @@ void InitOutputFiles(const InputParser& input) {
             const string output_path = input.getCmdOption("-benchmark-output");
             ofstream out(output_path);
             print_row(out, kernelizationCountDescriptor, "sssssss", "#|V|", "#|E|", "#|R8|", "#|R9|", "#|R9x|", "#|R10|", "#file");
+        }
+
+        if (action == "kernelization") {
+            const string output_path = input.getCmdOption("-benchmark-output");
+            ofstream out(output_path);
+            print_row(out, kernelizationDescriptor, "sssssssssssssss", "#|V(G)|", "#|E(G)|", "#|V(Gk)|", "#|E(Gk)|", "#LOW_B(k)","#LOW_B(kk)", "#MQLIB(G)", "#MQLIB(Gk)", "#locsearch(G)", "#locsearch(Gk)", "#locsearch_ext(Gk)", "EE(G)", "EE(Gk)", "+kk", "#file");
         }
     }
 }
@@ -111,8 +118,31 @@ void OutputKernelizationApplicabilityCount(
                                 const int r10_cnt) {
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output");
-        cout << "OUT: "<< output_path<<endl;
         ofstream out(output_path, fstream::app);
         print_row(out, kernelizationCountDescriptor, "dddddds", num_nodes, num_edges, r8_cnt, r9_cnt, r9x_cnt, r10_cnt, dataset.c_str());
+    }
+}
+
+void OutputKernelization(
+                                const InputParser& input,
+                                const string dataset,
+                                const int num_nodes,
+                                const int num_edges,
+                                const int num_nodes_k,
+                                const int num_edges_k,
+                                const double k,
+                                const double k_k,
+                                const int mqlib_sol,
+                                const int mqlib_sol_k,
+                                const int locsearch,
+                                const int locsearch_k,
+                                const double localsearch_k_extended,
+                                const double EE,
+                                const double EE_k,
+                                const double add_kk) {
+    if (input.cmdOptionExists("-benchmark-output")) {
+        const string output_path = input.getCmdOption("-benchmark-output");
+        ofstream out(output_path, fstream::app);
+        print_row(out, kernelizationDescriptor, "ddddffddddffffs", num_nodes, num_edges, num_nodes_k, num_edges_k, k, k_k, mqlib_sol, mqlib_sol_k, locsearch, locsearch_k, localsearch_k_extended, EE, EE_k, add_kk, dataset.c_str());
     }
 }
