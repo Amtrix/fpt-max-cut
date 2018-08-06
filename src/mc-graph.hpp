@@ -24,7 +24,6 @@ public:
     MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset);
 
     int GetNumNodes() const { return num_nodes; }
-//    int GetNumEdges() const { return num_edges; }
 
     int GetRealNumNodes() { return GetAllExistingNodes().size(); }
     int GetRealNumEdges() { return GetAllExistingEdges().size(); }
@@ -112,6 +111,11 @@ public:
 
     double GetEdwardsErdosBound();
 
+    // Due to the possibility of components disappearing, we need to do this. Otherwise, once a whole
+    // component is deleted, we gain 1/4.0 in EE. In itself, this is good, as a higher bound is achieved.
+    // Although... The kernelization rules' invariants break in those cases.
+    void SaveNumOfComponentsForEdwardsErdosBound();
+
     // Returns -1 if no component of size >= 1 was found.
     tuple<vector<int>, int> GetLeafBlockAndArticulation(bool print_components = false);
 
@@ -143,11 +147,11 @@ public:
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     // Warning! X >= C/2, therefore, deletion of some vertices in X is necessary when applying the rule.
     vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates();
-    void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate, int &k);
+    void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate, double &k);
 
     // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 
     vector<tuple<bool, int, int, int>> GetAllR10Candidates();
-    void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate, int &k);
+    void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate, double &k);
 
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 
@@ -157,6 +161,13 @@ public:
     // As of now, doesn't print the actual nodes. Some single nodes available.
     void PrintGraph(std::ostream& out);
 
+    // Get cut size according to 0/1 coloring of nodes.
+    int GetCutSize(const vector<int> &grouping);
+
+    // Pregroup[i] in {-1,0,1}. -1 = no predefined group, 0/1 group 0 or 1.
+    pair<int, vector<int>> ComputeLocalSearchCut(const vector<int> pregroup = {});
+
+    pair<int, vector<int>> ComputeMaxCutHeuristically();
 private:
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,
@@ -177,7 +188,7 @@ private:
     vector<int> dfs_tree_depth;
     int dfs_tree_ui;
 
-    int num_nodes;//, num_edges;
+    int num_nodes;
 
     bool bicomponents_computed = false;
     bool articulations_computed = false;
@@ -201,4 +212,6 @@ private:
 
     // Used by MaxCutExtension
     vector<int> computed_maxcut_coloring;
+
+    int saved_num_components_ee;
 };

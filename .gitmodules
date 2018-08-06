@@ -1,0 +1,3 @@
+[submodule "solvers/MQLib"]
+	path = solvers/MQLib
+	url = https://github.com/MQLib/MQLib

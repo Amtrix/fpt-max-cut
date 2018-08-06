@@ -1,5 +1,6 @@
 #include "mc-graph.hpp"
-
+#include "heuristics/qubo/glover1998a.h"
+#include "heuristics/maxcut/burer2002.h"
 
 
  MaxCutGraph::MaxCutGraph() {
@@ -7,7 +8,7 @@
  }
 
  MaxCutGraph::MaxCutGraph(int n, int /* not used m */) {
-    num_nodes = n;//, num_edges = m;
+    num_nodes = n;
     g_adj_list.resize(num_nodes);
 }
 
@@ -22,34 +23,26 @@ MaxCutGraph::MaxCutGraph(const string path) {
     // we take last two entries as dimacs prefixes each line with type of line
     if (sparams[0] != "#edge-list-0") {
         num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
-        // bug in kagen? 
-        // ./build/app/kagen -gen gnm_undirected -n 7 -m 11 -seed 123 -output ../../data/KaGen-2/gnm_undirected/n124_m11_seed12
-        num_nodes++;
 
         int num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
         g_adj_list.resize(num_nodes);
 
         for (int i = 0; i < num_edges; ++i) {
             sparams = ReadLine(in);
-            cout << sparams[0] << " " << sparams[1] << " " << sparams[2] << endl;
             if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
-
             AddEdge(stoi(sparams[0 + (sparams[0]=="e")]) - 1, stoi(sparams[1 + (sparams[0]=="e")]) - 1);
         }
-        cout << "END" << endl;
     } else {
-        num_nodes = 0;// = num_edges = 0;
+        num_nodes = 0;
         g_adj_list.resize(2000);
         while (in.eof() == false) {
             sparams = ReadLine(in);
             if (sparams.size() == 0) continue;
             if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(-1));
-            cout << sparams[0] << " " << sparams[1] << endl;
             int a = stoi(sparams[0]);
             int b = stoi(sparams[1]);
             if (a >= 5000 || b >= 5000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
-            num_nodes = max(num_nodes, max(a+1, b+1));
-           // num_edges++;
+            num_nodes = max(num_nodes, max(a + 1, b + 1));
             AddEdge(a, b);
         }
     }
@@ -66,7 +59,6 @@ MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) :
     for (const int node : subset)
         removed_node[node] = false;
 
-  //  num_edges = 0;
     for (const int node : subset) {
         auto adj = source.GetAdjacency(node);
         for (const int w : adj) {
@@ -74,7 +66,6 @@ MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) :
                 continue;
 
             AddEdge(node, w);
-          //  num_edges++;
         }
     }
 }
@@ -305,7 +296,7 @@ vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() {
     for (int i = 0; i < num_nodes; ++i) {
         if (removed_node[i]) continue;
         for (int w : g_adj_list[i]) {
-            if (removed_node[w] || i > w) continue;
+            if (removed_node[w] || i >= w) continue;
             ret.push_back(make_pair(i, w));
         }
     }
@@ -649,13 +640,17 @@ vector<int> MaxCutGraph::GetMarkedVerticesByOneWayRules() const {
 double MaxCutGraph::GetEdwardsErdosBound() {
     auto ccomponents = GetAllConnectedComponents();
     
-    double res = 0;
+    double res = -(saved_num_components_ee / 4.0);
     for (auto component : ccomponents) {
         MaxCutGraph ng(*this, component);
-        res += (ng.GetRealNumEdges() / 2.0) + (ng.GetRealNumNodes() - 1) / 4.0;
-    } 
+        res += (ng.GetRealNumEdges() / 2.0) + (ng.GetRealNumNodes()) / 4.0;
+    }
 
     return res;
+}
+
+void MaxCutGraph::SaveNumOfComponentsForEdwardsErdosBound() {
+    saved_num_components_ee = GetAllConnectedComponents().size();
 }
 
 tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_components) {
@@ -1059,6 +1054,7 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
                 if (na >= nb || edge_exists_lookup[make_pair(na,nb)] == false)
                     continue;
                 
+                // C_{int} intersect N_{G}(S) is empty.
                 if (!makes_nonspecial[na] && !makes_nonspecial[nb])
                     continue;
                 
@@ -1072,6 +1068,14 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
         for (int i = 0; i < (int)tris.size(); ++i) {
             for (int j = i + 1; j < (int)tris.size(); ++j) {
                 auto  &b1 = tris[i], &b2 = tris[j];
+                
+                bool ok = true;
+                for (int x1 : {b1.first, b1.second})
+                    for (int x2: {b2.first, b2.second})
+                        if (edge_exists_lookup[make_pair(x1,x2)])
+                            ok = false;
+
+                if (!ok) continue;
                 ret.push_back(make_pair(root, vector<pair<int,int>>{b1,b2}));
             }
         }
@@ -1080,9 +1084,9 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
     return ret;
 }
 
-void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates) {
-    const pair<int,int> &triag1 = candidates.second[0];
-    const pair<int,int> &triag2 = candidates.second[1];
+void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidate) {
+    const pair<int,int> &triag1 = candidate.second[0];
+    const pair<int,int> &triag2 = candidate.second[1];
     AddEdge(triag1.first, triag2.first);
     AddEdge(triag1.first, triag2.second);
 
@@ -1121,7 +1125,7 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
 
     return ret;
 }
-void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate, int &k) {
+void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate, double &k) {
     assert(candidate.second.size() >= 1);
     RemoveNode(candidate.second[0]);
     k--;
@@ -1152,7 +1156,7 @@ vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates() {
     
     return ret;
 }
-void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate, int &k) {
+void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate, double &k) {
     bool bridge_case = get<0>(candidate);
     int u = get<1>(candidate);
     int nodex = get<2>(candidate);
@@ -1245,8 +1249,7 @@ vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {
     return ret;
 }
 
-void MaxCutGraph::PrintGraph(std::ostream& out)
-{
+void MaxCutGraph::PrintGraph(std::ostream& out) {
     out << num_nodes << " " << GetRealNumEdges() << endl;
 
     for (int i = 0; i < num_nodes; ++i) {
@@ -1255,4 +1258,86 @@ void MaxCutGraph::PrintGraph(std::ostream& out)
                 out << i + 1<< " " << node + 1<< " " << 1 << endl;
         }
     }
+}
+
+int MaxCutGraph::GetCutSize(const vector<int> &grouping) {
+    int ret = 0;
+    for (int i = 0; i < num_nodes; ++i) {
+        if (removed_node[i]) continue;
+
+        int adj0 = 0, adj1 = 0;
+        auto adj = GetAdjacency(i);
+        for (auto x : adj) {
+            if (removed_node[x] || i >= x) continue;
+
+            adj0 += grouping[x] == 0;
+            adj1 += grouping[x] == 1;
+        }
+
+        ret += (grouping[i] == 0) * adj1;
+        ret += (grouping[i] == 1) * adj0;
+    }
+
+    return ret;
+}
+
+// http://pages.cs.wisc.edu/~shuchi/courses/880-S07/scribe-notes/lecture07.pdf
+pair<int, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> pregroup) {
+    assert((int)pregroup.size() == num_nodes || pregroup.empty());
+    
+    vector<int> grouping(num_nodes, -1);
+    for (int i = 0; i < num_nodes; ++i) {
+        grouping[i] = rand()%2;
+        if ((int)pregroup.size() == num_nodes && pregroup[i] != -1)
+            grouping[i] = pregroup[i];
+    }
+
+    bool change = true;
+    while (change) {
+        change = false;
+        for (int i = 0; i < num_nodes; ++i) {
+            if (removed_node[i]) continue;
+
+            int adj0 = 0, adj1 = 0;
+            auto adj = GetAdjacency(i);
+            for (auto x : adj) {
+                if (removed_node[x]) continue;
+
+                adj0 += grouping[x] == 0;
+                adj1 += grouping[x] == 1;
+            }
+
+            if (adj0 > adj1 && grouping[i] != 1) {
+                change = true;
+                grouping[i] = 1;
+            }
+
+            if (adj1 > adj0 && grouping[i] != 0) {
+                change = true;
+                grouping[i] = 0;
+            }
+        }
+    }
+
+    return make_pair(GetCutSize(grouping), grouping);
+}
+
+// https://github.com/MQLib/MQLib
+pair<int, vector<int>> MaxCutGraph::ComputeMaxCutHeuristically() {
+    std::vector<Instance::InstanceTuple> edgeList;
+    for (int i = 0; i < num_nodes; ++i) {
+        if (removed_node[i]) continue;
+
+        auto adj = GetAdjacency(i);
+        for (auto w : adj) {
+            if (removed_node[w] || i >= w) continue;
+            edgeList.push_back(Instance::InstanceTuple(std::make_pair(i+1, w+1), 1));
+        }
+    }
+
+    MaxCutInstance mi(edgeList, num_nodes + 1);
+    Burer2002 heur(mi, 0.5, false, NULL);
+    const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
+
+    return make_pair(mcSol.get_weight(), mcSol.get_assignments());
 }

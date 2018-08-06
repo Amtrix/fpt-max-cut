@@ -14,3 +14,8 @@ FLAGS:
     Execute brute force algorithm over marked vertices set right after one-way reduction rules are done.
 
     -print-kernalized-graph [output-file-path]
+
+
+
+Helpful stuff:
+    To get 1-indexed in KaGen: +1 within generator.io.h
