@@ -45,21 +45,18 @@ int main(int argc, char **argv){
     }
 
     const string action = input.getCmdOption("-action");
-
-    for (string data_filepath : all_sets_to_evaluate) {
-        cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
-
-        std::unique_ptr<BenchmarkAction> benchmark_action;
+    std::unique_ptr<BenchmarkAction> benchmark_action;
         
-        if (action == "clique-kernelization") {
-            benchmark_action.reset(new Benchmark_KernelizationByClique());
-        } else if (action == "kernelization") {
-            benchmark_action.reset(new Benchmark_Kernelization());
-        } else if (action == "eval-marked-set") {
-            benchmark_action.reset(new Benchmark_MarkedSet());
-        } else if (action == "kernelization-applicability-count") {
-            benchmark_action.reset(new Benchmark_KernelizationApplicabilityCount());
-        } else if (action == "test-cschulz-to-normalized") {
+    if (action == "clique-kernelization") {
+        benchmark_action.reset(new Benchmark_KernelizationByClique());
+    } else if (action == "kernelization") {
+        benchmark_action.reset(new Benchmark_Kernelization());
+    } else if (action == "eval-marked-set") {
+        benchmark_action.reset(new Benchmark_MarkedSet());
+    } else if (action == "kernelization-applicability-count") {
+        benchmark_action.reset(new Benchmark_KernelizationApplicabilityCount());
+    } else if (action == "test-cschulz-to-normalized") {
+        for (string data_filepath : all_sets_to_evaluate) {
             ifstream in(data_filepath);
             vector<string> sparams = ReadLine(in);
             int n = stoi(sparams[0]), m = stoi(sparams[1]);
@@ -71,14 +68,17 @@ int main(int argc, char **argv){
             }
 
             cout << "M-check: " << m << endl;
-
-            continue;
         }
-        else throw std::logic_error("Action flag not defined.");
-        
-        benchmark_action->Evaluate(input, data_filepath);
+    }
+    else throw std::logic_error("Action flag not defined.");
 
-        tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
+    if (benchmark_action) {
+        for (string data_filepath : all_sets_to_evaluate) {
+            cout << "================ RUNNING BENCHMARK ON " + data_filepath + " ================ " << endl;
+            
+            benchmark_action->Evaluate(input, data_filepath);
+            tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
+        }
     }
 
     cout << endl;

@@ -2,7 +2,9 @@
 res_folder="./"
 col_vec = c("darkorange")#,"red2","dodgerblue2","black", "purple")
 pnt_vec = c(9)#,16,17,15,0)
-columns  <- c('#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#LOW_B(k)','#LOW_B(kk)','#locsearch(G)','#locsearch(Gk)','EE(G)','EE(Gk)', '#file')
+columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#LOW_B(k)','#LOW_B(kk)','#MQLIB(G)','#MQLIB(Gk)','#locsearch(G)','#locsearch(Gk)','#locsearch_ext(Gk)','#locsearch_ext+MQLIB_OFF(Gk)', '#EE(G)', '#EE(Gk)', '#+kk', '#file')
+ 
+
 
 #Need readjustment for each case:
 x_start <- 8
@@ -11,7 +13,7 @@ case_type <- "rhg"
 nam_vec = c("rhg, gamma=2.4")#, "original", "task a", "task b", "task c")
                                                             
 # Read the results from the csv files
-gnm_undirected  <- read.table(paste(res_folder, "out"     , sep=""), comment.char = "#", col.names = columns)
+gnm_undirected  <- read.table(paste(res_folder, "out-avg"     , sep=""), comment.char = "#", col.names = columns)
 #base_raw <- read.table(paste(res_folder, "hash_original.txt", sep=""), comment.char = "#", col.names = columns)
 #a_raw    <- read.table(paste(res_folder, "hash_a.txt"       , sep=""), comment.char = "#", col.names = columns)
 #b_raw    <- read.table(paste(res_folder, "hash_b.txt"       , sep=""), comment.char = "#", col.names = columns)
@@ -25,7 +27,7 @@ gnm_undirected[,"X..E.G.."] <- log(gnm_undirected[,"X..E.G.."] , 2)
 
 gnm_undirected <- gnm_undirected[with(gnm_undirected, order(X..E.G..)), ]
 print(gnm_undirected)
-print("YO!")
+
 
 # Aggregate the read data depending on the section number
 #gnm_undirected  = aggregate(gnm_undirected , by=list(std_raw$sec) , FUN=mean)

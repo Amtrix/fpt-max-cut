@@ -4,6 +4,9 @@ make benchmark-debug && ./benchmark-debug -f ../data/biqmac/rudy/pm1d_80.7 -prin
 
 
 FLAGS:
+    -action [action-name]
+    Which action the suite should perform.
+
     -f [input-file-path]
     Runs the benchmark on a single file instead of all in data/{biqmac,custom}.
 
@@ -15,7 +18,11 @@ FLAGS:
 
     -print-kernalized-graph [output-file-path]
 
+    -num-iterations [number]
+    Number of iterations to execute for randomized benchmark actions.
 
+    -benchmark-output [output-file-path]
+    Where to output the benchmark data.
 
 Helpful stuff:
     To get 1-indexed in KaGen: +1 within generator.io.h
