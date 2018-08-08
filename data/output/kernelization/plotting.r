@@ -7,10 +7,10 @@ columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#LOW_B(k)'
 
 
 #Need readjustment for each case:
-x_start <- 8
-x_start_legend <- 13
-case_type <- "rhg"
-nam_vec = c("rhg, gamma=2.4")#, "original", "task a", "task b", "task c")
+x_start <- 10
+#x_start_legend <- 9
+case_type <- "ba_1024"
+nam_vec = c("ba_1024")#, "original", "task a", "task b", "task c")
                                                             
 # Read the results from the csv files
 gnm_undirected  <- read.table(paste(res_folder, "out-avg"     , sep=""), comment.char = "#", col.names = columns)
@@ -53,7 +53,7 @@ for (entry in list(
     x='X..E.G..'
 
     # Define some ranges for our plotting area
-    xrange <- range(x_start,9,gnm_undirected[,x])
+    xrange <- range(x_start,gnm_undirected[,x])
     yrange <- range(0, gnm_undirected[,y])
     yrange[2] <- yrange[2] * 1.1
     print(yrange)
@@ -69,7 +69,7 @@ for (entry in list(
     lines(gnm_undirected[,x] , gnm_undirected[,y] , col=col_vec[[1]], type="o", pch=pnt_vec[[1]])
 
     # Shows the legend
-    legend(x_start_legend, yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec)
+    #legend(x_start_legend, yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec)
 }
 
 

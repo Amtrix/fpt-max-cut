@@ -1338,7 +1338,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutHeuristically() {
     }
 
     MaxCutInstance mi(edgeList, num_nodes + 1);
-    Burer2002 heur(mi, 5, false, NULL);
+    Burer2002 heur(mi, 2, false, NULL);
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
     return make_pair(mcSol.get_weight(), mcSol.get_assignments());

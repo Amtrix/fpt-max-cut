@@ -18,7 +18,7 @@ FLAGS:
 
     -print-kernalized-graph [output-file-path]
 
-    -num-iterations [number]
+    -iterations [number]
     Number of iterations to execute for randomized benchmark actions.
 
     -benchmark-output [output-file-path]

@@ -21,7 +21,7 @@ const string paths[] = {
   //  "../data/KaGen/ba",
   //  "../data/KaGen/gnp_undirected",
   //  "../data/KaGen/rhg",
-    "../data/KaGen-2/rhg/instance2"//,
+    "../data/KaGen-2/ba_1024"//,
 };
 
 vector<int> tot_used_rules(10, 0);

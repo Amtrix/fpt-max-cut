@@ -1,0 +1,13 @@
+   #|V(G)|    #|E(G)|   #|V(Gk)|   #|E(Gk)|         #k   #locsearch(G)  #locsearch(Gk)                                                        #file 
+       128          2        124          0          0               2               0          ../data/KaGen-2/rhg/instance1/n07_e2.1_d0.1_seed123 
+       128         20         99          0          4              19               0          ../data/KaGen-2/rhg/instance1/n07_e2.1_d0.5_seed123 
+       128        171         82        122         31             124              86          ../data/KaGen-2/rhg/instance1/n07_e2.1_d1.5_seed123 
+       128        653        117        629         66             405             396           ../data/KaGen-2/rhg/instance1/n07_e2.1_d16_seed123 
+       128        115         86         75         22              84              57            ../data/KaGen-2/rhg/instance1/n07_e2.1_d1_seed123 
+       128        223         70        146         36             156             106          ../data/KaGen-2/rhg/instance1/n07_e2.1_d2.5_seed123 
+       128        183         78        118         28             136              80            ../data/KaGen-2/rhg/instance1/n07_e2.1_d2_seed123 
+       128        266         84        222         49             198             157          ../data/KaGen-2/rhg/instance1/n07_e2.1_d3.5_seed123 
+       128       1588        128       1588        127             919             901           ../data/KaGen-2/rhg/instance1/n07_e2.1_d32_seed123 
+       128        240         72        156         33             173             107            ../data/KaGen-2/rhg/instance1/n07_e2.1_d3_seed123 
+       128        300         78        233         48             210             157            ../data/KaGen-2/rhg/instance1/n07_e2.1_d4_seed123 
+       128        319         69        224         39             209             145            ../data/KaGen-2/rhg/instance1/n07_e2.1_d8_seed123 
