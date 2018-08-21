@@ -15,7 +15,7 @@ class Benchmark_Kernelization : public BenchmarkAction {
 public:
     void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
         int num_iterations = 1;
-        if (input.cmdOptionExists("-num-iterations")) {
+        if (input.cmdOptionExists("-iterations")) {
             num_iterations = stoi(input.getCmdOption("-num-iterations"));
         }
 
@@ -57,6 +57,14 @@ public:
                     continue;
                 }
 
+                auto res_r10ast = kernelized.GetAllR10ASTCandidates();
+                if (!res_r10ast.empty()) {
+                    kernelized.ApplyR10ASTCandidate(res_r10ast[0], k_change);
+                    case_coverage_cnt[4]++;
+                    continue;
+                }
+                
+
                 break;
             }
 
@@ -73,7 +81,7 @@ public:
             cout << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
             cout << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
             cout << "Case coverage (=number of applications) = ";
-            for (int r = 0; r < 4; ++r) cout << case_coverage_cnt[r] << " ";
+            for (int r = 0; r < 10; ++r) cout << case_coverage_cnt[r] << " ";
             cout << endl;
 
             

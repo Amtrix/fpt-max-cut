@@ -1055,9 +1055,11 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
             for (auto nb : adj) {
                 if (na >= nb || edge_exists_lookup[make_pair(na,nb)] == false)
                     continue;
+
+                // skipped case Cint = 3, Cext = 0. We can't have a shared vertex among two triag-blocks hereby.
                 
                 // C_{int} intersect N_{G}(S) is empty.
-                if (!makes_nonspecial[na] && !makes_nonspecial[nb])
+                if (makes_nonspecial[na] == false && makes_nonspecial[nb] == false) // <=> !(mnonspec[na] || mnonspecial[nb]) => Cext >= 2
                     continue;
                 
                 pairing[root].push_back(make_pair(na, nb));
@@ -1107,13 +1109,13 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
         vector<int> clique = GetAdjacency(root);
         clique.push_back(root);
 
-        if (IsClique(clique) == false) continue;
+        if (IsClique(clique) == false) continue; // root not in Cint
 
         vector<int> X;
         for (auto x : clique) {
             auto adj = GetAdjacency(x);
             auto inter = SetIntersection(clique, adj);
-            if (adj.size() == inter.size()) {
+            if (adj.size() == inter.size()) { // all adjacent vertices of x are in clique.
                 X.push_back(x);
             }
         }
@@ -1181,6 +1183,40 @@ void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate,
         RemoveEdgesBetween(nodex, nodey);
         k--;
     }
+}
+
+// O(|V| + |E|)
+vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates() {
+    vector<tuple<int,int,int,int,int>> ret;
+
+    vector<int> current_v = GetAllExistingNodes();
+    for (auto b : current_v) {
+        auto b_adj = GetAdjacency(b);
+        if (b_adj.size() != 2) continue;
+
+        int a = b_adj[0], c = b_adj[1];
+        auto a_adj = GetAdjacency(a), c_adj = GetAdjacency(c);
+        if (a_adj.size() != 2 || c_adj.size() != 2) continue;
+
+        int ex_L = a_adj[0] != b ? a_adj[0] : a_adj[1];
+        int ex_R = c_adj[0] != b ? c_adj[0] : c_adj[1];
+
+        if (ex_L == a || ex_L == b || ex_L == c) continue;
+        if (ex_R == a || ex_R == b || ex_R == c) continue;
+
+        ret.push_back(make_tuple(ex_L, a, b, c, ex_R));
+    }
+    return ret;
+}
+void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &k) {
+    (void) k;
+    int ex_L = get<0>(candidate), a = get<1>(candidate), b = get<2>(candidate),
+           c = get<3>(candidate), ex_R = get<4>(candidate);
+
+    RemoveNode(a);
+    RemoveNode(c);
+    AddEdge(ex_L, b);
+    AddEdge(b, ex_R);
 }
 
 vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {

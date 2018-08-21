@@ -3,125 +3,130 @@
 #include "src/mc-graph.hpp"
 using namespace std;
 
-int C_sz = 9;
-vector<int> partition_a = {2};
-vector<int> partition_b = {3};
-vector<pair<int,int>> add_sx = {
-  //  {2, 0}
+const bool kSkipSingletons = false;
+const bool kStopAtSame = false;
+
+const int n = 5;
+const int nc = 5;
+map<pair<int,int>, bool> preadd = {
 };
 
-vector<int> Sx = {1};
+map<pair<int,int>, bool> subset_in_result = {
+    //{make_pair(0,2), true},
+    //{make_pair(0,3), true},
+    //{make_pair(0,4), true},
+   // {make_pair(0,5), true},
+    //{make_pair(0,6), true},
+    
 
+   // {make_pair(1,2), true},
+   // {make_pair(1,3), true},
+    ////{make_pair(1,4), true},
+    //{make_pair(1,5), true},
+    //{make_pair(1,6), true},
+};
 
-bool SatisfiesRule8(vector<int> partition, int dx) {
-    int csz = 0;
-    for (auto v : partition) csz += v;
-
-    double rval = (csz + Sx[dx]) / 2.0;
-    double lval = partition[dx];
-    cout << lval << " > " << rval << endl;
-    return lval > rval;
-}
-
-int GetMaxCut(vector<int> partition, vector<int>& w_diff, vector<pair<int,int>> add_sx) {
-    vector<int> w_diff_new = w_diff;
-    for (int i = 0; i < (int)add_sx.size(); ++i)
-        w_diff_new[add_sx[i].second] += w_diff[add_sx[i].first];
-
-    vector<int> w_diff_tot;
-    int curr = 0;
-    for (int i = 0; i < (int)partition.size(); ++i)
-        for (int j = 0; j < partition[i]; ++j) {
-            w_diff_tot.push_back(w_diff_new[i]);
-            curr += -w_diff_new[i]; // all set to 0
+void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback) {
+    int mx_edges = (n * (n - 1)) / 2;
+    for (int mask = 0; mask < (1 << mx_edges); ++mask) {
+        vector<pair<int,int>> cumm;
+        int dx = 0;
+        for (int i = 0; i < n; ++i) {
+            for (int j = i + 1; j < n; ++j) {
+                if ((mask & (1 << dx)) || preadd[make_pair(i,j)] || preadd[make_pair(j,i)])
+                    cumm.push_back(make_pair(i,j));
+                dx++;
+            }
         }
 
-    sort(w_diff_tot.rbegin(), w_diff_tot.rend());
-
-    int res = curr;
-    int csz = w_diff_tot.size();
- //   cout << "  " << csz << endl;
-    for (int i = 0; i < csz; ++i) {
-        int val = w_diff_tot[i];
-        curr += 2 * val + (csz - i - 1) - i;
-        res = max(res, curr);
-    }
-
-    return res;
-}
-
-vector<int> w_diff;
-void GetSxColoring(int dx, std::function<void(vector<int>&)> callback) {
-    if (dx == (int)Sx.size()) {
-        callback(w_diff);
-        return;
-    }
-
-    for (int i = -Sx[dx]; i <= Sx[dx]; ++i) {
-        w_diff.push_back(i);
-        GetSxColoring(dx + 1, callback);
-        w_diff.pop_back();
+        callback(cumm);
     }
 }
 
-vector<pair<int,int>> aggregate;
-bool match(vector<int> p1, vector<int> p2, vector<int> Sx) {
-    (void) Sx;
+pair<int,int> RevPair(pair<int,int> p) { return make_pair(p.second, p.first); }
 
-    GetSxColoring(0, [&](vector<int>& color){
-        int c1 = GetMaxCut(p1, color, {});
-        int c2 = GetMaxCut(p2, color, add_sx);
-       // for (auto c : color)
-        //    cout << c << " ";
-        //cout << " = " << c1 << " " << c2 << " [ " << c1 - c2 << " ]" << endl;
-        aggregate.push_back(make_pair(c1, c2));
-    });
-    return false;
+string EncodeDiff(vector<int> &cuts) {
+    string ret = "";
+    for (int i = 0; i + 1 < (int)cuts.size(); ++i)
+        ret += (to_string(cuts[i] - cuts[i+1])) + ".";
+    return ret;
+}
+
+string EncodeEdgeSet(const vector<pair<int,int>>& w) {
+    string ret = "";
+    for (auto e : w)
+        ret += "(" + to_string(e.first) + "," + to_string(e.second) + "):";
+    return ret;
 }
 
 int main() {
-    cout << "NOTE: These are absolute differences in cut size. Papers use above edwards erdos value." << endl;
-    assert(partition_b.size() == partition_a.size() && partition_a.size() == Sx.size());
-    cout << "Satisfies? " << SatisfiesRule8(partition_a, 0) << endl;
-
+    
+    unordered_map<string, vector<pair<int, vector<pair<int,int>>>> > equiv_cls;
     unordered_map<string, bool> visited;
-    while(1) {
-        aggregate.clear();
 
-        int mx = 0;
-        for (int e : partition_a) mx = max(mx, e);
-        for (int i = 0; i < (int)partition_b.size(); ++i) partition_b[i] = rand()%(mx + 1);
+    TryAllEdgeSets(n, [&](vector<pair<int,int>>& edges){
+        string edge_key = EncodeEdgeSet(edges);
+        if (visited[edge_key]) return;
+        visited[edge_key] = true;
 
-        string key = "";
-        for (auto node : partition_a) key += to_string(node);
-        for (auto node : partition_b) key += to_string(node);
+        vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
+        for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
+            int mx_cut = 0;
+            for (int nrem_mask = 0; nrem_mask < (1 << (n-nc)); ++nrem_mask) {
+                vector<int> color;
+                for (int i = 0; i < nc; ++i) color.push_back((nc_mask & (1 << i)) != 0);
+                for (int i = 0; i < n - nc; ++i) color.push_back((nrem_mask & (1 << i)) != 0);
 
-        if (visited[key]) continue;
-        visited[key] = true;
+                int cut = 0;
+                for (auto e : edges) cut += color[e.first] != color[e.second];
+                mx_cut = max(mx_cut, cut);
+            }
+            maxcut_dependent_on_nc.push_back(mx_cut);
+        }
 
-        match(partition_a, partition_b, Sx);
+        const auto key = EncodeDiff(maxcut_dependent_on_nc);
+        
+        equiv_cls[key].push_back(make_pair(maxcut_dependent_on_nc[0], edges));
+    });
 
-        bool ok = true;
-        int cdiff = aggregate[0].first - aggregate[0].second;
-        for (auto entry : aggregate)
-            if (cdiff != entry.first - entry.second)
-                ok = false;
+    int subset_in_result_cnt_start = subset_in_result.size();
+    for (auto entry : equiv_cls) {
+        if (entry.second.size() <= 1 && kSkipSingletons) continue;
 
+        cout << "Class " << entry.first << " = " << entry.second.size() << endl;
 
-        if (ok) {
-            cout << "OK: ";
-            for (int i = 0; i < (int)partition_b.size(); ++i)
-                cout << partition_b[i] << " ";
+        bool found_exact = false;
+        for (auto e : entry.second) {
+            cout << "     ";
+            cout << "[sz: " << e.second.size() << ", mx(0): " << e.first << "] = ";
+
+            // Print edges and check if they contain subset_in_result as a subset.
+            map<pair<int,int>,bool> visi;
+            int subset_in_result_cnt = subset_in_result_cnt_start;
+            for (int i = 0; i < (int)e.second.size(); ++i) {
+                auto edge = e.second[i];
+                subset_in_result_cnt -= (visi[edge] == false) && (subset_in_result[edge] || subset_in_result[RevPair(edge)]);
+                
+                cout << "(" << edge.first << ", " << edge.second << ") ";
+                visi[edge] = true;
+            }
+
+            if (subset_in_result_cnt_start != 0 && subset_in_result_cnt == 0) {
+                if ((int)e.second.size() != subset_in_result_cnt_start)
+                    cout << " *********** ";
+                else {
+                    cout << " ########### ";
+                    found_exact = true;
+                }
+            }
+
             cout << endl;
         }
+        cout << endl << endl;
+    
+        if (found_exact && kStopAtSame) {
+            cout << "Break because exact found." << endl;
+            break;
+        }
     }
-
-
-  //  vector<int> col = {0, 0, 1};
-  //  cout << GetMaxCut(partition_a, col) << endl;
-
-   // vector<int> col = {1, 1, 1};
-   // cout << GetMaxCut(partition_a, col) << endl;
-
-  //  cout << GetMaxCut(partition_b, col) << endl;
 }

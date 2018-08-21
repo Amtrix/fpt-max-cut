@@ -153,6 +153,10 @@ public:
     vector<tuple<bool, int, int, int>> GetAllR10Candidates();
     void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate, double &k);
 
+    // Returns a vector of 5-tuples a' b c d d'
+    vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates();
+    void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &k);
+
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 
     // WRONG AS OF NOW, AS IT WORKS WITH VERTEX COVER, BUT SHOULD USE EDGE COVER
