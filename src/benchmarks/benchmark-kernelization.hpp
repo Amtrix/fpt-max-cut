@@ -23,48 +23,54 @@ public:
         for (int iteration = 1; iteration <= num_iterations; ++iteration) {
             MaxCutGraph G(data_filepath);
             MaxCutGraph kernelized = G;
-            kernelized.SaveNumOfComponentsForEdwardsErdosBound();
-            G.SaveNumOfComponentsForEdwardsErdosBound();
+           // kernelized.SaveNumOfComponentsForEdwardsErdosBound();
+           // G.SaveNumOfComponentsForEdwardsErdosBound();
 
             double k_change = 0;
             vector<int> case_coverage_cnt(10, 0);
             while (true) {
-                auto res_r9 = kernelized.GetAllR9Candidates();
-                if (!res_r9.empty()) {
-                    kernelized.ApplyR9Candidate(res_r9[0]);
+                auto res_rs2 = kernelized.GetS2Candidates(true);
+                if (!res_rs2.empty()) {
+                    kernelized.ApplyS2Candidate(res_rs2[0], k_change);
                     case_coverage_cnt[0]++;
-                    continue;
-                }
-
-                auto res_r8 = kernelized.GetAllR8Candidates();
-                if (!res_r8.empty()) {
-                    kernelized.ApplyR8Candidate(res_r8[0]);
-                    case_coverage_cnt[1]++;
                     continue;
                 }
 
                 auto res_r9x = kernelized.GetAllR9XCandidates();
                 if (!res_r9x.empty()) {
                     kernelized.ApplyR9XCandidate(res_r9x[0], k_change);
+                    case_coverage_cnt[1]++;
+                    continue;
+                }
+                
+                auto res_r8 = kernelized.GetAllR8Candidates();
+                if (!res_r8.empty()) {
+                    kernelized.ApplyR8Candidate(res_r8[0], k_change);
                     case_coverage_cnt[2]++;
                     continue;
                 }
-
+                
                 auto res_r10 = kernelized.GetAllR10Candidates();
                 if (!res_r10.empty()) {
                     kernelized.ApplyR10Candidate(res_r10[0], k_change);
                     case_coverage_cnt[3]++;
                     continue;
                 }
+                
+                auto res_r9 = kernelized.GetAllR9Candidates();
+                if (!res_r9.empty()) {
+                    kernelized.ApplyR9Candidate(res_r9[0], k_change);
+                    case_coverage_cnt[4]++;
+                    continue;
+                }
 
                 auto res_r10ast = kernelized.GetAllR10ASTCandidates();
                 if (!res_r10ast.empty()) {
                     kernelized.ApplyR10ASTCandidate(res_r10ast[0], k_change);
-                    case_coverage_cnt[4]++;
+                    case_coverage_cnt[5]++;
                     continue;
                 }
                 
-
                 break;
             }
 
@@ -72,12 +78,13 @@ public:
             double local_search_cut_size_k = kernelized.ComputeLocalSearchCut().first;
             auto heur_sol = G.ComputeMaxCutHeuristically();
             auto heur_sol_k = kernelized.ComputeMaxCutHeuristically();
-            double EE = G.GetEdwardsErdosBound();
-            double EE_k = kernelized.GetEdwardsErdosBound();
+            double EE = 0;//G.GetEdwardsErdosBound();
+            double EE_k = 0;//kernelized.GetEdwardsErdosBound();
             double k = (heur_sol.first - EE);
-            double k_k = (heur_sol_k.first - EE_k) - k_change/4.0;
+            double k_k = (heur_sol_k.first - EE_k) - k_change;
 
-            cout << k << " --- " << k_k << " same value proves correctness! (But different does not incorrectness!)" << endl;
+            cout << "VERIFY CUT VAL: " << heur_sol_k.first - k_change << " =?= " << heur_sol.first << endl;
+            //cout << k << " --- " << k_k << " same value proves correctness! (But different does not incorrectness!)" << endl;
             cout << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
             cout << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
             cout << "Case coverage (=number of applications) = ";
@@ -96,20 +103,20 @@ public:
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                 k, k_k,
                                 heur_sol.first, heur_sol_k.first,
-                                local_search_cut_size, local_search_cut_size_k, local_search_cut_size_k + (EE - (EE_k + k_change/4.0)),
-                                local_search_cut_size_k + (EE - (EE_k + k_change/4.0)) + (heur_sol_k.first - local_search_cut_size_k),
+                                local_search_cut_size, local_search_cut_size_k, local_search_cut_size_k + (EE - (EE_k + k_change)),
+                                heur_sol_k.first - k_change,
                                 EE, EE_k,
-                                -k_change/4.0);
+                                -k_change);
             
             accum.push_back({(double)test_id, (double)iteration,
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                 k, k_k,
                                 (double)heur_sol.first, (double)heur_sol_k.first,
-                                local_search_cut_size, local_search_cut_size_k, local_search_cut_size_k + (EE - (EE_k + k_change/4.0)),
-                                local_search_cut_size_k + (EE - (EE_k + k_change/4.0)) + (heur_sol_k.first - local_search_cut_size_k),
+                                local_search_cut_size, local_search_cut_size_k, local_search_cut_size_k + (EE - (EE_k + k_change)),
+                                local_search_cut_size_k + (EE - (EE_k + k_change)) + (heur_sol_k.first - local_search_cut_size_k),
                                 EE, EE_k,
-                                -k_change/4.0});
+                                -k_change});
         }
         
         vector<double> avg;

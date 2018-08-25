@@ -640,17 +640,13 @@ vector<int> MaxCutGraph::GetMarkedVerticesByOneWayRules() const {
 double MaxCutGraph::GetEdwardsErdosBound() {
     auto ccomponents = GetAllConnectedComponents();
     
-    double res = -(saved_num_components_ee / 4.0);
+    double res = -(GetAllConnectedComponents().size() / 4.0);
     for (auto component : ccomponents) {
         MaxCutGraph ng(*this, component);
         res += (ng.GetRealNumEdges() / 2.0) + (ng.GetRealNumNodes()) / 4.0;
     }
 
     return res;
-}
-
-void MaxCutGraph::SaveNumOfComponentsForEdwardsErdosBound() {
-    saved_num_components_ee = GetAllConnectedComponents().size();
 }
 
 tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_components) {
@@ -1027,13 +1023,18 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates() {
     return ret;
 }
 
-void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
+void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique, double &cut_change) {
     assert(clique.size() >= 2);
 
     int frem = rand() % clique.size();
     int srem = (frem + 1) % clique.size();
-    RemoveNode(clique[frem]);
-    RemoveNode(clique[srem]);
+    int rem_node1 = clique[frem], rem_node2 = clique[srem];
+
+    cut_change -= (2*GetAdjacency(rem_node1).size() + 1) / 4.0;
+    RemoveNode(rem_node1);
+
+    cut_change -= (2*GetAdjacency(rem_node2).size() + 1) / 4.0;
+    RemoveNode(rem_node2);
 }
 
 vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
@@ -1088,7 +1089,7 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
     return ret;
 }
 
-void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidate) {
+void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidate, double &cut_change) {
     const pair<int,int> &triag1 = candidate.second[0];
     const pair<int,int> &triag2 = candidate.second[1];
     AddEdge(triag1.first, triag2.first);
@@ -1096,6 +1097,8 @@ void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candid
 
     AddEdge(triag1.second, triag2.first);
     AddEdge(triag1.second, triag2.second);
+
+    cut_change += 2; // increases (4 edges / 2 in EE)
 }
 
 vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
@@ -1129,10 +1132,13 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() {
 
     return ret;
 }
-void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate, double &k) {
+void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate, double &cut_change) {
     assert(candidate.second.size() >= 1);
-    RemoveNode(candidate.second[rand() % candidate.second.size()]);
-    k--;
+
+    int rem_node = candidate.second[rand() % candidate.second.size()];
+    cut_change -= (2*GetAdjacency(rem_node).size() + 2 /* +1 for cut change, +1 for removal of node in EE */) / 4.0; // why is this an integer? GetAdjacency(rem_node).size() is odd, since clique is even and doesnt contain itself.
+
+    RemoveNode(rem_node);
 }
 
 vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates() {
@@ -1170,18 +1176,31 @@ void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate,
         vector<int> adj_nodex = GetAdjacency(nodex);
         vector<int> adj_nodey = GetAdjacency(nodey);
         vector<int> adj = SetUnion(adj_nodex, adj_nodey);
+
+        k -= (2 * GetAdjacency(u).size() + 1) / 4.0;
         RemoveNode(u);
+
+        k -= (2 * GetAdjacency(nodex).size() + 1) / 4.0;
         RemoveNode(nodex);
+
+        k -= (2 * GetAdjacency(nodey).size() + 1) / 4.0;
         RemoveNode(nodey);
+
+        k += 1 / 4.0;
         ReAddNode(u);
 
-        for (auto v : adj)
-            if (v != u && v != nodex && v != nodey)
+        for (auto v : adj) {
+            if (v != u && v != nodex && v != nodey) {
+                k += 1 / 2.0;
                 AddEdge(u, v);
+            }
+        }
     } else {
+        k -= (2 * GetAdjacency(u).size() + 2 /* +1 for node (/4 before already) and +1 for the change in cut (/4 before already) */) / 4.0; // k-- in EE included here.
         RemoveNode(u);
+
+        k -= 1 / 2.0; // m/2 in EE
         RemoveEdgesBetween(nodex, nodey);
-        k--;
     }
 }
 
@@ -1203,20 +1222,90 @@ vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates() {
 
         if (ex_L == a || ex_L == b || ex_L == c) continue;
         if (ex_R == a || ex_R == b || ex_R == c) continue;
+        if (ex_L == ex_R) continue; // ------------------------------ THIS COULD! BE SUPPORTED, BUT REQUIRED DOUBLE EDGES. USED TO BE A BUG.
 
         ret.push_back(make_tuple(ex_L, a, b, c, ex_R));
     }
     return ret;
 }
-void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &k) {
-    (void) k;
+void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &cut_change) {
     int ex_L = get<0>(candidate), a = get<1>(candidate), b = get<2>(candidate),
            c = get<3>(candidate), ex_R = get<4>(candidate);
+
+    /*for (auto node : {ex_L, a, b, c, ex_R}) {
+        cout << node << " : ";
+        auto adj = GetAdjacency(node);
+        for (int w : adj) 
+            cout << w << " ";
+        cout << endl;
+    }*/
 
     RemoveNode(a);
     RemoveNode(c);
     AddEdge(ex_L, b);
     AddEdge(b, ex_R);
+    cut_change -= 2;
+}
+
+vector<vector<int>> MaxCutGraph::GetS2Candidates(const bool break_on_first) {
+    vector<vector<int>> ret;
+
+    auto current_v = GetAllExistingNodes();
+    for (auto root : current_v) { // an internal vertex
+        const auto adj_root = GetAdjacency(root);
+        vector<int> curr_clique = SetUnion(adj_root, {root});
+
+        if (!IsClique(curr_clique))
+            continue;
+
+        vector<int> externals;
+        for (auto node : curr_clique) {
+            const auto adj = GetAdjacency(node);
+            if (adj.size() + 1 != curr_clique.size())
+                externals.push_back(node);
+        }
+
+        if (externals.size() <= ((curr_clique.size() >> 1) + (curr_clique.size() % 2))) {
+            ret.push_back(curr_clique);
+            if (break_on_first) return ret;
+        }
+
+
+        // there cant be more, add proof in thesis.
+    }
+
+    return ret;
+}
+
+void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, double &cut_change) {// Clique cut.
+    int n = clique.size();
+    int add_tot = 0;
+    for (int i = 1; i <= n; ++i) {
+        int add = (n - i) - (i - 1);
+        if (add <= 0) break;
+        add_tot += add;
+    }
+    cut_change -= add_tot;
+    
+    // Apply changes to graph:
+    vector<int> rem_nodes;
+    for (auto node : clique) {   
+        const auto adj = GetAdjacency(node);
+        if (adj.size() + 1 == clique.size()) { // is internal
+            rem_nodes.push_back(node);
+        }
+    }
+
+    for (auto node : clique) {   
+        for (auto node2 : clique) {
+            if (edge_exists_lookup[make_pair(node, node2)]) {
+                RemoveEdgesBetween(node, node2);
+            }
+        }
+    }
+
+    for (auto node : rem_nodes)
+        RemoveNode(node);
 }
 
 vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {
@@ -1369,12 +1458,13 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutHeuristically() {
         auto adj = GetAdjacency(i);
         for (auto w : adj) {
             if (removed_node[w] || i >= w) continue;
+            assert(edge_exists_lookup[make_pair(w, i)]);
             edgeList.push_back(Instance::InstanceTuple(std::make_pair(i+1, w+1), 1));
         }
     }
 
     MaxCutInstance mi(edgeList, num_nodes + 1);
-    Burer2002 heur(mi, 2, false, NULL);
+    Burer2002 heur(mi, 10, false, NULL);
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
     return make_pair(mcSol.get_weight(), mcSol.get_assignments());

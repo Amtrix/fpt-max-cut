@@ -137,17 +137,17 @@ public:
 
     // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
     vector<vector<int>> GetAllR8Candidates();
-    void ApplyR8Candidate(const vector<int> &clique);
+    void ApplyR8Candidate(const vector<int> &clique, double &cut_change);
 
     // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
     // (x,pair2.first,pair2.second).
     vector<pair<int,vector<pair<int,int>>>> GetAllR9Candidates();
-    void ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates);
+    void ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates, double &cut_change);
 
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     // Warning! X >= C/2, therefore, deletion of some vertices in X is necessary when applying the rule.
     vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates();
-    void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate, double &k);
+    void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate, double &cut_change);
 
     // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 
     vector<tuple<bool, int, int, int>> GetAllR10Candidates();
@@ -155,7 +155,11 @@ public:
 
     // Returns a vector of 5-tuples a' b c d d'
     vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates();
-    void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &k);
+    void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &cut_change);
+
+    // Returns a vector of odd cliques with less than ceil(n/2) external vertices.
+    vector<vector<int>> GetS2Candidates(const bool break_on_first = false);
+    void ApplyS2Candidate(const vector<int>& clique, double &cut_change);
 
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 
@@ -216,6 +220,4 @@ private:
 
     // Used by MaxCutExtension
     vector<int> computed_maxcut_coloring;
-
-    int saved_num_components_ee;
 };

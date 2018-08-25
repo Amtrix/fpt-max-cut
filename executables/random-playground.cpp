@@ -5,25 +5,20 @@ using namespace std;
 
 const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
+const bool kBreakWhenSmaller = false;
 
-const int n = 5;
-const int nc = 5;
+const int n = 4;
+const int nc = 2;
 map<pair<int,int>, bool> preadd = {
 };
 
 map<pair<int,int>, bool> subset_in_result = {
-    //{make_pair(0,2), true},
-    //{make_pair(0,3), true},
-    //{make_pair(0,4), true},
-   // {make_pair(0,5), true},
-    //{make_pair(0,6), true},
-    
-
-   // {make_pair(1,2), true},
-   // {make_pair(1,3), true},
-    ////{make_pair(1,4), true},
-    //{make_pair(1,5), true},
-    //{make_pair(1,6), true},
+    {make_pair(0, 1), true},
+    {make_pair(0, 2), true},
+    {make_pair(0, 3), true},
+    {make_pair(1, 2), true},
+    {make_pair(1, 3), true},
+    {make_pair(2, 3), true},
 };
 
 void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback) {
@@ -60,7 +55,8 @@ string EncodeEdgeSet(const vector<pair<int,int>>& w) {
 }
 
 int main() {
-    
+    ios_base::sync_with_stdio(false);
+
     unordered_map<string, vector<pair<int, vector<pair<int,int>>>> > equiv_cls;
     unordered_map<string, bool> visited;
 
@@ -117,6 +113,11 @@ int main() {
                 else {
                     cout << " ########### ";
                     found_exact = true;
+                }
+
+                if (subset_in_result_cnt_start > (int)e.second.size() && kBreakWhenSmaller) {
+                    cout << "Break because reduction of given subset found" << endl;
+                    break;
                 }
             }
 
