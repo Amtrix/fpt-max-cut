@@ -9,20 +9,42 @@
 #include "src/benchmarks/benchmark-kernelization.hpp"
 #include "src/benchmarks/benchmark-kernelization-by-clique.hpp"
 #include "src/benchmarks/benchmark-kernelization-applicability-count.hpp"
+#include "src/benchmarks/benchmark-count-clique-with-internal.hpp"
 
 #include <iostream>
 using namespace std;
 
-const int kDataSetCount = 1;
+const int kDataSetCount = 9;
 const string paths[] = {
- //   "../data/biqmac/ising",
- //   "../data/biqmac/rudy",
+   //"../data/biqmac/ising",
+    "../data/biqmac/rudy",
+    "../data/KaGen-2/ba_1024",
+    "../data/KaGen-2/gnm_undirected_128",
+    "../data/KaGen-2/gnm_undirected_1024",
+    "../data/KaGen-2/rdg_2d_1024",
+    "../data/KaGen-2/rdg_3d_1024",
+    "../data/KaGen-2/rhg_128_g2.1",
+    "../data/KaGen-2/rhg_1024_g2.4",
+    "../data/KaGen-2/rhg_1024_g5.4",
   //  "../data/custom",
   //  "../data/KaGen/ba",
   //  "../data/KaGen/gnp_undirected",
   //  "../data/KaGen/rhg",
-    "../data/KaGen-2/rhg_1024_g2.4"//,
+    "../data/KaGen-2/rdg_2d_1024"//,
 };
+
+/*
+used to evaluate cliques with internal node reductions:
+    "../data/biqmac/rudy",
+    "../data/KaGen-2/ba_1024",
+    "../data/KaGen-2/gnm_undirected_128",
+    "../data/KaGen-2/gnm_undirected_1024",
+    "../data/KaGen-2/rdg_2d_1024",
+    "../data/KaGen-2/rdg_3d_1024",
+    "../data/KaGen-2/rhg_128_g2.1",
+    "../data/KaGen-2/rhg_1024_g2.4",
+    "../data/KaGen-2/rhg_1024_g5.4",
+*/
 
 vector<int> tot_used_rules(10, 0);
 int main(int argc, char **argv){
@@ -69,6 +91,8 @@ int main(int argc, char **argv){
 
             cout << "M-check: " << m << endl;
         }
+    } else if (action == "count-clique-internal") {
+        benchmark_action.reset(new Benchmark_CountCliquesWithInternal());
     }
     else throw std::logic_error("Action flag not defined.");
 
@@ -79,6 +103,8 @@ int main(int argc, char **argv){
             benchmark_action->Evaluate(input, data_filepath);
             tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
         }
+
+        benchmark_action->PostProcess(input);
     }
 
     cout << endl;

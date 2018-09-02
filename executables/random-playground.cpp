@@ -1,44 +1,12 @@
 #include <bits/stdc++.h>
-#include <functional>
-#include "src/mc-graph.hpp"
+#include "src/utils.hpp"
 using namespace std;
 
-const bool kSkipSingletons = false;
-const bool kStopAtSame = false;
-const bool kBreakWhenSmaller = false;
+// Rule1: If clique of odd size n and has n - 2 external, remove edge between non-external
 
-const int n = 4;
-const int nc = 2;
-map<pair<int,int>, bool> preadd = {
-};
 
-map<pair<int,int>, bool> subset_in_result = {
-    {make_pair(0, 1), true},
-    {make_pair(0, 2), true},
-    {make_pair(0, 3), true},
-    {make_pair(1, 2), true},
-    {make_pair(1, 3), true},
-    {make_pair(2, 3), true},
-};
-
-void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback) {
-    int mx_edges = (n * (n - 1)) / 2;
-    for (int mask = 0; mask < (1 << mx_edges); ++mask) {
-        vector<pair<int,int>> cumm;
-        int dx = 0;
-        for (int i = 0; i < n; ++i) {
-            for (int j = i + 1; j < n; ++j) {
-                if ((mask & (1 << dx)) || preadd[make_pair(i,j)] || preadd[make_pair(j,i)])
-                    cumm.push_back(make_pair(i,j));
-                dx++;
-            }
-        }
-
-        callback(cumm);
-    }
-}
-
-pair<int,int> RevPair(pair<int,int> p) { return make_pair(p.second, p.first); }
+int n = 9;
+int nc = 7;
 
 string EncodeDiff(vector<int> &cuts) {
     string ret = "";
@@ -47,87 +15,149 @@ string EncodeDiff(vector<int> &cuts) {
     return ret;
 }
 
-string EncodeEdgeSet(const vector<pair<int,int>>& w) {
-    string ret = "";
-    for (auto e : w)
-        ret += "(" + to_string(e.first) + "," + to_string(e.second) + "):";
+int GetMaxCut(const vector<bool> color_base, const vector<pair<int,int>> &edges) {
+    int ret = 0;
+    for (int rem_mask = 0; rem_mask < (1 << (n - nc)); ++rem_mask) {
+        vector<bool> color = color_base;
+        for (int i = 0; i < n-nc; ++i) color.push_back(rem_mask & (1 << i));
+
+        int curr = 0;
+        for (auto e : edges)
+            curr += color[e.first] != color[e.second];
+
+        ret = max(ret, curr);
+    }
+
     return ret;
 }
 
-int main() {
-    ios_base::sync_with_stdio(false);
-
-    unordered_map<string, vector<pair<int, vector<pair<int,int>>>> > equiv_cls;
-    unordered_map<string, bool> visited;
-
-    TryAllEdgeSets(n, [&](vector<pair<int,int>>& edges){
-        string edge_key = EncodeEdgeSet(edges);
-        if (visited[edge_key]) return;
-        visited[edge_key] = true;
-
-        vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
-        for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
-            int mx_cut = 0;
-            for (int nrem_mask = 0; nrem_mask < (1 << (n-nc)); ++nrem_mask) {
-                vector<int> color;
-                for (int i = 0; i < nc; ++i) color.push_back((nc_mask & (1 << i)) != 0);
-                for (int i = 0; i < n - nc; ++i) color.push_back((nrem_mask & (1 << i)) != 0);
-
-                int cut = 0;
-                for (auto e : edges) cut += color[e.first] != color[e.second];
-                mx_cut = max(mx_cut, cut);
-            }
-            maxcut_dependent_on_nc.push_back(mx_cut);
-        }
-
-        const auto key = EncodeDiff(maxcut_dependent_on_nc);
-        
-        equiv_cls[key].push_back(make_pair(maxcut_dependent_on_nc[0], edges));
-    });
-
-    int subset_in_result_cnt_start = subset_in_result.size();
-    for (auto entry : equiv_cls) {
-        if (entry.second.size() <= 1 && kSkipSingletons) continue;
-
-        cout << "Class " << entry.first << " = " << entry.second.size() << endl;
-
-        bool found_exact = false;
-        for (auto e : entry.second) {
-            cout << "     ";
-            cout << "[sz: " << e.second.size() << ", mx(0): " << e.first << "] = ";
-
-            // Print edges and check if they contain subset_in_result as a subset.
-            map<pair<int,int>,bool> visi;
-            int subset_in_result_cnt = subset_in_result_cnt_start;
-            for (int i = 0; i < (int)e.second.size(); ++i) {
-                auto edge = e.second[i];
-                subset_in_result_cnt -= (visi[edge] == false) && (subset_in_result[edge] || subset_in_result[RevPair(edge)]);
-                
-                cout << "(" << edge.first << ", " << edge.second << ") ";
-                visi[edge] = true;
-            }
-
-            if (subset_in_result_cnt_start != 0 && subset_in_result_cnt == 0) {
-                if ((int)e.second.size() != subset_in_result_cnt_start)
-                    cout << " *********** ";
-                else {
-                    cout << " ########### ";
-                    found_exact = true;
-                }
-
-                if (subset_in_result_cnt_start > (int)e.second.size() && kBreakWhenSmaller) {
-                    cout << "Break because reduction of given subset found" << endl;
-                    break;
-                }
-            }
-
-            cout << endl;
-        }
-        cout << endl << endl;
-    
-        if (found_exact && kStopAtSame) {
-            cout << "Break because exact found." << endl;
-            break;
-        }
+string GetMaxCutClass(const vector<pair<int,int>> &edges) {
+    vector<int> sol;
+    for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
+        vector<bool> color;
+        for (int i = 0; i < nc; ++i) color.push_back(nc_mask & (1 << i));
+        int subsol = GetMaxCut(color, edges);
+        sol.push_back(subsol);
     }
+
+    return EncodeDiff(sol);
+}
+
+vector<pair<int,int>> GetCliqueEdges(const int n) {
+    vector<pair<int,int>> ret;
+    for (int i = 0; i < n; ++i)
+        for (int j = i + 1; j < n; ++j)
+            ret.push_back(make_pair(i,j));
+    return ret;
+}
+
+void printedges(vector<pair<int,int>> edges) {
+    for (auto e : edges)
+        cout << "(" << e.first << ", " << e.second << ") ";
+    cout << endl;
+}
+
+bool TryRemoveEdge(const vector<pair<int,int>> &edges, std::function<bool(pair<int,int>, vector<pair<int,int>>&)> callback) {
+    for (auto e : edges) {
+        auto cpye = edges;
+        auto it = std::find(cpye.cbegin(), cpye.cend(), e);
+        cpye.erase(it);
+        if (callback(e, cpye)) return true;
+    }
+    return false;
+}
+
+vector<pair<int,int>> EdgeConcat(const vector<pair<int,int>> &A, const vector<pair<int,int>> &B) {
+    vector<pair<int,int>> ret = A;
+    ret.insert( ret.end(), B.begin(), B.end());
+    return ret;
+}
+
+bool TryRemoveNEdge(const int N, const vector<pair<int,int>> erased, const vector<pair<int,int>> &edges, std::function<bool(vector<pair<int,int>>, vector<pair<int,int>>&)> callback) {
+    return TryRemoveEdge(edges, [&](pair<int,int> erased_edge, vector<pair<int,int>>& edges){
+        if (erased.empty() == false && erased.back() > erased_edge) return false;
+
+        if (N > 1) return TryRemoveNEdge(N - 1, EdgeConcat(erased, {erased_edge}), edges, callback);
+        else return callback(EdgeConcat(erased, {erased_edge}), edges);
+
+        return false;
+    });
+}
+
+void TryTripleRemove(const string basesol, const vector<pair<int,int>> &edges) {
+    TryRemoveNEdge(5, {}, edges, [&](vector<pair<int,int>> erased, vector<pair<int,int>>& edges){
+        string cmpsol = GetMaxCutClass(edges);
+        if (basesol == cmpsol) {
+            cout << "Reduction: " << endl;
+            cout << "ERASE-TRIPLE: " << "X "<< erased.size() << endl;
+            cout << "mx(0) = " << GetMaxCut(vector<bool>(nc, 0), edges) << endl;
+            printedges(edges);
+            cout << endl << endl;
+        }
+        return false;
+    });
+}
+
+void TryHowManyEdgesRemovable(const string basesol, const vector<pair<int,int>> &edges) {
+    for (int i = 1; i <= n * (n-1) / 2; ++i) {
+        bool possible = false;
+        cout << "Can remove " << i << " edges?" << endl;
+        TryRemoveNEdge(i, {}, edges, [&](vector<pair<int,int>> erased, vector<pair<int,int>>& edges){
+            string cmpsol = GetMaxCutClass(edges);
+            if (basesol == cmpsol) {
+                for (auto e : erased) cout << e.first << " " << e.second << " ,  ";
+                cout << endl;
+                possible = true;
+                return true;
+            }
+            return false;
+        });
+        cout << (possible ? "yes" : "no") << endl;
+    }
+}
+
+int main() {
+    string basesol = GetMaxCutClass(GetCliqueEdges(n));
+    
+    vector<pair<int,int>> cmp_edges;
+    //for (int i = 0; i < nc; ++i) // look into this too, there is something to this +-2... for n = 7,nc=5
+    //    for (int j = i + 1; j < nc; ++j)
+    //        cmp_edges.push_back(make_pair(i, j));
+    
+    for (int i = 0; i < n; ++i)
+        for (int j = i + 1; j < n; ++j)
+            if (i < nc || j < nc)
+                cmp_edges.push_back(make_pair(i, j));
+
+    string cmpsol = GetMaxCutClass(cmp_edges);
+
+    cout << "Test #1: " << (basesol == cmpsol) << endl;
+
+    auto edges = GetCliqueEdges(n);
+    cout << "Base edge list: " << endl;
+    printedges(edges);
+    cout << "Base mx(0) = " << GetMaxCut(vector<bool>(nc, 0), edges) << endl;
+    //cout << "Base key = " << basesol << endl;
+    cout << endl;
+
+    TryHowManyEdgesRemovable(basesol, edges);
+
+    /*
+    TryRemoveEdge(edges, [&](pair<int,int> erased, vector<pair<int,int>>& edges){
+        string cmpsol = GetMaxCutClass(edges);
+        if (basesol == cmpsol) {
+            cout << "Reduction: " << endl;
+            cout << "ERASE: " << erased.first << " " << erased.second << endl;
+            cout << "mx(0) = " << GetMaxCut(vector<bool>(nc, 0), edges) << endl;
+            printedges(edges);
+            cout << endl << endl;
+
+            TryTripleRemove(basesol, edges);
+        }
+        return false;
+    });*/
+
+    
+    
+    return 0;
 }

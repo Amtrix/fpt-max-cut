@@ -283,6 +283,14 @@ void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
     edge_exists_lookup.erase(make_pair(nodey, nodex));
 }
 
+void MaxCutGraph::RemoveEdgesInComponent(const vector<int> &component) {
+    for (int i = 0; i < (int)component.size(); ++i) {
+        for (int j = i + 1; j < (int)component.size(); ++j) {
+            RemoveEdgesBetween(component[i], component[j]);
+        }
+    }
+}
+
 vector<int> MaxCutGraph::GetAllExistingNodes() {
     vector<int> ret;
     for (int i = 0; i < num_nodes; ++i)
@@ -1222,7 +1230,7 @@ vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates() {
 
         if (ex_L == a || ex_L == b || ex_L == c) continue;
         if (ex_R == a || ex_R == b || ex_R == c) continue;
-        if (ex_L == ex_R) continue; // ------------------------------ THIS COULD! BE SUPPORTED, BUT REQUIRED DOUBLE EDGES. USED TO BE A BUG.
+        if (ex_L == ex_R) continue; // ------------------------------ THIS COULD! BE SUPPORTED, BUT REQUIRED DOUBLE EDGES. USED TO BE A BUG BECAUSE THIS CONDITION MISSED.
 
         ret.push_back(make_tuple(ex_L, a, b, c, ex_R));
     }
@@ -1247,6 +1255,9 @@ void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
     cut_change -= 2;
 }
 
+// Interesting facts on this rule:
+// -- in case of RGG graphs: manages to process ALL cliques with at least one internal vertex -- therefore, cliques tend to be small.
+// 
 vector<vector<int>> MaxCutGraph::GetS2Candidates(const bool break_on_first) {
     vector<vector<int>> ret;
 
@@ -1264,6 +1275,8 @@ vector<vector<int>> MaxCutGraph::GetS2Candidates(const bool break_on_first) {
             if (adj.size() + 1 != curr_clique.size())
                 externals.push_back(node);
         }
+
+    //    cout << "CLIQUE WITH AT LEAST ON INTERNAL: " << curr_clique.size() << " " << externals.size() << endl;
 
         if (externals.size() <= ((curr_clique.size() >> 1) + (curr_clique.size() % 2))) {
             ret.push_back(curr_clique);
@@ -1464,8 +1477,40 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutHeuristically() {
     }
 
     MaxCutInstance mi(edgeList, num_nodes + 1);
-    Burer2002 heur(mi, 10, false, NULL);
+    Burer2002 heur(mi, 1, false, NULL);
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
     return make_pair(mcSol.get_weight(), mcSol.get_assignments());
+}
+
+
+// O(|V| + |E|)
+vector<vector<int>> MaxCutGraph::GetCliquesWithAtLeastOneInternal() {
+    vector<vector<int>> ret;
+    vector<bool> visited(num_nodes, false);
+
+    auto cmp = [&](int a, int b) {
+        return g_adj_list[a].size() < g_adj_list[b].size();
+    };
+
+    auto current_v = GetAllExistingNodes();
+    sort(current_v.begin(), current_v.end(), cmp);
+
+    for (auto root : current_v) { // an internal vertex
+        if (visited[root])
+            continue;
+
+        const auto adj_root = GetAdjacency(root);
+        vector<int> clique = SetUnion(adj_root, {root});
+
+        for (auto node : clique)
+            visited[node] = true;
+
+        if (!IsClique(clique))
+            continue;
+
+        ret.push_back(clique);
+    }
+
+    return ret;
 }

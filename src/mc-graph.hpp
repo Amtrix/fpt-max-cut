@@ -30,7 +30,7 @@ public:
 
     void AddEdge(int a, int b) {
         if(edge_exists_lookup[make_pair(a,b)] || a == b) {
-            cout << "Warning: Edge added already or loop: " << a << " " << b << ". Ignored." << endl;
+            //cout << "Warning: Edge added already or loop: " << a << " " << b << ". Ignored." << endl;
             return;
         }
 
@@ -67,6 +67,7 @@ public:
     // Does not add the previously removed edges with the RemoveNode function!
     void ReAddNode(int node);
     void RemoveEdgesBetween(int nodex, int nodey);
+    void RemoveEdgesInComponent(const vector<int> &component);
 
     vector<int> GetAllExistingNodes();
 
@@ -176,6 +177,9 @@ public:
     pair<int, vector<int>> ComputeLocalSearchCut(const vector<int> pregroup = {});
 
     pair<int, vector<int>> ComputeMaxCutHeuristically();
+
+    vector<vector<int>> GetCliquesWithAtLeastOneInternal();
+
 private:
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,

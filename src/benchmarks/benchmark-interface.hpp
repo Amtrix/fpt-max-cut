@@ -7,6 +7,10 @@ public:
     BenchmarkAction() {
         tot_used_rules.resize(20);
     }
+
+    virtual void PostProcess(InputParser& /* input */) {
+
+    }
     
     virtual void Evaluate(InputParser& input, const string data_filepath) = 0;
 

@@ -69,3 +69,15 @@ target_link_libraries(double-clique-solver PRIVATE ${TARGET_LIBS})
 add_executable(random-playground executables/random-playground.cpp)
 target_sources(random-playground PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(random-playground PRIVATE ${TARGET_LIBS})
+
+add_executable(find-kernelization-general executables/find-kernelization-general.cpp)
+target_sources(find-kernelization-general PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(find-kernelization-general PRIVATE ${TARGET_LIBS})
+
+add_executable(find-kernelization-clique executables/find-kernelization-clique.cpp)
+target_sources(find-kernelization-clique PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(find-kernelization-clique PRIVATE ${TARGET_LIBS})
+
+add_executable(lower-bound-num-of-class-computation executables/lower-bound-num-of-class-computation.cpp)
+target_sources(lower-bound-num-of-class-computation PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(lower-bound-num-of-class-computation PRIVATE ${TARGET_LIBS})
