@@ -20,6 +20,9 @@ public:
     // File based input is 1-index based. Transformed to 0-based while reading in.
     MaxCutGraph(const string path);
 
+    // Create graph based on list of edges.
+    MaxCutGraph(const vector<pair<int,int>> &elist);
+
     // Create induced subgraph
     MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset);
 
@@ -161,6 +164,8 @@ public:
     // Returns a vector of odd cliques with less than ceil(n/2) external vertices.
     vector<vector<int>> GetS2Candidates(const bool break_on_first = false);
     void ApplyS2Candidate(const vector<int>& clique, double &cut_change);
+
+    void ExecuteExhaustiveKernelization();
 
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 

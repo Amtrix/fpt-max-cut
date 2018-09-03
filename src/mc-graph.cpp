@@ -41,13 +41,25 @@ MaxCutGraph::MaxCutGraph(const string path) {
             if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(-1));
             int a = stoi(sparams[0]);
             int b = stoi(sparams[1]);
-            if (a >= 5000 || b >= 5000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
+            if (a >= 2000 || b >= 2000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
             num_nodes = max(num_nodes, max(a + 1, b + 1));
             AddEdge(a, b);
         }
     }
     
     OutputDebugLog("Reading from file done.");
+}
+
+MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist) {
+    num_nodes = 0;
+    g_adj_list.resize(2000);
+    for (auto e : elist) {
+        int a = e.first;
+        int b = e.second;
+        if (a >= 2000 || b >= 2000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
+        num_nodes = max(num_nodes, max(a + 1, b + 1));
+        AddEdge(a, b);
+    }
 }
 
 MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {
@@ -1319,6 +1331,49 @@ void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, double &cut_change
 
     for (auto node : rem_nodes)
         RemoveNode(node);
+}
+
+void MaxCutGraph::ExecuteExhaustiveKernelization() {
+    double k_change = 0;
+    while (true) {
+        auto res_rs2 = GetS2Candidates(true);
+        if (!res_rs2.empty()) {
+            ApplyS2Candidate(res_rs2[0], k_change);
+            continue;
+        }
+
+        auto res_r9x = GetAllR9XCandidates();
+        if (!res_r9x.empty()) {
+            ApplyR9XCandidate(res_r9x[0], k_change);
+            continue;
+        }
+        
+        auto res_r8 = GetAllR8Candidates();
+        if (!res_r8.empty()) {
+            ApplyR8Candidate(res_r8[0], k_change);
+            continue;
+        }
+        
+        auto res_r10 = GetAllR10Candidates();
+        if (!res_r10.empty()) {
+            ApplyR10Candidate(res_r10[0], k_change);
+            continue;
+        }
+        
+        auto res_r9 = GetAllR9Candidates();
+        if (!res_r9.empty()) {
+            ApplyR9Candidate(res_r9[0], k_change);
+            continue;
+        }
+
+        auto res_r10ast = GetAllR10ASTCandidates();
+        if (!res_r10ast.empty()) {
+            ApplyR10ASTCandidate(res_r10ast[0], k_change);
+            continue;
+        }
+        
+        break;
+    }
 }
 
 vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {

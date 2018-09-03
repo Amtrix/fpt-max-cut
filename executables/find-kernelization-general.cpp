@@ -6,6 +6,7 @@ using namespace std;
 const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
 const bool kBreakWhenSmaller = false;
+const bool kKernelizeAndVisit = true;
 
 int n = 4;
 int nc = 3;
@@ -14,6 +15,12 @@ map<pair<int,int>, bool> preadd = {
 };
 
 map<pair<int,int>, bool> subset_in_result = {
+};
+
+map<pair<int,int>, bool> any_in_result = {
+    {make_pair(0, 1), true},
+    {make_pair(0, 2), true},
+    {make_pair(1, 2), true},
 };
 
 void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback) {
@@ -32,6 +39,16 @@ void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback)
         callback(cumm);
     }
 }
+
+string GetGraphKey(MaxCutGraph &G) {
+    string ret = "";
+    auto edges = G.GetAllExistingEdges();
+    for (auto e : edges)
+        ret += "(" + to_string(e.first) + "," + to_string(e.second) +")";
+    return ret;
+}
+
+//void GetAllIsomorphismKeys(MaxCutGraph& G, std::function<void(vector<pair<int,int>>&)> callback) {
 
 pair<int,int> RevPair(pair<int,int> p) { return make_pair(p.second, p.first); }
 
@@ -81,38 +98,86 @@ int main() {
         equiv_cls[key].push_back(make_pair(maxcut_dependent_on_nc[0], edges));
     });
 
-    int num_of_classes = 0;
-    int subset_in_result_cnt_start = subset_in_result.size();
+    vector<pair<int,string>> ordered_classes;
     for (auto entry : equiv_cls) {
-        if (entry.second.size() <= 1 && kSkipSingletons) continue;
+        int sz = entry.second.size();
+        if (kKernelizeAndVisit) {
+            map<string, bool> visited_graph_key;
+            for (auto e : entry.second) {
+                MaxCutGraph G(e.second);
+                G.ExecuteExhaustiveKernelization();
+                const string key = GetGraphKey(G);
+                if (visited_graph_key[key]) { sz--; continue; }
+                visited_graph_key[key] = true;
+            }
+        }
+        ordered_classes.push_back(make_pair(sz, entry.first));
+    }
+    sort(ordered_classes.rbegin(), ordered_classes.rend());
 
-        cout << "Class " << entry.first << " = " << entry.second.size() << endl;
+    auto cmpentries = [&](pair<int,vector<pair<int,int>>> &entry1, pair<int,vector<pair<int,int>>> &entry2) {
+        return entry1.second.size() < entry2.second.size();
+    };
+
+    int num_of_classes = 0;
+    double sum_coverage = 0;
+    int subset_in_result_cnt_start = subset_in_result.size();
+    for (int i = 0; i < (int)ordered_classes.size(); ++i) {
+        const string key = ordered_classes[i].second;
+        vector<pair<int, vector<pair<int,int>>>> entries = equiv_cls[key];
+        if (entries.size() <= 1 && kSkipSingletons) continue;
+
+        sort(entries.begin(), entries.end(), cmpentries);
+
+        cout << "Class " << key << " = " << entries.size() << " (total!)" << endl;
         num_of_classes++;
 
         bool found_exact = false;
-        for (auto e : entry.second) {
+        map<string, bool> visited_graph_key;
+        int kernelized_count = 0;
+        for (auto e : entries) {
+            if (kKernelizeAndVisit) {
+                MaxCutGraph G(e.second);
+                G.ExecuteExhaustiveKernelization();
+                const string key = GetGraphKey(G);
+                if (visited_graph_key[key]) { kernelized_count++; continue; }
+                visited_graph_key[key] = true;
+            }
+
             cout << "     ";
-            cout << "[sz: " << e.second.size() << ", mx(0): " << e.first << "] = ";
+            cout << "[sz: " << e.second.size() << ", mx(0): " << e.first << ", clsid: " << num_of_classes << "] = ";
 
             // Print edges and check if they contain subset_in_result as a subset.
+            bool any_property = false;
             map<pair<int,int>,bool> visi;
             int subset_in_result_cnt = subset_in_result_cnt_start;
             for (int i = 0; i < (int)e.second.size(); ++i) {
                 auto edge = e.second[i];
                 subset_in_result_cnt -= (visi[edge] == false) && (subset_in_result[edge] || subset_in_result[RevPair(edge)]);
+                if (any_in_result[edge]) any_property = true;
                 
                 cout << "(" << edge.first << ", " << edge.second << ") ";
                 visi[edge] = true;
             }
 
+            cout << "  [";
             if (subset_in_result_cnt_start != 0 && subset_in_result_cnt == 0) {
                 if ((int)e.second.size() != subset_in_result_cnt_start)
-                    cout << " *********** ";
+                    cout << " sub:1 ";
                 else {
-                    cout << " ########### ";
+                    cout << " eq:1 ";
                     found_exact = true;
                 }
+            }
 
+            if (any_property)
+                cout << " any:1 ";
+            else
+                cout << " any:0 ";
+            
+            cout << "]";
+
+            if (subset_in_result_cnt_start != 0 && subset_in_result_cnt == 0) {
                 if (subset_in_result_cnt_start > (int)e.second.size() && kBreakWhenSmaller) {
                     cout << "Break because reduction of given subset found" << endl;
                     break;
@@ -120,6 +185,12 @@ int main() {
             }
 
             cout << endl;
+        }
+        if (kKernelizeAndVisit) {
+            double coverage = 1;
+            if (entries.size() >= 2) coverage = (kernelized_count) / (double)(entries.size() - 1);
+            sum_coverage += coverage;
+            cout << "kernelized count: " << kernelized_count << " (coverage: " << coverage << ")" << endl;
         }
         cout << endl << endl;
     
@@ -130,4 +201,5 @@ int main() {
     }
 
     cout << "Number of classes: " << num_of_classes << endl;
+    cout << "Total kernelization coverage: " << (sum_coverage / num_of_classes) << endl;
 }
