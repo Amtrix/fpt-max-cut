@@ -55,6 +55,7 @@ public:
 
     void CalculateSingleSourceDistance(int source);
 
+    vector<int> GetConnectedComponentOf(int node);
     vector<vector<int>> GetAllConnectedComponents();
 
     bool DoesDisconnect(vector<int> selection_rem);
@@ -154,18 +155,19 @@ public:
     void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate, double &cut_change);
 
     // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 
-    vector<tuple<bool, int, int, int>> GetAllR10Candidates();
+    vector<tuple<bool, int, int, int>> GetAllR10Candidates(const unordered_map<int,bool>& preset_is_external = {});
     void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate, double &k);
 
     // Returns a vector of 5-tuples a' b c d d'
-    vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates();
+    vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates(const unordered_map<int,bool>& preset_is_external = {});
     void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &cut_change);
 
     // Returns a vector of odd cliques with less than ceil(n/2) external vertices.
-    vector<vector<int>> GetS2Candidates(const bool break_on_first = false);
-    void ApplyS2Candidate(const vector<int>& clique, double &cut_change);
+    vector<vector<int>> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
+    void ApplyS2Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
 
     void ExecuteExhaustiveKernelization();
+    void ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool>& preset_is_external);
 
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 

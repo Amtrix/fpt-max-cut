@@ -39,3 +39,7 @@ vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_sma
 vector<string> GetAllDatasets(const string path);
 
 vector<string> ReadLine(std::istream& in);
+
+inline bool KeyExists(int key, const unordered_map<int, bool> &m) {
+    return m.find(key) != m.end();
+}

@@ -7,6 +7,7 @@ const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
 const bool kBreakWhenSmaller = false;
 const bool kKernelizeAndVisit = true;
+const bool kRemoveIsomorphisms = true;
 
 int n = 4;
 int nc = 3;
@@ -40,9 +41,32 @@ void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback)
     }
 }
 
-string GetGraphKey(MaxCutGraph &G) {
+inline bool IsExternal(int id) {
+    return id < nc;
+}
+
+void GetAllIsomorphisms(int n, vector<pair<int,int>> elist, std::function<void(vector<pair<int,int>>&)> callback) {
+    vector<int> vorder;
+    for (int i = 0; i < n; ++i) vorder.push_back(i);
+
+    do {
+        vector<pair<int,int>> new_elist = elist;
+        bool ok = true;
+        for (int i = 0; i < (int)new_elist.size(); ++i) {
+            if (IsExternal(new_elist[i].first) != IsExternal(vorder[new_elist[i].first])) { ok = false; break; }
+            if (IsExternal(new_elist[i].second) != IsExternal(vorder[new_elist[i].second])) { ok = false; break; }
+            
+            new_elist[i].first = vorder[new_elist[i].first];
+            new_elist[i].second = vorder[new_elist[i].second];
+        }
+
+        if (ok)
+            callback(new_elist);
+    } while (next_permutation(vorder.begin(), vorder.end()));
+}
+
+string GetGraphKey(vector<pair<int,int>> edges) {
     string ret = "";
-    auto edges = G.GetAllExistingEdges();
     for (auto e : edges)
         ret += "(" + to_string(e.first) + "," + to_string(e.second) +")";
     return ret;
@@ -72,6 +96,10 @@ int main() {
 
     unordered_map<string, vector<pair<int, vector<pair<int,int>>>> > equiv_cls;
     unordered_map<string, bool> visited;
+    unordered_map<int, bool> preset_is_external;
+
+    for (int i = 0; i < nc; ++i)
+        preset_is_external[i] = true;
 
     TryAllEdgeSets(n, [&](vector<pair<int,int>>& edges){
         string edge_key = EncodeEdgeSet(edges);
@@ -105,8 +133,8 @@ int main() {
             map<string, bool> visited_graph_key;
             for (auto e : entry.second) {
                 MaxCutGraph G(e.second);
-                G.ExecuteExhaustiveKernelization();
-                const string key = GetGraphKey(G);
+                G.ExecuteExhaustiveKernelizationExternalsSupport(preset_is_external);
+                const string key = GetGraphKey(G.GetAllExistingEdges());
                 if (visited_graph_key[key]) { sz--; continue; }
                 visited_graph_key[key] = true;
             }
@@ -129,7 +157,7 @@ int main() {
 
         sort(entries.begin(), entries.end(), cmpentries);
 
-        cout << "Class " << key << " = " << entries.size() << " (total!)" << endl;
+        cout << "Class " << key << " = " << entries.size() << " (total!)  or  " << ordered_classes[i].first << " (filtered!)" << endl;
         num_of_classes++;
 
         bool found_exact = false;
@@ -138,10 +166,19 @@ int main() {
         for (auto e : entries) {
             if (kKernelizeAndVisit) {
                 MaxCutGraph G(e.second);
-                G.ExecuteExhaustiveKernelization();
-                const string key = GetGraphKey(G);
+                G.ExecuteExhaustiveKernelizationExternalsSupport(preset_is_external);
+                const auto kedges = G.GetAllExistingEdges();
+                const string key = GetGraphKey(kedges);
                 if (visited_graph_key[key]) { kernelized_count++; continue; }
-                visited_graph_key[key] = true;
+
+                if (kRemoveIsomorphisms) {
+                    GetAllIsomorphisms(n, kedges,  [&](vector<pair<int,int>>& edges){
+                        const string isokey = GetGraphKey(edges);
+                        visited_graph_key[isokey] = true;
+                    });
+                } else {
+                    visited_graph_key[key] = true;
+                }
             }
 
             cout << "     ";
