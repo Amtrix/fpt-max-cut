@@ -56,6 +56,7 @@ void OutputDebugVector_(const string file, const int line_num, const string name
 }
 
 
+// source - target
 vector<int> SetSubstract(const vector<int>& source, const vector<int>& target) {
     vector<int> ret;
 

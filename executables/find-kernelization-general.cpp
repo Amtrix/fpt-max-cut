@@ -7,7 +7,7 @@ const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
 const bool kBreakWhenSmaller = false;
 const bool kKernelizeAndVisit = true;
-const bool kRemoveIsomorphisms = true;
+const bool kRemoveIsomorphisms = false;
 
 int n = 4;
 int nc = 3;
@@ -19,9 +19,6 @@ map<pair<int,int>, bool> subset_in_result = {
 };
 
 map<pair<int,int>, bool> any_in_result = {
-    {make_pair(0, 1), true},
-    {make_pair(0, 2), true},
-    {make_pair(1, 2), true},
 };
 
 void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback) {
@@ -45,7 +42,7 @@ inline bool IsExternal(int id) {
     return id < nc;
 }
 
-void GetAllIsomorphisms(int n, vector<pair<int,int>> elist, std::function<void(vector<pair<int,int>>&)> callback) {
+void GetAllIsomorphisms(vector<pair<int,int>> elist, std::function<void(vector<pair<int,int>>&)> callback) {
     vector<int> vorder;
     for (int i = 0; i < n; ++i) vorder.push_back(i);
 
@@ -58,17 +55,37 @@ void GetAllIsomorphisms(int n, vector<pair<int,int>> elist, std::function<void(v
             
             new_elist[i].first = vorder[new_elist[i].first];
             new_elist[i].second = vorder[new_elist[i].second];
+
+            if (new_elist[i].first > new_elist[i].second)
+                swap(new_elist[i].first, new_elist[i].second);
         }
 
-        if (ok)
+        if (ok) {
+            sort(new_elist.begin(), new_elist.end());
             callback(new_elist);
+        }
     } while (next_permutation(vorder.begin(), vorder.end()));
+}
+
+vector<pair<int,int>> GetLexicographicallyLowestIso(vector<pair<int,int>> elist) {
+    auto sel = elist;
+    GetAllIsomorphisms(elist,  [&](vector<pair<int,int>>& edges){
+        if (sel > edges) sel = edges;
+    });
+    return sel;
 }
 
 string GetGraphKey(vector<pair<int,int>> edges) {
     string ret = "";
     for (auto e : edges)
         ret += "(" + to_string(e.first) + "," + to_string(e.second) +")";
+    return ret;
+}
+
+vector<pair<int,int>> IncreaseBy1(const vector<pair<int,int>> &v) {
+    vector<pair<int,int>> ret;
+    for (int i = 0; i < (int)v.size(); ++i)
+        ret.push_back(make_pair(v[i].first + 1, v[i].second + 1));
     return ret;
 }
 
@@ -101,9 +118,30 @@ int main() {
     for (int i = 0; i < nc; ++i)
         preset_is_external[i] = true;
 
-    TryAllEdgeSets(n, [&](vector<pair<int,int>>& edges){
+    /* Compute all graphs and remove isomorphic ones */
+    vector<vector<pair<int,int>>> all_graphs_edges;
+    unordered_map<string, bool> init_visited_graph_key;
+    TryAllEdgeSets(n, [&](vector<pair<int,int>>& init_edges){
+        const string init_key = GetGraphKey(init_edges);
+        if (init_visited_graph_key[init_key]) return;
+
+        vector<pair<int,int>> sel = init_edges;
+
+        if (kRemoveIsomorphisms) {
+            GetAllIsomorphisms(init_edges,  [&](vector<pair<int,int>>& edges){
+                if (sel > edges) sel = edges;
+                const string isokey = GetGraphKey(edges);
+                init_visited_graph_key[isokey] = true;
+            });
+        }
+
+        all_graphs_edges.push_back(sel);
+    });
+
+    /* Calculate equivalence classes */
+    for (auto edges : all_graphs_edges) {
         string edge_key = EncodeEdgeSet(edges);
-        if (visited[edge_key]) return;
+        if (visited[edge_key]) continue;
         visited[edge_key] = true;
 
         vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
@@ -124,19 +162,45 @@ int main() {
         const auto key = EncodeDiff(maxcut_dependent_on_nc);
         
         equiv_cls[key].push_back(make_pair(maxcut_dependent_on_nc[0], edges));
-    });
+    }
+
+    //* Subroutine to handle isomorphisms and kernelization -- both as a choice.
+    auto kernelizeandmark = [&](vector<pair<int,int>> &elist,
+                                unordered_map<string, bool> &visited_graph_key) {
+        auto graph_edges = elist;
+        MaxCutGraph G(elist);
+        G.ExecuteExhaustiveKernelizationExternalsSupport(preset_is_external);
+
+        auto kedges = G.GetAllExistingEdges();
+        if (kRemoveIsomorphisms) kedges = GetLexicographicallyLowestIso(kedges);
+
+        const string key = GetGraphKey(kedges);
+        if (visited_graph_key[key]) { return make_pair(true, graph_edges); }
+
+
+        if (kRemoveIsomorphisms) {
+            auto sel = kedges;
+            GetAllIsomorphisms(kedges,  [&](vector<pair<int,int>>& edges){
+                if (sel > edges) sel = edges;
+                const string isokey = GetGraphKey(edges);
+                visited_graph_key[isokey] = true;
+            });
+            graph_edges = sel;
+        } else {
+            visited_graph_key[key] = true;
+        }
+
+        return make_pair(false, graph_edges);
+    };
 
     vector<pair<int,string>> ordered_classes;
     for (auto entry : equiv_cls) {
         int sz = entry.second.size();
         if (kKernelizeAndVisit) {
-            map<string, bool> visited_graph_key;
+            unordered_map<string, bool> visited_graph_key;
             for (auto e : entry.second) {
-                MaxCutGraph G(e.second);
-                G.ExecuteExhaustiveKernelizationExternalsSupport(preset_is_external);
-                const string key = GetGraphKey(G.GetAllExistingEdges());
-                if (visited_graph_key[key]) { sz--; continue; }
-                visited_graph_key[key] = true;
+                auto res = kernelizeandmark(e.second, visited_graph_key);
+                sz -= res.first;
             }
         }
         ordered_classes.push_back(make_pair(sz, entry.first));
@@ -149,6 +213,7 @@ int main() {
 
     int num_of_classes = 0;
     double sum_coverage = 0;
+    double sum_denum = 0;
     int subset_in_result_cnt_start = subset_in_result.size();
     for (int i = 0; i < (int)ordered_classes.size(); ++i) {
         const string key = ordered_classes[i].second;
@@ -161,35 +226,29 @@ int main() {
         num_of_classes++;
 
         bool found_exact = false;
-        map<string, bool> visited_graph_key;
+        unordered_map<string, bool> visited_graph_key;
         int kernelized_count = 0;
-        for (auto e : entries) {
+        for (auto e : entries) { // iterate over all edge-sets in the class.
+            auto graph_edges = e.second;
             if (kKernelizeAndVisit) {
-                MaxCutGraph G(e.second);
-                G.ExecuteExhaustiveKernelizationExternalsSupport(preset_is_external);
-                const auto kedges = G.GetAllExistingEdges();
-                const string key = GetGraphKey(kedges);
-                if (visited_graph_key[key]) { kernelized_count++; continue; }
+                auto res = kernelizeandmark(e.second, visited_graph_key);
+                graph_edges = res.second;
 
-                if (kRemoveIsomorphisms) {
-                    GetAllIsomorphisms(n, kedges,  [&](vector<pair<int,int>>& edges){
-                        const string isokey = GetGraphKey(edges);
-                        visited_graph_key[isokey] = true;
-                    });
-                } else {
-                    visited_graph_key[key] = true;
+                if (res.first) {
+                    kernelized_count++;
+                    continue;
                 }
             }
 
             cout << "     ";
-            cout << "[sz: " << e.second.size() << ", mx(0): " << e.first << ", clsid: " << num_of_classes << "] = ";
+            cout << "[sz: " << graph_edges.size() << ", mx(0): " << e.first << ", clsid: " << num_of_classes << "] = ";
 
             // Print edges and check if they contain subset_in_result as a subset.
             bool any_property = false;
             map<pair<int,int>,bool> visi;
             int subset_in_result_cnt = subset_in_result_cnt_start;
-            for (int i = 0; i < (int)e.second.size(); ++i) {
-                auto edge = e.second[i];
+            for (int i = 0; i < (int)graph_edges.size(); ++i) {
+                auto edge = graph_edges[i];
                 subset_in_result_cnt -= (visi[edge] == false) && (subset_in_result[edge] || subset_in_result[RevPair(edge)]);
                 if (any_in_result[edge]) any_property = true;
                 
@@ -226,7 +285,8 @@ int main() {
         if (kKernelizeAndVisit) {
             double coverage = 1;
             if (entries.size() >= 2) coverage = (kernelized_count) / (double)(entries.size() - 1);
-            sum_coverage += coverage;
+            sum_coverage += kernelized_count;
+            sum_denum += entries.size() - 1;
             cout << "kernelized count: " << kernelized_count << " (coverage: " << coverage << ")" << endl;
         }
         cout << endl << endl;
@@ -238,5 +298,11 @@ int main() {
     }
 
     cout << "Number of classes: " << num_of_classes << endl;
-    cout << "Total kernelization coverage: " << (sum_coverage / num_of_classes) << endl;
+    cout << "Total kernelization coverage: " << (sum_denum > 1e-9 ? (sum_coverage / sum_denum) : 1) << endl;
+
+    ofstream out("find-kernelization-general-stats", std::ios_base::app);
+    out << "(" << n << " " << nc << ")" << endl;
+    out << "Number of classes: " << num_of_classes << endl;
+    out << "Total kernelization coverage: " << (sum_denum > 1e-9 ? (sum_coverage / sum_denum) : 1) << endl;
+    out << endl;
 }

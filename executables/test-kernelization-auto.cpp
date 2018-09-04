@@ -39,6 +39,13 @@ std::function<void()> suite[] = {
                     continue;
                 }
 
+                auto res_rs3 = kernelized.GetS3Candidates(true);
+                if (!res_rs3.empty()) {
+                    kernelized.ApplyS3Candidate(res_rs3[0], k_change);
+                    case_coverage_cnt[6]++;
+                    continue;
+                }
+
                 auto res_r9x = kernelized.GetAllR9XCandidates();
                 if (!res_r9x.empty()) {
                     kernelized.ApplyR9XCandidate(res_r9x[0], k_change);

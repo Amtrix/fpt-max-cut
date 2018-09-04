@@ -1323,6 +1323,74 @@ vector<vector<int>> MaxCutGraph::GetS2Candidates(const bool break_on_first, cons
     return ret;
 }
 
+vector<vector<int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
+    vector<vector<int>> ret;
+
+    auto current_v = GetAllExistingNodes();
+    for (auto root : current_v) { // an internal vertex
+        const auto adj_root = GetAdjacency(root);
+        if (KeyExists(root, preset_is_external) || adj_root.size() == 0) continue;
+
+        
+        vector<int> clique = SetUnion(adj_root, {root});
+        
+        auto missingnodes = GetAdjacency(adj_root[0]);
+        for (auto node : adj_root)
+            missingnodes = SetIntersection(missingnodes, GetAdjacency(node));
+        
+        missingnodes = SetSubstract(missingnodes, clique);
+        if (missingnodes.empty()) continue;
+        clique = SetUnion(clique, {missingnodes[0]});
+
+        bool ok = true;
+
+        vector<int> externals;
+        unordered_map<int,bool> is_external = preset_is_external;
+        for (auto node : clique) {
+            const auto adj = GetAdjacency(node);
+            const auto sub = SetSubstract(adj, clique);
+            if (sub.empty() == false || KeyExists(node, preset_is_external)) {
+                externals.push_back(node);
+                is_external[node] = true;
+            }
+        }
+
+        int missing_edges_cnt = 0;
+        for (int i = 0; i < (int)clique.size() && ok; ++i) {
+            for (int j = i + 1; j < (int)clique.size() && ok; ++j) {
+                if (AreAdjacent(clique[i], clique[j]) == false) {
+                    missing_edges_cnt++;
+
+                    if (is_external[clique[i]] || is_external[clique[j]])
+                        ok = false;
+                }
+            }
+        }
+
+        ok = ok && (missing_edges_cnt == 1);
+        if (clique.size() % 2 == 0 && (int)externals.size() == ((int)clique.size()) - 2)
+            ok = false;
+
+        if (ok) {
+            ret.push_back(clique);
+            if (break_on_first)
+                break;
+        }
+    }
+
+    return ret;
+}
+
+void MaxCutGraph::ApplyS3Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external) {
+    (void) cut_change;
+    (void) preset_is_external;
+
+    for (int i = 0; i < (int)clique.size(); ++i)
+        for (int j = i + 1; j < (int)clique.size(); ++j)
+            if (AreAdjacent(clique[i], clique[j]) == false)
+                AddEdge(clique[i], clique[j]);
+}
+
 void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external) {// Clique cut.
     int n = clique.size();
     int add_tot = 0;
@@ -1406,11 +1474,24 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
             continue;
         }
 
+        auto res_s3 = GetS3Candidates(true, preset_is_external);
+        if (!res_s3.empty()) {
+            ApplyS3Candidate(res_s3[0], k_change, preset_is_external);
+            continue;
+        }
+
         auto res_r10ast = GetAllR10ASTCandidates(preset_is_external);
         if (!res_r10ast.empty()) {
             ApplyR10ASTCandidate(res_r10ast[0], k_change);
             continue;
         }
+
+        // Is external/internal independent -- NOT TRUE!
+        /*auto res_r8 = GetAllR8Candidates();
+        if (!res_r8.empty()) {
+            ApplyR8Candidate(res_r8[0], k_change);
+            continue;
+        }*/
         
         break;
     }

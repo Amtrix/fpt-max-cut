@@ -166,6 +166,10 @@ public:
     vector<vector<int>> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
     void ApplyS2Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
 
+    // Get "almost cliques" (missing one edge) with at least one internal vertex.
+    vector<vector<int>> GetS3Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
+    void ApplyS3Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
+
     void ExecuteExhaustiveKernelization();
     void ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool>& preset_is_external);
 
