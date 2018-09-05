@@ -13,6 +13,10 @@ using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
+    Benchmark_Kernelization() {
+        tot_case_coverage_cnt = vector<int>(20, 0);
+    }
+
     void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {
@@ -84,6 +88,13 @@ public:
                     case_coverage_cnt[7]++;
                     continue;
                 }
+
+                auto res_rs3 = kernelized.GetS3Candidates(true);
+                if (!res_rs3.empty()) {
+                    kernelized.ApplyS3Candidate(res_rs3[0], k_change);
+                    case_coverage_cnt[6]++;
+                    continue;
+                }
                 
                 break;
             }
@@ -102,7 +113,10 @@ public:
             cout << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
             cout << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
             cout << "Case coverage (=number of applications) = ";
-            for (int r = 0; r < 10; ++r) cout << case_coverage_cnt[r] << " ";
+            for (int r = 0; r < 10; ++r) {
+                cout << case_coverage_cnt[r] << " ";
+                tot_case_coverage_cnt[r] += case_coverage_cnt[r];
+            }
             cout << endl;
 
             
@@ -149,6 +163,14 @@ public:
         test_id++;
     }
 
+    void PostProcess(InputParser& /* input */) override {
+        cout << "Total case coverage: " << endl;
+        for (int i = 0; i < (int)tot_case_coverage_cnt.size(); ++i)
+            cout << tot_case_coverage_cnt[i] << " ";
+        cout << endl;
+    }
+
 private:
+    vector<int> tot_case_coverage_cnt;
     int test_id = 1;
 };

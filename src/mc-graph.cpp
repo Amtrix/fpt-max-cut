@@ -1442,14 +1442,17 @@ vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetAllS4Candidates(const unorde
             for (int k = 0; k < (int)adjA.size() && !ok; ++k) {
                 for (int l = k + 1; l < (int)adjA.size() && !ok; ++l) {
                     nodeC = adjA[k], nodeD = adjA[l];
-                    if (AreAdjacent(nodeB, nodeC) && AreAdjacent(nodeB, nodeD) && KeyExists(nodeC, preset_is_external) == false && KeyExists(nodeD, preset_is_external) == false)
+                    if (KeyExists(nodeC, preset_is_external)) continue;
+                    if (KeyExists(nodeD, preset_is_external)) continue;
+                    if (AreAdjacent(nodeB, nodeC) && AreAdjacent(nodeB, nodeD))
                         ok = true;
                 }
             }
 
             if (!ok) continue;
 
-            if (Degree(nodeC) == 2 && Degree(nodeD) == 2 && (KeyExists(nodeA, preset_is_external) == false || KeyExists(nodeB, preset_is_external) == false))
+            if (Degree(nodeC) == 2 && Degree(nodeD) == 2 && ((KeyExists(nodeA, preset_is_external) == false && Degree(nodeA) == 2)
+                                                          || (KeyExists(nodeB, preset_is_external) == false && Degree(nodeB) == 2)))
                 ret.push_back(make_tuple(0, nodeA, nodeB, nodeC, nodeD));
             else if (Degree(nodeC) == 3 && Degree(nodeD) == 3 && AreAdjacent(nodeC, nodeD))
                 ret.push_back(make_tuple(1, nodeA, nodeB, nodeC, nodeD));
@@ -1555,6 +1558,7 @@ void MaxCutGraph::ExecuteExhaustiveKernelization() {
 void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool> &preset_is_external) {
     double k_change = 0;
     while (true) {
+        
         auto res_rs2 = GetS2Candidates(true, preset_is_external);
         if (!res_rs2.empty()) {
             ApplyS2Candidate(res_rs2[0], k_change, preset_is_external);
@@ -1585,6 +1589,7 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
             continue;
         }
 
+      
         auto res_s5 = GetAllS5Candidates(preset_is_external);
         if (!res_s5.empty()) {
             ApplyS5Candidate(res_s5[0], k_change);

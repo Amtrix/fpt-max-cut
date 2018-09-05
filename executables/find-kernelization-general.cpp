@@ -93,7 +93,7 @@ vector<pair<int,int>> IncreaseBy1(const vector<pair<int,int>> &v) {
 
 pair<int,int> RevPair(pair<int,int> p) { return make_pair(p.second, p.first); }
 
-string EncodeDiff(vector<int> &cuts) {
+string EncodeDiff(const vector<int> &cuts) {
     string ret = "";
     for (int i = 0; i + 1 < (int)cuts.size(); ++i)
         ret += (to_string(cuts[i] - cuts[i+1])) + ".";
@@ -107,16 +107,33 @@ string EncodeEdgeSet(const vector<pair<int,int>>& w) {
     return ret;
 }
 
+vector<int> GetMaxcutDependentOnNc(vector<pair<int,int>> &edges) {
+    vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
+    for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
+        int mx_cut = 0;
+        for (int nrem_mask = 0; nrem_mask < (1 << (n-nc)); ++nrem_mask) {
+            vector<int> color;
+            for (int i = 0; i < nc; ++i) color.push_back((nc_mask & (1 << i)) != 0);
+            for (int i = 0; i < n - nc; ++i) color.push_back((nrem_mask & (1 << i)) != 0);
+
+            int cut = 0;
+            for (auto e : edges) cut += color[e.first] != color[e.second];
+            mx_cut = max(mx_cut, cut);
+        }
+        maxcut_dependent_on_nc.push_back(mx_cut);
+    }
+    return maxcut_dependent_on_nc;
+}
+
 int main() {
     ios_base::sync_with_stdio(false);
     cin >> n >> nc;
 
     unordered_map<string, vector<pair<int, vector<pair<int,int>>>> > equiv_cls;
     unordered_map<string, bool> visited;
-    unordered_map<int, bool> preset_is_external;
 
-    for (int i = 0; i < nc; ++i)
-        preset_is_external[i] = true;
+    unordered_map<int, bool> preset_is_external;
+    for (int i = 0; i < nc; ++i) preset_is_external[i] = true;
 
     /* Compute all graphs and remove isomorphic ones */
     vector<vector<pair<int,int>>> all_graphs_edges;
@@ -126,10 +143,15 @@ int main() {
         if (init_visited_graph_key[init_key]) return;
 
         vector<pair<int,int>> sel = init_edges;
+        auto mxcutnc = GetMaxcutDependentOnNc(sel);
 
         if (kRemoveIsomorphisms) {
             GetAllIsomorphisms(init_edges,  [&](vector<pair<int,int>>& edges){
-                if (sel > edges) sel = edges;
+                auto mxcutnc_candidate = GetMaxcutDependentOnNc(edges);
+                if (mxcutnc_candidate > mxcutnc) {
+                    sel = edges;
+                    mxcutnc = mxcutnc_candidate;
+                }
                 const string isokey = GetGraphKey(edges);
                 init_visited_graph_key[isokey] = true;
             });
@@ -144,23 +166,8 @@ int main() {
         if (visited[edge_key]) continue;
         visited[edge_key] = true;
 
-        vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
-        for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
-            int mx_cut = 0;
-            for (int nrem_mask = 0; nrem_mask < (1 << (n-nc)); ++nrem_mask) {
-                vector<int> color;
-                for (int i = 0; i < nc; ++i) color.push_back((nc_mask & (1 << i)) != 0);
-                for (int i = 0; i < n - nc; ++i) color.push_back((nrem_mask & (1 << i)) != 0);
-
-                int cut = 0;
-                for (auto e : edges) cut += color[e.first] != color[e.second];
-                mx_cut = max(mx_cut, cut);
-            }
-            maxcut_dependent_on_nc.push_back(mx_cut);
-        }
-
+        const auto maxcut_dependent_on_nc = GetMaxcutDependentOnNc(edges);
         const auto key = EncodeDiff(maxcut_dependent_on_nc);
-        
         equiv_cls[key].push_back(make_pair(maxcut_dependent_on_nc[0], edges));
     }
 
@@ -180,8 +187,13 @@ int main() {
 
         if (kRemoveIsomorphisms) {
             auto sel = kedges;
+            auto mxcutnc = GetMaxcutDependentOnNc(sel);
             GetAllIsomorphisms(kedges,  [&](vector<pair<int,int>>& edges){
-                if (sel > edges) sel = edges;
+                auto mxcutnc_candidate = GetMaxcutDependentOnNc(edges);
+                if (mxcutnc_candidate > mxcutnc) {
+                    sel = edges;
+                    mxcutnc = mxcutnc_candidate;
+                }
                 const string isokey = GetGraphKey(edges);
                 visited_graph_key[isokey] = true;
             });

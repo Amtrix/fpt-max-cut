@@ -18,12 +18,12 @@ using namespace std;
 const int kDataSetCount = 1;
 const string paths[] = {
    //"../data/biqmac/ising",
-    "../data/biqmac/rudy",
+    //"../data/biqmac/rudy",
   //  "../data/custom",
   //  "../data/KaGen/ba",
   //  "../data/KaGen/gnp_undirected",
   //  "../data/KaGen/rhg",
-    "../data/KaGen-2/rdg_2d_1024"//,
+    "../data/KaGen-2/rhg_1024_g2.4"//,
 };
 
 /*
