@@ -49,6 +49,7 @@ public:
 
     const vector<int>& GetAdjacency(int node) const { return g_adj_list[node]; }
     bool AreAdjacent(int n1, int n2) { return edge_exists_lookup[make_pair(n1,n2)]; }
+    int Degree(int node) { return GetAdjacency(node).size(); }
 
     // https://github.com/niklasb/tcr/blob/master/graphentheorie/arti-bruecken.cpp
     void ComputeArticulationAndBiconnected();
@@ -141,7 +142,7 @@ public:
     vector<int> GetMaxCutColoring() { return computed_maxcut_coloring; }
 
     // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
-    vector<vector<int>> GetAllR8Candidates();
+    vector<vector<int>> GetAllR8Candidates(const unordered_map<int,bool>& preset_is_external = {});
     void ApplyR8Candidate(const vector<int> &clique, double &cut_change);
 
     // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
@@ -168,7 +169,13 @@ public:
 
     // Get "almost cliques" (missing one edge) with at least one internal vertex.
     vector<vector<int>> GetS3Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
-    void ApplyS3Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
+    void ApplyS3Candidate(const vector<int> &clique, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
+
+    vector<tuple<bool,int,int,int,int>> GetAllS4Candidates(const unordered_map<int,bool>& preset_is_external = {});
+    void ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate, double &cut_change);
+    
+    vector<tuple<int,int,int,int>> GetAllS5Candidates(const unordered_map<int,bool>& preset_is_external = {});
+    void ApplyS5Candidate(const tuple<int,int,int,int>& candidate, double &cut_change);
 
     void ExecuteExhaustiveKernelization();
     void ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool>& preset_is_external);

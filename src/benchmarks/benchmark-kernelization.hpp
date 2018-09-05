@@ -70,6 +70,20 @@ public:
                     case_coverage_cnt[5]++;
                     continue;
                 }
+
+                auto res_s5 = kernelized.GetAllS5Candidates();
+                if (!res_s5.empty()) {
+                    kernelized.ApplyS5Candidate(res_s5[0], k_change);
+                    case_coverage_cnt[8]++;
+                    continue;
+                }
+
+                auto res_s4 = kernelized.GetAllS4Candidates();
+                if (!res_s4.empty()) {
+                    kernelized.ApplyS4Candidate(res_s4[0], k_change);
+                    case_coverage_cnt[7]++;
+                    continue;
+                }
                 
                 break;
             }

@@ -7,7 +7,7 @@ const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
 const bool kBreakWhenSmaller = false;
 const bool kKernelizeAndVisit = true;
-const bool kRemoveIsomorphisms = false;
+const bool kRemoveIsomorphisms = true;
 
 int n = 4;
 int nc = 3;

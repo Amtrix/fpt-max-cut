@@ -32,6 +32,20 @@ std::function<void()> suite[] = {
 
             double k_change = 0;
             while (true) {
+                auto res_s5 = kernelized.GetAllS5Candidates();
+                if (!res_s5.empty()) {
+                    kernelized.ApplyS5Candidate(res_s5[0], k_change);
+                    case_coverage_cnt[8]++;
+                    continue;
+                }
+
+                auto res_s4 = kernelized.GetAllS4Candidates();
+                if (!res_s4.empty()) {
+                    kernelized.ApplyS4Candidate(res_s4[0], k_change);
+                    case_coverage_cnt[7]++;
+                    continue;
+                }
+
                 auto res_rs2 = kernelized.GetS2Candidates(true);
                 if (!res_rs2.empty()) {
                     kernelized.ApplyS2Candidate(res_rs2[0], k_change);
@@ -89,24 +103,6 @@ std::function<void()> suite[] = {
             auto heur_sol = G.ComputeMaxCutHeuristically();
             auto heur_sol_k = kernelized.ComputeMaxCutHeuristically();
             VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change);
-            //double local_search_cut_size = G.ComputeLocalSearchCut().first;
-            //double local_search_cut_size_k = kernelized.ComputeLocalSearchCut().first;
-            
-            /*
-            cout << "STATS: " << endl;
-            cout << "Nodes: " << G.GetAllExistingNodes().size() << " " << kernelized.GetAllExistingNodes().size() << endl;
-            cout << "Edges: " << G.GetAllExistingEdges().size() << " " << kernelized.GetAllExistingEdges().size() << endl;
-            cout << "MQLib sol G: " << heur_sol.first << endl;
-            cout << "MQLib sol G': " << heur_sol_k.first << endl;
-            cout << "EE': " << EE_k << endl;
-            cout << "EE: " << EE << endl;
-            cout << "LOCAL_SEARCH(G) = " << local_search_cut_size << endl;
-            cout << "LOCAL_SEARCH(G') = " << local_search_cut_size_k << endl;
-            cout << "LOW_BOUND_CUT_SIZE_G'(G) = " << local_search_cut_size_k + (EE - EE_k) + -k_change/4.0 << endl;
-            */
-
-           // cout << "k = " << k << endl;
-           // cout << "k' = " << k_k << endl;
         }
 
         cout << "Case coverage (=number of applications) = ";
