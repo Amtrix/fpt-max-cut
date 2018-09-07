@@ -187,6 +187,7 @@ public:
 
     // As of now, doesn't print the actual nodes. Some single nodes available.
     void PrintGraph(std::ostream& out);
+    string PrintDegrees(const unordered_map<int,bool>& preset_is_external = {});
 
     // Get cut size according to 0/1 coloring of nodes.
     int GetCutSize(const vector<int> &grouping);

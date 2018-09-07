@@ -3,6 +3,9 @@
 #include "src/mc-graph.hpp"
 using namespace std;
 
+typedef vector<pair<int,int>> graph_edges;
+
+const bool kHandleAnyProperty = false;
 const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
 const bool kBreakWhenSmaller = false;
@@ -125,6 +128,13 @@ vector<int> GetMaxcutDependentOnNc(vector<pair<int,int>> &edges) {
     return maxcut_dependent_on_nc;
 }
 
+bool IsSuperset(graph_edges &superset, graph_edges &subset) {
+    map<pair<int,int>, bool> visited;
+    for (auto e : superset) visited[e] = true;
+    for (auto e : subset) if (visited[e] == false) return false;
+    return true;
+}
+
 int main() {
     ios_base::sync_with_stdio(false);
     cin >> n >> nc;
@@ -240,6 +250,7 @@ int main() {
         bool found_exact = false;
         unordered_map<string, bool> visited_graph_key;
         int kernelized_count = 0;
+        vector<vector<pair<int,int>>> lookback_graphs_for_subsets;
         for (auto e : entries) { // iterate over all edge-sets in the class.
             auto graph_edges = e.second;
             if (kKernelizeAndVisit) {
@@ -268,7 +279,7 @@ int main() {
                 visi[edge] = true;
             }
 
-            cout << "  [";
+            cout << "      [";
             if (subset_in_result_cnt_start != 0 && subset_in_result_cnt == 0) {
                 if ((int)e.second.size() != subset_in_result_cnt_start)
                     cout << " sub:1 ";
@@ -278,11 +289,26 @@ int main() {
                 }
             }
 
-            if (any_property)
-                cout << " any:1 ";
-            else
-                cout << " any:0 ";
-            
+            if (kHandleAnyProperty) {
+                if (any_property)
+                    cout << " any:1 ";
+                else
+                    cout << " any:0 ";
+            }
+
+            int dx = -1;
+            for (int i = 0; i < (int)lookback_graphs_for_subsets.size(); ++i) {
+                if (IsSuperset(graph_edges, lookback_graphs_for_subsets[(int)lookback_graphs_for_subsets.size() - 1 - i])) {
+                    dx = i;
+                    break;
+                }
+            }
+
+            cout << "lookback:" << dx << "th    ";
+
+            auto G = MaxCutGraph(graph_edges);
+            cout << G.PrintDegrees(preset_is_external);
+            cout << "  CONNECTED=" << (G.GetAllConnectedComponents().size() == 1u);
             cout << "]";
 
             if (subset_in_result_cnt_start != 0 && subset_in_result_cnt == 0) {
@@ -293,6 +319,8 @@ int main() {
             }
 
             cout << endl;
+
+            lookback_graphs_for_subsets.push_back(graph_edges);
         }
         if (kKernelizeAndVisit) {
             double coverage = 1;

@@ -1700,6 +1700,48 @@ int MaxCutGraph::GetCutSize(const vector<int> &grouping) {
     return ret;
 }
 
+string MaxCutGraph::PrintDegrees(const unordered_map<int,bool>& preset_is_external) {
+    auto current_v = GetAllExistingNodes();
+
+    string ret = "[[->(";
+    int tottot = 0;
+    for (auto node : current_v) {
+        if (KeyExists(node, preset_is_external) == false) continue;
+        const auto adj = GetAdjacency(node);
+        int to_R = 0;
+        for (auto w : adj)
+            to_R += KeyExists(w, preset_is_external) == false;
+        tottot += to_R;
+        ret += to_string(to_R) + ",";
+    }
+
+    ret += "=" + to_string(tottot) + ")  <-(";
+    tottot = 0;
+    for (auto node : current_v) {
+        if (KeyExists(node, preset_is_external)) continue;
+        const auto adj = GetAdjacency(node);
+        int to_L = 0;
+        for (auto w : adj)
+            to_L += KeyExists(w, preset_is_external) == true;
+        tottot += to_L;
+        ret += to_string(to_L) + ",";
+    }
+
+    ret += "=" + to_string(tottot) + ")  *(";
+    tottot = 0;
+    for (auto node : current_v) {
+        const auto adj = GetAdjacency(node);
+        int tot = 0;
+        for (auto w : adj)
+            tot += KeyExists(w, preset_is_external) == KeyExists(node, preset_is_external);
+        tottot += tot;
+        ret += to_string(tot) + ",";
+    }
+    
+    ret += "=" + to_string(tottot) + ")]]";
+    return ret;
+}
+
 // http://pages.cs.wisc.edu/~shuchi/courses/880-S07/scribe-notes/lecture07.pdf
 pair<int, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> pregroup) {
     assert((int)pregroup.size() == num_nodes || pregroup.empty());
