@@ -12,6 +12,8 @@ const bool kBreakWhenSmaller = false;
 const bool kKernelizeAndVisit = true;
 const bool kRemoveIsomorphisms = true;
 
+const int kSampleMode = -3; // -2 for specific sampling, -3 for bfs with <=2-removal(take first entry from specific_sampling_set as start)
+
 int n = 4;
 int nc = 3;
 
@@ -24,9 +26,103 @@ map<pair<int,int>, bool> subset_in_result = {
 map<pair<int,int>, bool> any_in_result = {
 };
 
-void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback) {
+vector<vector<pair<int,int>>> specific_sampling_set = {
+    {{0,1}, {0,2}, {0,3}, {0,4}, {0,5}, {0,6}, {0,7}, {1,2}, {1,3}, {1,4}, {1,5}, {1,6}, {1,7},
+     {2,3}, {2,4}, {2,5}, {2,6}, {2,7}, {3,4}, {3,5}, {3,6},
+     {4,5}, {4,6}, {4,7}, {5,6}, {5,7}, {6,7}},
+
+    {{0,1}, {0,2}, {0,3}, {0,4}, {0,5}, {0,6}, {0,7}, {1,2}, {1,3}, {1,4}, {1,5}, {1,6}, {1,7},
+     {2,3}, {2,4}, {2,5}, {2,6}, {2,7}, {3,4}, {3,5}, /* {3,6}, */
+     /*{4,5},*/ {4,6}, /*{4,7},*/ {5,6}, /*{5,7},*/ {6,7}}
+};
+
+string GetGraphKey(vector<pair<int,int>> edges) {
+    string ret = "";
+    for (auto e : edges)
+        ret += "(" + to_string(e.first) + "," + to_string(e.second) +")";
+    return ret;
+}
+
+string EncodeDiff(const vector<int> &cuts) {
+    string ret = "";
+    for (int i = 0; i + 1 < (int)cuts.size(); ++i)
+        ret += (to_string(cuts[i] - cuts[i+1])) + ".";
+    return ret;
+}
+
+vector<int> GetMaxcutDependentOnNc(const vector<pair<int,int>> &edges) {
+    vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
+    for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
+        int mx_cut = 0;
+        for (int nrem_mask = 0; nrem_mask < (1 << (n-nc)); ++nrem_mask) {
+            vector<int> color;
+            for (int i = 0; i < nc; ++i) color.push_back((nc_mask & (1 << i)) != 0);
+            for (int i = 0; i < n - nc; ++i) color.push_back((nrem_mask & (1 << i)) != 0);
+
+            int cut = 0;
+            for (auto e : edges) cut += color[e.first] != color[e.second];
+            mx_cut = max(mx_cut, cut);
+        }
+        maxcut_dependent_on_nc.push_back(mx_cut);
+    }
+    return maxcut_dependent_on_nc;
+}
+
+void TryAllEdgeSets(int n, std::function<void(const vector<pair<int,int>>&)> callback) {
+    if (kSampleMode == -2) {
+        for (const auto &edges : specific_sampling_set)
+            callback(edges);
+        return;
+    } else if (kSampleMode == -3) {
+        const auto start_node = specific_sampling_set[0];
+        string cutid = EncodeDiff(GetMaxcutDependentOnNc(start_node));
+        queue<graph_edges> Q;
+        Q.push(start_node);
+
+        map<string,bool>visi;
+        visi[GetGraphKey(start_node)] = true;
+
+        while (!Q.empty()) {
+            graph_edges u = Q.front(); Q.pop();
+            callback(u);
+
+            for (int i = 0; i < (int)u.size(); ++i) {
+                
+                graph_edges nw = u;
+                nw.erase(nw.begin() + i);
+
+                string key = GetGraphKey(nw);
+                if (!visi[key]) {
+                    visi[key] = true;
+                    string nwcutid = EncodeDiff(GetMaxcutDependentOnNc(nw));
+                    if (nwcutid == cutid) Q.push(nw);
+                }
+
+                for (int j = i + 1; j < (int)u.size(); ++j) {
+                    nw = u;
+                    nw.erase(nw.begin() + i);
+                    nw.erase(nw.begin() + j - 1); // cuz i deleted and i < j
+
+                    key = GetGraphKey(nw);
+                    if (!visi[key]) {
+                        visi[key] = true;
+                        string nwcutid = EncodeDiff(GetMaxcutDependentOnNc(nw));
+                        if (nwcutid == cutid) Q.push(nw);
+                    }
+                }
+            }
+
+        }
+    }
+
     int mx_edges = (n * (n - 1)) / 2;
-    for (int mask = 0; mask < (1 << mx_edges); ++mask) {
+
+    int bound = 1 << mx_edges;
+    if (kSampleMode != -1) bound = kSampleMode;
+    for (int i = 0; i < bound; ++i) {
+        int mask = i;
+        if (kSampleMode != -1) mask = rand();
+
         vector<pair<int,int>> cumm;
         int dx = 0;
         for (int i = 0; i < n; ++i) {
@@ -78,13 +174,6 @@ vector<pair<int,int>> GetLexicographicallyLowestIso(vector<pair<int,int>> elist)
     return sel;
 }
 
-string GetGraphKey(vector<pair<int,int>> edges) {
-    string ret = "";
-    for (auto e : edges)
-        ret += "(" + to_string(e.first) + "," + to_string(e.second) +")";
-    return ret;
-}
-
 vector<pair<int,int>> IncreaseBy1(const vector<pair<int,int>> &v) {
     vector<pair<int,int>> ret;
     for (int i = 0; i < (int)v.size(); ++i)
@@ -96,37 +185,6 @@ vector<pair<int,int>> IncreaseBy1(const vector<pair<int,int>> &v) {
 
 pair<int,int> RevPair(pair<int,int> p) { return make_pair(p.second, p.first); }
 
-string EncodeDiff(const vector<int> &cuts) {
-    string ret = "";
-    for (int i = 0; i + 1 < (int)cuts.size(); ++i)
-        ret += (to_string(cuts[i] - cuts[i+1])) + ".";
-    return ret;
-}
-
-string EncodeEdgeSet(const vector<pair<int,int>>& w) {
-    string ret = "";
-    for (auto e : w)
-        ret += "(" + to_string(e.first) + "," + to_string(e.second) + "):";
-    return ret;
-}
-
-vector<int> GetMaxcutDependentOnNc(vector<pair<int,int>> &edges) {
-    vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
-    for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
-        int mx_cut = 0;
-        for (int nrem_mask = 0; nrem_mask < (1 << (n-nc)); ++nrem_mask) {
-            vector<int> color;
-            for (int i = 0; i < nc; ++i) color.push_back((nc_mask & (1 << i)) != 0);
-            for (int i = 0; i < n - nc; ++i) color.push_back((nrem_mask & (1 << i)) != 0);
-
-            int cut = 0;
-            for (auto e : edges) cut += color[e.first] != color[e.second];
-            mx_cut = max(mx_cut, cut);
-        }
-        maxcut_dependent_on_nc.push_back(mx_cut);
-    }
-    return maxcut_dependent_on_nc;
-}
 
 bool IsSuperset(graph_edges &superset, graph_edges &subset) {
     map<pair<int,int>, bool> visited;
@@ -144,11 +202,16 @@ int main() {
 
     unordered_map<int, bool> preset_is_external;
     for (int i = 0; i < nc; ++i) preset_is_external[i] = true;
+    
+    vector<int> L_vertex, R_vertex;
+    for (int i = 0; i < n; ++i)
+        if (i < nc) L_vertex.push_back(i);
+        else R_vertex.push_back(i);
 
     /* Compute all graphs and remove isomorphic ones */
     vector<vector<pair<int,int>>> all_graphs_edges;
     unordered_map<string, bool> init_visited_graph_key;
-    TryAllEdgeSets(n, [&](vector<pair<int,int>>& init_edges){
+    TryAllEdgeSets(n, [&](const vector<pair<int,int>>& init_edges){
         const string init_key = GetGraphKey(init_edges);
         if (init_visited_graph_key[init_key]) return;
 
@@ -172,7 +235,7 @@ int main() {
 
     /* Calculate equivalence classes */
     for (auto edges : all_graphs_edges) {
-        string edge_key = EncodeEdgeSet(edges);
+        string edge_key = GetGraphKey(edges);
         if (visited[edge_key]) continue;
         visited[edge_key] = true;
 
@@ -297,16 +360,21 @@ int main() {
             }
 
             int dx = -1;
+            int supersetcnt = 0;
             for (int i = 0; i < (int)lookback_graphs_for_subsets.size(); ++i) {
                 if (IsSuperset(graph_edges, lookback_graphs_for_subsets[(int)lookback_graphs_for_subsets.size() - 1 - i])) {
-                    dx = i;
-                    break;
+                    if (dx == -1) dx = i;
+                    supersetcnt++;
                 }
             }
 
             cout << "lookback:" << dx << "th    ";
+            cout << "supersetcnt:" << supersetcnt << "    ";
 
             auto G = MaxCutGraph(graph_edges);
+            cout << "clique(L,R)=(" << G.IsClique(L_vertex) << "," << G.IsClique(R_vertex) << "      ";
+
+            
             cout << G.PrintDegrees(preset_is_external);
             cout << "  CONNECTED=" << (G.GetAllConnectedComponents().size() == 1u);
             cout << "]";

@@ -1512,6 +1512,42 @@ void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate, doub
     cut_change -= 2;
 }
 
+
+vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
+    vector<pair<int,int>> ret;
+
+    auto current_v = GetAllExistingNodes();
+    for (auto root_A : current_v) { // an internal vertex
+        auto adj_root_A = GetAdjacency(root_A);
+        if (KeyExists(root_A, preset_is_external) || adj_root_A.size() == 0) continue;
+        sort(adj_root_A.begin(), adj_root_A.end());
+
+        for (auto root_B : adj_root_A) { // root_A and root_B are connected.
+            if (KeyExists(root_B, preset_is_external)) continue;
+            auto adj_root_B = GetAdjacency(root_B);
+            sort(adj_root_B.begin(), adj_root_B.end());
+            auto NG = SetSubstract(adj_root_A, {root_B});
+            
+            if (NG == SetSubstract(adj_root_B, {root_A}) && IsClique(NG)) {
+                ret.push_back(make_pair(root_A, root_B));
+                if (break_on_first) break;
+            }
+        }
+        
+        if (break_on_first && !ret.empty())
+            break;
+    }
+
+    return ret;
+}
+
+void MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, double &cut_change, const unordered_map<int,bool>& preset_is_external) {
+    (void) cut_change;
+    (void) preset_is_external;
+
+    RemoveEdgesBetween(candidate.first, candidate.second);
+}
+
 void MaxCutGraph::ExecuteExhaustiveKernelization() {
     double k_change = 0;
     while (true) {
@@ -1583,6 +1619,7 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
             continue;
         }
 
+        
         auto res_s4 = GetAllS4Candidates(preset_is_external);
         if (!res_s4.empty()) {
             ApplyS4Candidate(res_s4[0], k_change);
@@ -1590,12 +1627,20 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
         }
 
       
+        
         auto res_s5 = GetAllS5Candidates(preset_is_external);
         if (!res_s5.empty()) {
             ApplyS5Candidate(res_s5[0], k_change);
             continue;
         }
         
+        /*
+        auto res_s6 = GetAllS6Candidates(true, preset_is_external);
+        if (!res_s6.empty()) {
+            ApplyS6Candidate(res_s6[0], k_change, preset_is_external);
+            continue;
+        }*/
+
         break;
     }
 }
