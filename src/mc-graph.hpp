@@ -21,7 +21,7 @@ public:
     MaxCutGraph(const string path);
 
     // Create graph based on list of edges.
-    MaxCutGraph(const vector<pair<int,int>> &elist);
+    MaxCutGraph(const vector<pair<int,int>> &elist, int n = 0);
 
     // Create induced subgraph
     MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset);
@@ -181,6 +181,7 @@ public:
     vector<pair<int,int>> GetAllS6Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
     void ApplyS6Candidate(const pair<int,int> &candidate, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
 
+    double ExecuteLinearKernelization();
     void ExecuteExhaustiveKernelization();
     void ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool>& preset_is_external);
 

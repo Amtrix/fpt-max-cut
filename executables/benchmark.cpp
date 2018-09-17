@@ -11,6 +11,7 @@
 #include "src/benchmarks/benchmark-kernelization-applicability-count.hpp"
 #include "src/benchmarks/benchmark-count-clique-with-internal.hpp"
 #include "src/benchmarks/benchmark-playground.hpp"
+#include "src/benchmarks/benchmark-linear-kernel-paper.hpp"
 
 #include <iostream>
 using namespace std;
@@ -18,12 +19,12 @@ using namespace std;
 const int kDataSetCount = 1;
 const string paths[] = {
    //"../data/biqmac/ising",
-    //"../data/biqmac/rudy",
+    "../data/biqmac/rudy",
   //  "../data/custom",
   //  "../data/KaGen/ba",
   //  "../data/KaGen/gnp_undirected",
   //  "../data/KaGen/rhg",
-    "../data/KaGen-2/rhg_1024_g2.4"//,
+  //  "../data/KaGen-2/rhg_1024_g2.4"//,
 };
 
 /*
@@ -88,6 +89,8 @@ int main(int argc, char **argv){
         benchmark_action.reset(new Benchmark_CountCliquesWithInternal());
     } else if (action == "playground") {
         benchmark_action.reset(new Benchmark_Playground());
+    } else if (action == "linear-kernel") {
+        benchmark_action.reset(new Benchmark_LinearKernelPaper());
     }
     else throw std::logic_error("Action flag not defined.");
 

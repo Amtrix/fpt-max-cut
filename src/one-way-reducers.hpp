@@ -35,6 +35,9 @@ int TryRule7(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k)
             inside_component.push_back(node);
     
     if (inside_component.size() == 2) {
+        if (G.AreAdjacent(inside_component[0], inside_component[1]))
+            return -1;
+
         vector<int> s1 = SetSubstract(leaf_block, {r, inside_component[0]});
         vector<int> s2 = SetSubstract(leaf_block, {r, inside_component[1]});
         vector<int> intersect = SetSubstract(leaf_block, {r, inside_component[0], inside_component[1]});

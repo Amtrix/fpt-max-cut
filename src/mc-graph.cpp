@@ -50,8 +50,8 @@ MaxCutGraph::MaxCutGraph(const string path) {
     OutputDebugLog("Reading from file done.");
 }
 
-MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist) {
-    num_nodes = 0;
+MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist, int n) {
+    num_nodes = n;
     g_adj_list.resize(2000);
     for (auto e : elist) {
         int a = e.first;
@@ -1548,6 +1548,27 @@ void MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, double &cut_c
     RemoveEdgesBetween(candidate.first, candidate.second);
 }
 
+double MaxCutGraph::ExecuteLinearKernelization() {
+    double k_change = 0;
+    while (true) {
+        auto res_r8 = GetAllR8Candidates(); // 
+        if (!res_r8.empty()) {
+            ApplyR8Candidate(res_r8[0], k_change);
+            continue;
+        }
+        
+        auto res_r9 = GetAllR9Candidates();
+        if (!res_r9.empty()) {
+            ApplyR9Candidate(res_r9[0], k_change);
+            continue;
+        }
+
+        break;
+    }
+
+    return k_change;
+}
+
 void MaxCutGraph::ExecuteExhaustiveKernelization() {
     double k_change = 0;
     while (true) {
@@ -1594,13 +1615,14 @@ void MaxCutGraph::ExecuteExhaustiveKernelization() {
 void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool> &preset_is_external) {
     double k_change = 0;
     while (true) {
-        
+        /*
         auto res_rs2 = GetS2Candidates(true, preset_is_external);
         if (!res_rs2.empty()) {
             ApplyS2Candidate(res_rs2[0], k_change, preset_is_external);
             continue;
-        }
+        }*/
 
+        
         auto res_s3 = GetS3Candidates(true, preset_is_external);
         if (!res_s3.empty()) {
             ApplyS3Candidate(res_s3[0], k_change, preset_is_external);
@@ -1634,12 +1656,12 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
             continue;
         }
         
-        /*
+        
         auto res_s6 = GetAllS6Candidates(true, preset_is_external);
         if (!res_s6.empty()) {
             ApplyS6Candidate(res_s6[0], k_change, preset_is_external);
             continue;
-        }*/
+        }
 
         break;
     }
@@ -1746,10 +1768,19 @@ int MaxCutGraph::GetCutSize(const vector<int> &grouping) {
 }
 
 string MaxCutGraph::PrintDegrees(const unordered_map<int,bool>& preset_is_external) {
-    auto current_v = GetAllExistingNodes();
+    //auto current_v = GetAllExistingNodes();
+    vector<int> current_v;
+    for (int i = 0; i < num_nodes; ++i) current_v.push_back(i);
 
-    string ret = "[[->(";
+    string ret = "[[deg(";
     int tottot = 0;
+    for (auto node : current_v) {
+        tottot += Degree(node);
+        ret += to_string(Degree(node)) + ",";
+    }
+
+    ret += "=" + to_string(tottot) + ")  ->(";
+    tottot = 0;
     for (auto node : current_v) {
         if (KeyExists(node, preset_is_external) == false) continue;
         const auto adj = GetAdjacency(node);

@@ -5,6 +5,9 @@ using namespace std;
 
 typedef vector<pair<int,int>> graph_edges;
 
+const bool kRequireLClique = false;
+
+const bool kRoughAnalaysis = false;
 const bool kHandleAnyProperty = false;
 const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
@@ -12,7 +15,7 @@ const bool kBreakWhenSmaller = false;
 const bool kKernelizeAndVisit = true;
 const bool kRemoveIsomorphisms = true;
 
-const int kSampleMode = -3; // -2 for specific sampling, -3 for bfs with <=2-removal(take first entry from specific_sampling_set as start)
+const int kSampleMode = -1; // -1 for normal mode, -2 for specific sampling, -3 for bfs with <=2-removal(take first entry from specific_sampling_set as start)
 
 int n = 4;
 int nc = 3;
@@ -27,14 +30,21 @@ map<pair<int,int>, bool> any_in_result = {
 };
 
 vector<vector<pair<int,int>>> specific_sampling_set = {
-    {{0,1}, {0,2}, {0,3}, {0,4}, {0,5}, {0,6}, {0,7}, {1,2}, {1,3}, {1,4}, {1,5}, {1,6}, {1,7},
+   /* {{0,1}, {0,2}, {0,3}, {0,4}, {0,5}, {0,6}, {0,7}, {1,2}, {1,3}, {1,4}, {1,5}, {1,6}, {1,7},
      {2,3}, {2,4}, {2,5}, {2,6}, {2,7}, {3,4}, {3,5}, {3,6},
-     {4,5}, {4,6}, {4,7}, {5,6}, {5,7}, {6,7}},
+     {4,5}, {4,6}, {4,7}, {5,6}, {5,7}, {6,7}},*/
 
-    {{0,1}, {0,2}, {0,3}, {0,4}, {0,5}, {0,6}, {0,7}, {1,2}, {1,3}, {1,4}, {1,5}, {1,6}, {1,7},
-     {2,3}, {2,4}, {2,5}, {2,6}, {2,7}, {3,4}, {3,5}, /* {3,6}, */
-     /*{4,5},*/ {4,6}, /*{4,7},*/ {5,6}, /*{5,7},*/ {6,7}}
+     {{0,1}, {0,2}, {0,3}, {0,4}, {0,5}, {0,6}, {0,7}, {0,8}, {0,9},     {1,2}, {1,3}, {1,4}, {1,5}, {1,6}, {1,7}, {1,8}, {1,9},      {2,3}, {2,4}, {2,5}, {2,6}, {2,7}, {2,8}, {2,9},            {3,4}, {3,5}, {3,6}, {3,7}, {3,8}, {3,9},    {4,5}, {4,6}, {4,7}, {4,8}, 
+      {5,6}, {5,7}, {5,8}, {5,9}, {6,7}, {6,8}, {6,9}, {7,8}, {7,9}, {8,9}}
+
+
+      /*{{0,1}, {0,2}, {0,3}, {0,4}, {0,5}, {0,6}, {0,7}, {0,8}, {0,9}, {0,10}, {0,11},     {1,2}, {1,3}, {1,4}, {1,5}, {1,6}, {1,7}, {1,8}, {1,9}, {1,10}, {1,11},      {2,3}, {2,4}, {2,5}, {2,6}, {2,7}, {2,8}, {2,9}, {2,10}, {2,11},            
+                        {3,4}, {3,5}, {3,6}, {3,7}, {3,8}, {3,9}, {3,10}, {3,11},    {4,5}, {4,6}, {4,7}, {4,8}, {4,10}, {4,11}, {5,6}, {5,7}, {5,8}, {5,10},
+       {6,7}, {6,8}, {6,9}, {6,10}, {6,11}, {7,8}, {7,9}, {7,10}, {7,11}, {8,9}, {8,10}, {8,11}, {9,10}, {9,11}, {10,11}}*/
 };
+
+vector<int> L_vertex, R_vertex;
+unordered_map<int, bool> preset_is_external;
 
 string GetGraphKey(vector<pair<int,int>> edges) {
     string ret = "";
@@ -52,7 +62,7 @@ string EncodeDiff(const vector<int> &cuts) {
 
 vector<int> GetMaxcutDependentOnNc(const vector<pair<int,int>> &edges) {
     vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
-    for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
+    for (int nc_mask = 0; nc_mask * 2 < (1 << nc); ++nc_mask) { // simetry!
         int mx_cut = 0;
         for (int nrem_mask = 0; nrem_mask < (1 << (n-nc)); ++nrem_mask) {
             vector<int> color;
@@ -84,6 +94,16 @@ void TryAllEdgeSets(int n, std::function<void(const vector<pair<int,int>>&)> cal
 
         while (!Q.empty()) {
             graph_edges u = Q.front(); Q.pop();
+            cout << "Graph: " << GetGraphKey(u) << "     ";
+
+            auto G = MaxCutGraph(u, n);
+            cout << "clique(L,R)=(" << G.IsClique(L_vertex) << "," << G.IsClique(R_vertex) << "      ";
+
+            
+            cout << G.PrintDegrees(preset_is_external);
+            cout << "  CONNECTED=" << (G.GetAllConnectedComponents().size() == 1u);
+            cout << "]" << endl;
+
             callback(u);
 
             for (int i = 0; i < (int)u.size(); ++i) {
@@ -109,10 +129,25 @@ void TryAllEdgeSets(int n, std::function<void(const vector<pair<int,int>>&)> cal
                         string nwcutid = EncodeDiff(GetMaxcutDependentOnNc(nw));
                         if (nwcutid == cutid) Q.push(nw);
                     }
+
+                    for (int k = j + 1; k < (int)u.size(); ++k) {
+                        nw = u;
+                        nw.erase(nw.begin() + i);
+                        nw.erase(nw.begin() + j - 1); // cuz i deleted and i < j
+                        nw.erase(nw.begin() + k - 2);
+
+                        key = GetGraphKey(nw);
+                        if (!visi[key]) {
+                            visi[key] = true;
+                            string nwcutid = EncodeDiff(GetMaxcutDependentOnNc(nw));
+                            if (nwcutid == cutid) Q.push(nw);
+                        }
+                    }
                 }
             }
 
         }
+        return;
     }
 
     int mx_edges = (n * (n - 1)) / 2;
@@ -197,13 +232,10 @@ int main() {
     ios_base::sync_with_stdio(false);
     cin >> n >> nc;
 
-    unordered_map<string, vector<pair<int, vector<pair<int,int>>>> > equiv_cls;
-    unordered_map<string, bool> visited;
-
-    unordered_map<int, bool> preset_is_external;
-    for (int i = 0; i < nc; ++i) preset_is_external[i] = true;
     
-    vector<int> L_vertex, R_vertex;
+
+    
+    for (int i = 0; i < nc; ++i) preset_is_external[i] = true;
     for (int i = 0; i < n; ++i)
         if (i < nc) L_vertex.push_back(i);
         else R_vertex.push_back(i);
@@ -211,9 +243,17 @@ int main() {
     /* Compute all graphs and remove isomorphic ones */
     vector<vector<pair<int,int>>> all_graphs_edges;
     unordered_map<string, bool> init_visited_graph_key;
+    unordered_map<string, bool> class_count;
+    unordered_map<string, bool> tot_class_count;
     TryAllEdgeSets(n, [&](const vector<pair<int,int>>& init_edges){
         const string init_key = GetGraphKey(init_edges);
         if (init_visited_graph_key[init_key]) return;
+
+        if (kRequireLClique) {
+            MaxCutGraph G(init_edges);
+            if (G.IsClique(L_vertex) == false)
+                return;
+        }
 
         vector<pair<int,int>> sel = init_edges;
         auto mxcutnc = GetMaxcutDependentOnNc(sel);
@@ -221,6 +261,7 @@ int main() {
         if (kRemoveIsomorphisms) {
             GetAllIsomorphisms(init_edges,  [&](vector<pair<int,int>>& edges){
                 auto mxcutnc_candidate = GetMaxcutDependentOnNc(edges);
+                tot_class_count[EncodeDiff(mxcutnc_candidate)] = true;
                 if (mxcutnc_candidate > mxcutnc) {
                     sel = edges;
                     mxcutnc = mxcutnc_candidate;
@@ -230,10 +271,23 @@ int main() {
             });
         }
 
+        
+        class_count[EncodeDiff(mxcutnc)] = true;
         all_graphs_edges.push_back(sel);
     });
 
+    
+
+    if (kRoughAnalaysis) {
+        cout << "Number of classes: " << class_count.size() << endl; // beware, using = false increases this too.
+        cout << "Total number of classes -- including visited isos (with visited isomorphisms) [kRemoveIso has to be active]: " << tot_class_count.size() << endl; // beware, using = false increases this too.
+        cout << "Graph set computation complete." << endl;
+        return 0;
+    }
+
     /* Calculate equivalence classes */
+    unordered_map<string, vector<pair<int, vector<pair<int,int>>>> > equiv_cls;
+    unordered_map<string, bool> visited;
     for (auto edges : all_graphs_edges) {
         string edge_key = GetGraphKey(edges);
         if (visited[edge_key]) continue;
@@ -248,7 +302,7 @@ int main() {
     auto kernelizeandmark = [&](vector<pair<int,int>> &elist,
                                 unordered_map<string, bool> &visited_graph_key) {
         auto graph_edges = elist;
-        MaxCutGraph G(elist);
+        MaxCutGraph G(elist, n);
         G.ExecuteExhaustiveKernelizationExternalsSupport(preset_is_external);
 
         auto kedges = G.GetAllExistingEdges();
@@ -371,7 +425,7 @@ int main() {
             cout << "lookback:" << dx << "th    ";
             cout << "supersetcnt:" << supersetcnt << "    ";
 
-            auto G = MaxCutGraph(graph_edges);
+            auto G = MaxCutGraph(graph_edges, n);
             cout << "clique(L,R)=(" << G.IsClique(L_vertex) << "," << G.IsClique(R_vertex) << "      ";
 
             
