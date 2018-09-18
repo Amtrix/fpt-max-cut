@@ -81,3 +81,8 @@ target_link_libraries(find-kernelization-clique PRIVATE ${TARGET_LIBS})
 add_executable(lower-bound-num-of-class-computation executables/lower-bound-num-of-class-computation.cpp)
 target_sources(lower-bound-num-of-class-computation PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(lower-bound-num-of-class-computation PRIVATE ${TARGET_LIBS})
+
+
+add_executable(remove-double-edges executables/remove-double-edges.cpp)
+target_sources(remove-double-edges PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(remove-double-edges PRIVATE ${TARGET_LIBS})

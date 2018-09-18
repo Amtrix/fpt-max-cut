@@ -25,6 +25,8 @@ const string paths[] = {
   //  "../data/KaGen/gnp_undirected",
   //  "../data/KaGen/rhg",
   //  "../data/KaGen-2/rhg_1024_g2.4"//,
+
+   // "../data/thesis-tests/kagen-large-dense/tests"
 };
 
 /*

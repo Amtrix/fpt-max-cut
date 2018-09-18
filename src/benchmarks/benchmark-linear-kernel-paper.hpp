@@ -9,28 +9,23 @@
 #include "../output-filter.hpp"
 
 #include <iostream>
+#include <chrono>
 using namespace std;
 
 class Benchmark_LinearKernelPaper : public BenchmarkAction {
 public:
     Benchmark_LinearKernelPaper() {
-        tot_case_coverage_cnt = vector<int>(20, 0);
+        tot_used_rules = vector<int>(20, 0);
     }
 
     void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
+        BenchmarkAction::Evaluate(input, data_filepath);
+        string data_filepath_key = BenchmarkAction::GetKey(data_filepath);
+
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {
             num_iterations = stoi(input.getCmdOption("-num-iterations"));
         }
-
-        string key = "";
-        int dx = ((int)data_filepath.size()) - 1;
-        while (data_filepath[dx] != '/' && data_filepath[dx] != '\\')
-            key += data_filepath[dx--];
-        key = key.substr(key.find('.'));
-        
-        if (mixingid[key] == 0) mixingid[key] = mixingid_giver++;
-
 
         vector<vector<double>> accum;
         for (int iteration = 1; iteration <= num_iterations; ++iteration) {
@@ -39,39 +34,59 @@ public:
             int change_tmp = 0;
             MaxCutGraph G_processing_oneway = G; // ! make sure no pointers in G !
             int rule_taken = -1;
+            auto t0 = std::chrono::high_resolution_clock::now();
             while ((rule_taken = TryOneWayReduce(G_processing_oneway, change_tmp)) != -1) {
                 OutputDebugLog("RULE: " + to_string(rule_taken));
                 OutputDebugLog("-----------");
+                tot_used_rules[rule_taken]++;
             }
+            auto t1 = std::chrono::high_resolution_clock::now();
+            double oneway_time = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
 
             auto marked = G_processing_oneway.GetMarkedVerticesByOneWayRules();
 
             G.SetMarkedVertices(G_processing_oneway.GetMarkedVerticesByOneWayRules());
             const int s_size_oneway = G.GetMarkedVerticesByOneWayRules().size();
 
-
             // Try reduce size of S
-            G.ReduceMarksetVertexSet();
-            const int s_size_oneway_with_reverse = G.GetMarkedVerticesByOneWayRules().size();
+            string perform_reduce = "yes";
+            if (input.cmdOptionExists("-do-reduce"))
+                perform_reduce = input.getCmdOption("-do-reduce");
 
+            int s_size_oneway_with_reverse = -1;
+            double oneway_reduc_time = -1;
+            int s_size_adhoc = -1;
+            if (perform_reduce == "yes") {
+                G.ReduceMarksetVertexSet();
+                s_size_oneway_with_reverse = G.GetMarkedVerticesByOneWayRules().size();
+                auto t2 = std::chrono::high_resolution_clock::now();
+                oneway_reduc_time = std::chrono::duration_cast<std::chrono::microseconds> (t2 - t0).count()/1000.;
+                s_size_adhoc = G.Algorithm3MarkedComputation_Randomized();
+            }
 
-            const int s_size_adhoc = G.Algorithm3MarkedComputation_Randomized();
-            OutputMarkedSetAnalysis(input, data_filepath, mixingid[key], iteration, G.GetRealNumNodes(), G.GetRealNumEdges(), s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc);
+            
+            OutputMarkedSetAnalysis(input, data_filepath, mixingid[data_filepath_key], iteration, G.GetRealNumNodes(), G.GetRealNumEdges(), s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc, oneway_time, oneway_reduc_time);
         }
 
         test_id++;
     }
 
-    void PostProcess(InputParser& /* input */) override {
-        cout << "Total case coverage: " << endl;
-        for (int i = 0; i < (int)tot_case_coverage_cnt.size(); ++i)
-            cout << tot_case_coverage_cnt[i] << " ";
+    void PostProcess(InputParser& input) override {
+        cout << "Total rules coverage: " << endl;
+        for (int i = 0; i < (int)tot_used_rules.size(); ++i)
+            cout << tot_used_rules[i] << " ";
         cout << endl;
+
+
+        std::stringstream buffer;
+        buffer << "Total rules coverage: " << endl;
+        for (int i = 0; i < (int)tot_used_rules.size(); ++i)
+            buffer << tot_used_rules[i] << " ";
+        buffer << endl;
+        OutputMarkedSetAnalysisMeta(input, string(buffer.str()));
     }
 
 private:
-    int mixingid_giver = 1;
-    map<string,int> mixingid;
-    vector<int> tot_case_coverage_cnt;
+    vector<int> tot_used_rules;
     int test_id = 1;
 };

@@ -35,6 +35,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
     } else {
         num_nodes = 0;
         g_adj_list.resize(2000);
+        vector<pair<int,int>> elist;
         while (in.eof() == false) {
             sparams = ReadLine(in);
             if (sparams.size() == 0) continue;
@@ -43,8 +44,12 @@ MaxCutGraph::MaxCutGraph(const string path) {
             int b = stoi(sparams[1]);
             if (a >= 2000 || b >= 2000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
             num_nodes = max(num_nodes, max(a + 1, b + 1));
-            AddEdge(a, b);
+            elist.push_back(make_pair(a,b));
+            //AddEdge(a, b);
         }
+        
+        for (auto e : elist)
+            AddEdge(e.first, e.second);
     }
     
     OutputDebugLog("Reading from file done.");
@@ -72,9 +77,9 @@ MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) :
         removed_node[node] = false;
 
     for (const int node : subset) {
-        auto adj = source.GetAdjacency(node);
+        auto &adj = source.GetAdjacency(node);
         for (const int w : adj) {
-            if (removed_node[w] || edge_exists_lookup[make_pair(node, w)])
+            if (w < node || removed_node[w])
                 continue;
 
             AddEdge(node, w);
@@ -229,14 +234,24 @@ vector<vector<int>> MaxCutGraph::GetAllConnectedComponents() {
 bool MaxCutGraph::DoesDisconnect(vector<int> selection_rem) {
     auto before = GetAllConnectedComponents();
     auto vset_after_sub = SetSubstract(GetAllExistingNodes(), selection_rem);
-    MaxCutGraph ng(*this, vset_after_sub);
+    MaxCutGraph ng(*this, vset_after_sub); // this is a bit slow....
     auto after = ng.GetAllConnectedComponents();
+
+    unordered_map<int,bool> mark_rem;
+    for (auto node : selection_rem)
+        mark_rem[node] = true;
 
     // If a whole component gets deleted, it doesn't make the graph disconnected, so account for these cases.
     int num_deleted_whole_components = 0;
-    for (auto component : before)
-        if (IsASubsetOfB(component, selection_rem))
+    for (auto component : before) {
+        bool wholly_removed = true;
+        for (auto node : component)
+            if (mark_rem[node] == false)
+                wholly_removed = false;
+
+        if (wholly_removed)
             num_deleted_whole_components++;
+    }
     
     return before.size() != (after.size() + num_deleted_whole_components);
 }
@@ -281,8 +296,8 @@ void MaxCutGraph::RemoveNode(int node) {
         if (it != g_adj_list[i].end())
             g_adj_list[i].erase(it);
         
-        edge_exists_lookup.erase(make_pair(node, i));
-        edge_exists_lookup.erase(make_pair(i, node));
+        edge_exists_lookup.erase(MakeEdgeKey(node, i));
+        edge_exists_lookup.erase(MakeEdgeKey(i, node));
     }
 
     removed_node[node] = true;
@@ -300,8 +315,8 @@ void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
     if (it != g_adj_list[nodey].end())
         g_adj_list[nodey].erase(it);
     
-    edge_exists_lookup.erase(make_pair(nodex, nodey));
-    edge_exists_lookup.erase(make_pair(nodey, nodex));
+    edge_exists_lookup.erase(MakeEdgeKey(nodex, nodey));
+    edge_exists_lookup.erase(MakeEdgeKey(nodey, nodex));
 }
 
 void MaxCutGraph::RemoveEdgesInComponent(const vector<int> &component) {
@@ -335,7 +350,7 @@ vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() {
 bool MaxCutGraph::IsClique(const vector<int>& vertex_set) {
     for (unsigned int i = 0; i < vertex_set.size(); ++i)
         for (unsigned int j = i + 1; j < vertex_set.size(); ++j)
-            if (edge_exists_lookup[make_pair(vertex_set[i], vertex_set[j])] == false)
+            if (edge_exists_lookup[MakeEdgeKey(vertex_set[i], vertex_set[j])] == false)
                 return false;
     return true;
 }
@@ -346,9 +361,9 @@ void MaxCutGraph::ApplyRule3(const vector<int>& c_with_v, const int v) {
     for (const int node : c_with_v) {
         if (node == v) continue;
 
-        if (edge_exists_lookup[make_pair(node, v)])
+        if (edge_exists_lookup[MakeEdgeKey(node, v)])
             any_adj_to_v_node = node;
-        if (!edge_exists_lookup[make_pair(node, v)])
+        if (!edge_exists_lookup[MakeEdgeKey(node, v)])
             any_nonadj_to_v_node = node;
         
         if (any_adj_to_v_node >= 0 && any_nonadj_to_v_node >= 0)
@@ -504,21 +519,22 @@ vector<int> MaxCutGraph::FindInducedPathForRule6(const vector<int>& component, c
         int current_min_d_xr = 1e9;
         int selected_x = -1, selected_y = -1;
         for (unsigned int i = 0; i < component_minus_r.size(); ++i) {
+            int x = component_minus_r[i];
+            int d_xr = c_graph.GetSingleSourceDistance(x);
+            if (current_min_d_xr <= d_xr) continue;
+
             for (unsigned int j = 0; j < component_minus_r.size(); ++j) { // we can't do j = i + 1, because symmetry not given in x and y because of min(r,x) condition.
                 if (i == j) continue;
 
-                int x = component_minus_r[i];
                 int y = component_minus_r[j];
 
-                if (edge_exists_lookup[make_pair(x,y)]) continue;
+                if (edge_exists_lookup[MakeEdgeKey(x,y)]) continue;
                 if (Li[1] == vector<int>{x,y}) continue;
                 
-                int d_xr = c_graph.GetSingleSourceDistance(x);
-                if (current_min_d_xr > d_xr) {
-                    current_min_d_xr = d_xr;
-                    selected_x = x;
-                    selected_y = y;
-                }
+                current_min_d_xr = d_xr;
+                selected_x = x;
+                selected_y = y;
+                break;
             }
         }
         OutputDebugLog("Selection of (x,y) = (" + to_string(selected_x) + "," + to_string(selected_y) + ")");
@@ -551,6 +567,7 @@ vector<int> MaxCutGraph::FindInducedPathForRule6(const vector<int>& component, c
             // if P.size() < 3, then P doesn't exist.
             // P.size() >= 3 has to hold because of the way we selected x,y
             // {x,y} != L[1]
+            assert(false);
         }
 
         // We still didn't succeed => we do lemma 2 now.
@@ -1089,7 +1106,7 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
         auto adj = GetAdjacency(root);
         for (auto na : adj) {
             for (auto nb : adj) {
-                if (na >= nb || edge_exists_lookup[make_pair(na,nb)] == false)
+                if (na >= nb || edge_exists_lookup[MakeEdgeKey(na,nb)] == false)
                     continue;
 
                 // skipped case Cint = 3, Cext = 0. We can't have a shared vertex among two triag-blocks hereby.
@@ -1112,7 +1129,7 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
                 bool ok = true;
                 for (int x1 : {b1.first, b1.second})
                     for (int x2: {b2.first, b2.second})
-                        if (edge_exists_lookup[make_pair(x1,x2)])
+                        if (edge_exists_lookup[MakeEdgeKey(x1,x2)])
                             ok = false;
 
                 if (!ok) continue;
@@ -1349,7 +1366,7 @@ void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, double &cut_change
 
     for (auto node : clique) {   
         for (auto node2 : clique) {
-            if (edge_exists_lookup[make_pair(node, node2)]) {
+            if (edge_exists_lookup[MakeEdgeKey(node, node2)]) {
                 RemoveEdgesBetween(node, node2);
             }
         }
@@ -1868,7 +1885,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutHeuristically() {
         auto adj = GetAdjacency(i);
         for (auto w : adj) {
             if (removed_node[w] || i >= w) continue;
-            assert(edge_exists_lookup[make_pair(w, i)]);
+            assert(edge_exists_lookup[MakeEdgeKey(w, i)]);
             edgeList.push_back(Instance::InstanceTuple(std::make_pair(i+1, w+1), 1));
         }
     }

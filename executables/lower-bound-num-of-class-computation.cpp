@@ -20,7 +20,7 @@ map<pair<int,int>, bool> subset_in_result = {
 
 
 void TryAllEdgeSets(int n, std::function<void(vector<pair<int,int>>&)> callback) {
-    int mx_edges = (n * (n - 1)) / 2;
+    //int mx_edges = (n * (n - 1)) / 2;
     for (int i = 0; i <= runs; ++i) {
         int mask = rand();
         vector<pair<int,int>> cumm;

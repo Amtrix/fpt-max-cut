@@ -32,15 +32,18 @@ public:
     int GetRealNumEdges() { return GetAllExistingEdges().size(); }
 
     void AddEdge(int a, int b) {
-        if(edge_exists_lookup[make_pair(a,b)] || a == b) {
-            //cout << "Warning: Edge added already or loop: " << a << " " << b << ". Ignored." << endl;
+        if(edge_exists_lookup[MakeEdgeKey(a,b)]) {
+            OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b));
+            return;
+        } else if (a == b) {
+            OutputDebugLog("Warning: self-loop on " + to_string(a) + " detected.");
             return;
         }
 
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);
-        edge_exists_lookup[make_pair(a,b)] = true;
-        edge_exists_lookup[make_pair(b,a)] = true;
+        edge_exists_lookup[MakeEdgeKey(a,b)] = true;
+        edge_exists_lookup[MakeEdgeKey(b,a)] = true;
 
         bicomponents_computed = false;
         articulations_computed = false;
@@ -48,7 +51,7 @@ public:
     }
 
     const vector<int>& GetAdjacency(int node) const { return g_adj_list[node]; }
-    bool AreAdjacent(int n1, int n2) { return edge_exists_lookup[make_pair(n1,n2)]; }
+    bool AreAdjacent(int n1, int n2) { return edge_exists_lookup[MakeEdgeKey(n1,n2)]; }
     int Degree(int node) { return GetAdjacency(node).size(); }
 
     // https://github.com/niklasb/tcr/blob/master/graphentheorie/arti-bruecken.cpp
@@ -205,6 +208,8 @@ public:
     vector<vector<int>> GetCliquesWithAtLeastOneInternal();
 
 private:
+    inline long long MakeEdgeKey(int a, int b) { return a * (long long)num_nodes + b; }
+
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,
         REVISIT
@@ -235,7 +240,7 @@ private:
 
     map<pair<int,int>, bool> is_bridge_between;
 
-    map<pair<int,int>, bool> edge_exists_lookup; // IMPROVE TO O(1)!!!!
+    unordered_map<long long, bool> edge_exists_lookup; // IMPROVE TO O(1)!!!!
     vector<vector<int>> g_adj_list;
     vector<vector<int>> biconnected_components;
     vector<int> paper_S;
