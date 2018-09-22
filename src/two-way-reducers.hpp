@@ -110,11 +110,6 @@ int TryRule8(MaxCutGraph& G_0, MaxCutGraph& G_minus_S, const vector<int>& S) {
 
         string largest_key = "";
         for (auto entry : partition) {
-            cout << entry.first << " = ";
-            for (auto node : partition[entry.first])
-                cout << node << " ";
-            cout << endl;
-
             if (largest_key == "" || (partition[largest_key].size() < entry.second.size()))
                 largest_key = entry.first;
         }
@@ -130,7 +125,7 @@ int TryRule8(MaxCutGraph& G_0, MaxCutGraph& G_minus_S, const vector<int>& S) {
 
         double sz = (component.size() + S_intersect_NX.size()) / 2.0;
         
-        cout << partition[largest_key].size() << " " << sz << "( = (" << component.size() << " " << S_intersect_NX.size() << ") / 2.0" <<  endl;
+      //  cout << partition[largest_key].size() << " " << sz << "( = (" << component.size() << " " << S_intersect_NX.size() << ") / 2.0" <<  endl;
         if (partition[largest_key].size() > sz && sz >= 1 - 1e-9) {
             G_0.RemoveNode(partition[largest_key][0]);
             G_0.RemoveNode(partition[largest_key][1]);
@@ -267,8 +262,8 @@ int ExhaustiveTwoWayReduce(MaxCutGraph& G_0, const vector<int>& S) {
     int res;
     if ((res = TryRule9(G_0, G_minus_S, is_triag_block)) > -1) return res;
     if ((res = TryRule8(G_0, G_minus_S, S)) > -1) return res;
-    if ((res = TryRule10(G_0, G_minus_S, S)) > -1) return res;
-    if ((res = TryRule11(G_0, G_minus_S)) > -1) return res;
+    //if ((res = TryRule10(G_0, G_minus_S, S)) > -1) return res;
+    //if ((res = TryRule11(G_0, G_minus_S)) > -1) return res;
     //if ((res = TryRule12(G_0, G_minus_S, S)) > -1) return res;
     
     return -1;

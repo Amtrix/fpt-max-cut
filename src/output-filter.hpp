@@ -48,7 +48,7 @@ vector<int> kMarkedSizeColumnDescriptor =   {10, 10, 15, 22, 15, 50};
 vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
 vector<int> kernelizationCountDescriptor =  {10, 10, 10, 10, 10, 10, 60};
 vector<int> kernelizationDescriptor =       {5, 5, 10, 10, 10, 10, 15, 15, 15, 15, 15, 15, 20, 30, 10, 10, 10, 60};
-vector<int> markedSetDescriptor = {15,15,15,15,25,25,25,25,25,50};
+vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,100};
 
 void InitOutputFiles(const InputParser& input) {
     if (input.cmdOptionExists("-oneway-reduce-marked-size")) {
@@ -84,7 +84,7 @@ void InitOutputFiles(const InputParser& input) {
         if (action == "linear-kernel") {
             const string output_path = input.getCmdOption("-benchmark-output");
             ofstream out(output_path);
-            print_row(out, markedSetDescriptor, "ssssssssss", "#sec", "#it", "#num_nodes", "#num_edges", "#marked_cnt", "#marked_time", "#marked_cnt_reduc", "#marked_cnt_reduc_time", "#marked_cnt_rand", "#file");
+            print_row(out, markedSetDescriptor, "sssssssssssss", "#sec", "#it", "#num_nodes", "#num_edges", "#num_nodes_k", "#num_edges_k", "#marked_cnt", "#marked_time", "twoway_time", "#marked_cnt_reduc", "#marked_cnt_reduc_time", "#marked_cnt_rand", "#file");
         }
     }
 }
@@ -164,21 +164,24 @@ void OutputKernelization(
 }
 
 
-void OutputMarkedSetAnalysis(const InputParser& input,
-                             const string dataset,
-                             const int sec,
-                             const int it,
-                             const int num_nodes,
-                             const int num_edges,
-                             const int marked_cnt,
-                             const int marked_cnt_reduced,
-                             const int rand_marked_cnt,
-                             const double oneway_time,
-                             const double oneway_reduc_time) {
+void OutputLinearKernelAnalysis(const InputParser& input,
+                                const string dataset,
+                                const int sec,
+                                const int it,
+                                const int num_nodes,
+                                const int num_edges,
+                                const int num_nodes_k,
+                                const int num_edges_k,
+                                const int marked_cnt,
+                                const int marked_cnt_reduced,
+                                const int rand_marked_cnt,
+                                const double oneway_time,
+                                const double twoway_time,
+                                const double oneway_reduc_time) {
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output");
         ofstream out(output_path, fstream::app);
-        print_row(out, markedSetDescriptor, "dddddfdfds", sec, it, num_nodes, num_edges, marked_cnt, oneway_time, marked_cnt_reduced, oneway_reduc_time, rand_marked_cnt, dataset.c_str());
+        print_row(out, markedSetDescriptor, "dddddddffdfds", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, marked_cnt, oneway_time, twoway_time, marked_cnt_reduced, oneway_reduc_time, rand_marked_cnt, dataset.c_str());
     }
 }
 

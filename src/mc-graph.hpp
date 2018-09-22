@@ -24,7 +24,7 @@ public:
     MaxCutGraph(const vector<pair<int,int>> &elist, int n = 0);
 
     // Create induced subgraph
-    MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset);
+    MaxCutGraph(MaxCutGraph& source, const vector<int>& subset);
 
     int GetNumNodes() const { return num_nodes; }
 
@@ -208,7 +208,7 @@ public:
     vector<vector<int>> GetCliquesWithAtLeastOneInternal();
 
 private:
-    inline long long MakeEdgeKey(int a, int b) { return a * (long long)num_nodes + b; }
+    inline long long MakeEdgeKey(int a, int b) { return a * (long long)(num_nodes+1) + b; }
 
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,
@@ -240,7 +240,7 @@ private:
 
     map<pair<int,int>, bool> is_bridge_between;
 
-    unordered_map<long long, bool> edge_exists_lookup; // IMPROVE TO O(1)!!!!
+    unordered_map<long long, bool> edge_exists_lookup;
     vector<vector<int>> g_adj_list;
     vector<vector<int>> biconnected_components;
     vector<int> paper_S;

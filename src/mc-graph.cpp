@@ -63,14 +63,17 @@ MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist, int n) {
         int b = e.second;
         if (a >= 2000 || b >= 2000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
         num_nodes = max(num_nodes, max(a + 1, b + 1));
-        AddEdge(a, b);
+        //AddEdge(a, b);
     }
+
+    for (auto e : elist)
+        AddEdge(e.first, e.second);
 }
 
-MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {
-    int source_num_nodes = source.GetNumNodes();
+MaxCutGraph::MaxCutGraph(MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {
+    removed_node.clear();
 
-    for (int i = 0; i < source_num_nodes; ++i)
+    for (int i = 0; i < num_nodes; ++i)
         removed_node[i] = true;
     
     for (const int node : subset)
@@ -79,9 +82,9 @@ MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) :
     for (const int node : subset) {
         auto &adj = source.GetAdjacency(node);
         for (const int w : adj) {
-            if (w < node || removed_node[w])
+            if (w <= node || removed_node[w]) // The added condition w >= node may actually influence results. It creates differently ordered adjacency lists in the graph.
                 continue;
-
+            
             AddEdge(node, w);
         }
     }
