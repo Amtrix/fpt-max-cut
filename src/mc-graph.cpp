@@ -1063,6 +1063,8 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const unordered_map<int,bool
         
         marked = SetUnion(marked, candidates);
         if (marked.size() > 1 && marked.size() > ((int)GetAdjacency(root).size()) - (marked.size() - 1)) { // -1 since root included here.
+
+            // Just a check to ensure no vertices in X are external. Not used outside of research for new kernelization rules.
             bool ok = true;
             for (auto node : marked)
                 if (KeyExists(node, preset_is_external))
@@ -1090,6 +1092,9 @@ void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique, double &cut_change
 
     cut_change -= (2*GetAdjacency(rem_node2).size() + 1) / 4.0;
     RemoveNode(rem_node2);
+
+    // tot: cut_change -= 1/2 (|GetAdjacency(rem_node1)| + |GetAdjacency(rem_node2)|) + 2/4.
+    // TRY THE VALUE FROM PAPER!!!! TO VERIFY!!!
 }
 
 vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
