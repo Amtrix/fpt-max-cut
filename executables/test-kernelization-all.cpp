@@ -1,3 +1,8 @@
+/**
+ * Tests specifically individual kernelization rules. Great for verifying wanted behavior where the rule is expected to happen.
+ * Bad for verifying possible unintended reductions -- see -auto test for that.
+ **/
+
 #define TESTING
 
 #include "src/mc-graph.hpp"
@@ -30,6 +35,14 @@ std::function<void()> suite[] = {
 
         auto res_r8 = G.GetAllR8Candidates();
         VERIFY(res_r8.size(), 2);
+        {
+            MaxCutGraph Gtmp = G;
+            double chgtmp = 0;
+            Gtmp.ApplyR8Candidate(res_r8[0], chgtmp);
+            VERIFY(chgtmp, -2);
+            Gtmp.ApplyR8Candidate(res_r8[1], chgtmp);
+            VERIFY(chgtmp, -4);
+        }
     },
     []{ // Test rules on two K4 sharing a common vertex.
         MaxCutGraph G(10, 12);
@@ -59,6 +72,14 @@ std::function<void()> suite[] = {
 
         auto res_r8 = G.GetAllR8Candidates();
         VERIFY(res_r8.size(), 2);
+        {
+            MaxCutGraph Gtmp = G;
+            double chgtmp = 0;
+            Gtmp.ApplyR8Candidate(res_r8[0], chgtmp);
+            VERIFY(chgtmp, -3);
+            Gtmp.ApplyR8Candidate(res_r8[1], chgtmp);
+            VERIFY(chgtmp, -6);
+        }
     },
     []{ // Test chain of 5.   P1-2-3-4-5Q
         MaxCutGraph G(10, 12);

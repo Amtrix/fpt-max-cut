@@ -1038,7 +1038,10 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
 
 vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const unordered_map<int,bool>& preset_is_external) {
     vector<vector<int>> ret;
-    
+    vector<int> current_v = GetAllExistingNodes();
+    vector<bool> visited(num_nodes, false);
+
+    /*
     auto prune_candidates = [&](vector<int> marked, vector<int> candidates) {
         vector<int> ret;
         for (auto node : candidates) {
@@ -1052,8 +1055,8 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const unordered_map<int,bool
         return ret;
     };
 
-    vector<bool> visited(num_nodes, false);
-    vector<int> current_v = GetAllExistingNodes();
+    
+    
 
     for (auto root : current_v) {
         if (visited[root]) continue;
@@ -1075,6 +1078,31 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const unordered_map<int,bool
             for (auto node : marked)
                 visited[node] = true;
         }
+    }*/
+
+    
+    map<vector<int>, vector<int>> partitions;
+    for (auto root : current_v) {
+        auto key = SetUnion(GetAdjacency(root), vector<int>{root});
+        sort(key.begin(), key.end());
+        partitions[key].push_back(root);
+    }
+
+    for (auto root : current_v) {
+        if (visited[root]) continue;
+
+        auto key = SetUnion(GetAdjacency(root), vector<int>{root});
+        sort(key.begin(), key.end());
+        
+        const auto X = partitions[key];
+        const auto NG = SetSubstract(key, X);
+
+        for (auto x : X) {
+            visited[x] = true;
+        }
+
+        if (X.size() > NG.size() && IsClique(X) && X.size() > 1)
+            ret.push_back(X);
     }
 
     return ret;
@@ -1087,14 +1115,11 @@ void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique, double &cut_change
     int srem = (frem + 1) % clique.size();
     int rem_node1 = clique[frem], rem_node2 = clique[srem];
 
-    cut_change -= (2*GetAdjacency(rem_node1).size() + 1) / 4.0;
+    cut_change -= GetAdjacency(rem_node1).size();
     RemoveNode(rem_node1);
-
-    cut_change -= (2*GetAdjacency(rem_node2).size() + 1) / 4.0;
     RemoveNode(rem_node2);
 
     // tot: cut_change -= 1/2 (|GetAdjacency(rem_node1)| + |GetAdjacency(rem_node2)|) + 2/4.
-    // TRY THE VALUE FROM PAPER!!!! TO VERIFY!!!
 }
 
 vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {

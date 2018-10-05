@@ -1,3 +1,7 @@
+/**
+ * When testing change diff on specific rule it might be better to remove (comment out) unrelated rules to have higher coverage for that single rule and better correctness report.
+ * */
+
 #define TESTING
 
 #include "src/mc-graph.hpp"
@@ -9,8 +13,17 @@ using namespace std;
 
 const int kDataSetCount = 1;
 const string paths[] = {
-    "../data/auto-tests",
+    "../data/auto-tests/tests",
 };
+
+const bool DEBUG = false;
+
+string serializestr(vector<int> vec) {
+    string ret = "";
+    for (auto node : vec)
+        ret += to_string(node+1) + " ";
+    return ret;
+}
 
 std::function<void()> suite[] = {
     []{ // Test rules on two triangles sharing a common vertex.
@@ -23,6 +36,7 @@ std::function<void()> suite[] = {
                 all_sets_to_evaluate.push_back(sets[i]);
         }
 
+        double k_change_hash_tot = 0;
         vector<int> case_coverage_cnt(10, 0);
         for (string data_filepath : all_sets_to_evaluate) {
             cout << "================ RUNNING TEST INSTANCE ON " + data_filepath + " ================ " << endl;
@@ -32,10 +46,12 @@ std::function<void()> suite[] = {
 
             double k_change = 0;
             while (true) {
+                /*
                 auto res_s5 = kernelized.GetAllS5Candidates();
                 if (!res_s5.empty()) {
                     kernelized.ApplyS5Candidate(res_s5[0], k_change);
                     case_coverage_cnt[8]++;
+                    if (DEBUG) cout << "Rule S5 " << endl;
                     continue;
                 }
 
@@ -43,6 +59,7 @@ std::function<void()> suite[] = {
                 if (!res_s4.empty()) {
                     kernelized.ApplyS4Candidate(res_s4[0], k_change);
                     case_coverage_cnt[7]++;
+                    if (DEBUG) cout << "Rule S4 " << endl;
                     continue;
                 }
 
@@ -50,6 +67,7 @@ std::function<void()> suite[] = {
                 if (!res_rs2.empty()) {
                     kernelized.ApplyS2Candidate(res_rs2[0], k_change);
                     case_coverage_cnt[0]++;
+                    if (DEBUG) cout << "Rule S2 " << serializestr(res_rs2[0]) << endl;
                     continue;
                 }
 
@@ -65,15 +83,16 @@ std::function<void()> suite[] = {
                     kernelized.ApplyR9XCandidate(res_r9x[0], k_change);
                     case_coverage_cnt[1]++;
                     continue;
-                }
+                }*/
                 
                 auto res_r8 = kernelized.GetAllR8Candidates();
                 if (!res_r8.empty()) {
                     kernelized.ApplyR8Candidate(res_r8[0], k_change);
                     case_coverage_cnt[2]++;
+                    if (DEBUG) cout << "Rule R8 " << serializestr(res_r8[0]) << endl;
                     continue;
                 }
-                
+                /*
                 auto res_r10 = kernelized.GetAllR10Candidates();
                 if (!res_r10.empty()) {
                     kernelized.ApplyR10Candidate(res_r10[0], k_change);
@@ -95,7 +114,7 @@ std::function<void()> suite[] = {
                     kernelized.ApplyR10ASTCandidate(res_r10ast[0], k_change); // THERE SEEMS TO BE SOMETHING OFF HERE, BUT I HAVE NO CLUE WHAT
                     case_coverage_cnt[5]++;
                     continue;
-                }
+                }*/
 
                 break;
             }
@@ -103,8 +122,12 @@ std::function<void()> suite[] = {
             auto heur_sol = G.ComputeMaxCutHeuristically();
             auto heur_sol_k = kernelized.ComputeMaxCutHeuristically();
             VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change);
+
+            if (DEBUG) cout << "DOUBLE k_change: " << k_change << endl;
+            k_change_hash_tot += k_change;
         }
 
+        cout << "Total k_change: " << k_change_hash_tot << endl;
         cout << "Case coverage (=number of applications) = ";
         for (int r = 0; r < 10; ++r) cout << case_coverage_cnt[r] << " ";
         cout << endl;
