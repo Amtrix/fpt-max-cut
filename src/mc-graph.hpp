@@ -9,7 +9,7 @@ using namespace std;
 // Its removal parts the graph in at least two non-empty graphs.
 
 // Undirected, Unweighted.
-// pointers not allowed due to usage of default copy in benchmark.cpp !!!!
+// pointers not allowed in this class due to usage of default copy !!!!
 // All node indices are 0-based.
 class MaxCutGraph {
 public:
@@ -31,19 +31,28 @@ public:
     int GetRealNumNodes() { return GetAllExistingNodes().size(); }
     int GetRealNumEdges() { return GetAllExistingEdges().size(); }
 
-    void AddEdge(int a, int b) {
+    void AddEdge(int a, int b, int weight = 1) {
         if(edge_exists_lookup[MakeEdgeKey(a,b)]) {
             OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b));
             return;
         } else if (a == b) {
             OutputDebugLog("Warning: self-loop on " + to_string(a) + " detected.");
             return;
+        } else if (weight == 0) {
+            return;
         }
 
         g_adj_list[a].push_back(b);
         g_adj_list[b].push_back(a);
-        edge_exists_lookup[MakeEdgeKey(a,b)] = true;
-        edge_exists_lookup[MakeEdgeKey(b,a)] = true;
+
+        int keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
+        edge_exists_lookup[keyAB] = true;
+        edge_exists_lookup[keyBA] = true;
+
+        if (weight != 1) {
+            edge_weight_ifnot_1[keyAB] += weight;
+            edge_weight_ifnot_1[keyBA] += weight;
+        }
 
         bicomponents_computed = false;
         articulations_computed = false;
@@ -59,17 +68,19 @@ public:
 
     void CalculateSingleSourceDistance(int source);
 
-    vector<int> GetConnectedComponentOf(int node);
+    vector<int> GetConnectedComponentOf(int node) const;
     vector<vector<int>> GetAllConnectedComponents();
 
     bool DoesDisconnect(vector<int> selection_rem);
 
     bool Breaks2Connected(vector<int> selection_rem);
 
-    int GetSingleSourceDistance(int dest) { return single_source_dist[dest]; }
+    int GetSingleSourceDistance(int dest) const { return single_source_dist.at(dest); }
 
     // Return: {r,...,dest}
-    vector<int> GetSingleSourcePathFromRoot(int dest);
+    vector<int> GetSingleSourcePathFromRoot(int dest) const;
+
+    void ResetComputedTopology();
 
     void RemoveNode(int node);
     // Does not add the previously removed edges with the RemoveNode function!
@@ -77,11 +88,11 @@ public:
     void RemoveEdgesBetween(int nodex, int nodey);
     void RemoveEdgesInComponent(const vector<int> &component);
 
-    vector<int> GetAllExistingNodes();
+    vector<int> GetAllExistingNodes() const;
 
-    vector<pair<int,int>> GetAllExistingEdges();
+    vector<pair<int,int>> GetAllExistingEdges() const;
 
-    bool IsClique(const vector<int>& vertex_set);
+    bool IsClique(const vector<int>& vertex_set) const;
 
     // (c_with_v - v) is clique
     void ApplyRule3(const vector<int>& c_with_v, const int v);
@@ -190,9 +201,6 @@ public:
 
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false);
 
-    // WRONG AS OF NOW, AS IT WORKS WITH VERTEX COVER, BUT SHOULD USE EDGE COVER
-    vector<vector<int>> DecomposeIntoCliques();
-
     // As of now, doesn't print the actual nodes. Some single nodes available.
     void PrintGraph(std::ostream& out);
     string PrintDegrees(const unordered_map<int,bool>& preset_is_external = {});
@@ -208,7 +216,7 @@ public:
     vector<vector<int>> GetCliquesWithAtLeastOneInternal();
 
 private:
-    inline long long MakeEdgeKey(int a, int b) { return a * (long long)(num_nodes+1) + b; }
+    inline long long MakeEdgeKey(int a, int b) const { return a * (long long)(num_nodes+1) + b; }
 
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,
@@ -240,6 +248,7 @@ private:
 
     map<pair<int,int>, bool> is_bridge_between;
 
+    unordered_map<long long, int> edge_weight_ifnot_1;
     unordered_map<long long, bool> edge_exists_lookup;
     vector<vector<int>> g_adj_list;
     vector<vector<int>> biconnected_components;

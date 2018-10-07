@@ -43,3 +43,16 @@ vector<string> ReadLine(std::istream& in);
 inline bool KeyExists(int key, const unordered_map<int, bool> &m) {
     return m.find(key) != m.end();
 }
+
+
+// BEWARE: KeyExistsAndEquals(<key,bool>, key, false) returns false when key does not exist. Same for KeyExistsAndEquals(<key,int>, key, 0). You cannot rely on default type!
+// See MapEqualCheck for alternative.
+template <class KeyType, class ValType>
+inline bool KeyExistsAndEquals(const unordered_map<KeyType, ValType> &m, const KeyType key, const ValType value) {
+    return m.find(key) != m.cend() && m.at(key) == value;
+}
+
+template <class KeyType, class ValType>
+inline bool MapEqualCheck(const unordered_map<KeyType, ValType> &m, const KeyType key, const ValType value) {
+    return m.find(key) != m.cend() ? m.at(key) == value : value == ValType();
+}

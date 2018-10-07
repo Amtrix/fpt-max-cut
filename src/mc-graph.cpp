@@ -2,12 +2,42 @@
 #include "heuristics/qubo/glover1998a.h"
 #include "heuristics/maxcut/burer2002.h"
 
+struct trie_node_r8 {
+    unordered_map<int, unique_ptr<trie_node_r8>> children;
+    vector<int> elems;
+};
 
- MaxCutGraph::MaxCutGraph() {
+struct trie_r8 {
+    trie_node_r8* Traverse(const vector<int>& seq) {
+        trie_node_r8 *curr = &root;
+        for (unsigned int i = 0; i < seq.size(); ++i) {
+            auto &children = curr->children;
+            if (children.find(seq[i]) == children.end())
+                children[seq[i]] = make_unique<trie_node_r8>();
+            
+            curr = children[seq[i]].get();
+        }
+        return curr;
+    }
 
- }
+    void Insert(const vector<int>& seq, int elem) {
+        trie_node_r8 *curr = Traverse(seq);
+        curr->elems.push_back(elem);
+    }
 
- MaxCutGraph::MaxCutGraph(int n, int /* not used m */) {
+    const vector<int>& Retrieve(const vector<int>& seq) {
+        trie_node_r8 *curr = Traverse(seq);
+        return curr->elems;
+    }
+
+    trie_node_r8 root;
+};
+
+MaxCutGraph::MaxCutGraph() {
+
+}
+
+MaxCutGraph::MaxCutGraph(int n, int /* not used m */) {
     num_nodes = n;
     g_adj_list.resize(num_nodes);
 }
@@ -192,7 +222,7 @@ void MaxCutGraph::CalculateSingleSourceDistance(int source) {
     }
 }
 
-vector<int> MaxCutGraph::GetConnectedComponentOf(int node) {
+vector<int> MaxCutGraph::GetConnectedComponentOf(int node) const {
     vector<bool> visited(num_nodes, false);
     queue<int> q;
     visited[node] = true;
@@ -205,10 +235,11 @@ vector<int> MaxCutGraph::GetConnectedComponentOf(int node) {
 
         component.push_back(u);
 
-        for (unsigned int i = 0; i < g_adj_list[u].size(); ++i) {
-            int w = g_adj_list[u][i];
+        const auto& adj_list = g_adj_list.at(u);
+        for (unsigned int i = 0; i < adj_list.size(); ++i) {
+            int w = adj_list.at(i);
 
-            if (visited[w] || removed_node[w]) continue;
+            if (visited[w] || MapEqualCheck(removed_node, w, true)) continue;
             visited[w] = true;
             q.push(w);
         }
@@ -272,44 +303,53 @@ bool MaxCutGraph::Breaks2Connected(vector<int> selection_rem) {
 }
 
 // Return: {r,...,dest}
-vector<int> MaxCutGraph::GetSingleSourcePathFromRoot(int dest) {
-    if (single_source_dist[dest] == -1)
+vector<int> MaxCutGraph::GetSingleSourcePathFromRoot(int dest) const {
+    if (single_source_dist.at(dest) == -1)
         throw logic_error("Requested path to unreachable destination.");
     
     vector<int> ret;
     int curr = dest;
     while (curr != -1) {
         ret.push_back(curr);
-        curr = single_source_prev[curr];
+        curr = single_source_prev.at(curr);
     }
     
     reverse(ret.begin(), ret.end());
     return ret;
 }
 
-void MaxCutGraph::RemoveNode(int node) {
+void MaxCutGraph::ResetComputedTopology() {
     articulations_computed = false;
     bicomponents_computed = false;
     bridges_computed = false;
+}
+
+void MaxCutGraph::RemoveNode(int node) {
+    ResetComputedTopology();
 
     g_adj_list[node].clear();
 
     for (int i = 0; i < num_nodes; ++i) {
-        const auto it = std::find(g_adj_list[i].cbegin(), g_adj_list[i].cend(), node);
-        if (it != g_adj_list[i].end())
-            g_adj_list[i].erase(it);
-        
-        edge_exists_lookup.erase(MakeEdgeKey(node, i));
-        edge_exists_lookup.erase(MakeEdgeKey(i, node));
+        RemoveEdgesBetween(i, node);
+        //const auto it = std::find(g_adj_list[i].cbegin(), g_adj_list[i].cend(), node);
+        //if (it != g_adj_list[i].end())
+        //    g_adj_list[i].erase(it);
+        //
+       // edge_exists_lookup.erase(MakeEdgeKey(node, i));
+       // edge_exists_lookup.erase(MakeEdgeKey(i, node));
     }
 
     removed_node[node] = true;
 }
 void MaxCutGraph::ReAddNode(int node) {
+    ResetComputedTopology();
+
     removed_node[node] = false;
 }
 
 void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
+    ResetComputedTopology();
+
     auto it = std::find(g_adj_list[nodex].cbegin(), g_adj_list[nodex].cend(), nodey);
     if (it != g_adj_list[nodex].end())
         g_adj_list[nodex].erase(it);
@@ -318,8 +358,11 @@ void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
     if (it != g_adj_list[nodey].end())
         g_adj_list[nodey].erase(it);
     
-    edge_exists_lookup.erase(MakeEdgeKey(nodex, nodey));
-    edge_exists_lookup.erase(MakeEdgeKey(nodey, nodex));
+    int keyAB = MakeEdgeKey(nodex, nodey), keyBA = MakeEdgeKey(nodey, nodex);
+    edge_exists_lookup.erase(keyAB);
+    edge_exists_lookup.erase(keyBA);
+    edge_weight_ifnot_1.erase(keyAB);
+    edge_weight_ifnot_1.erase(keyBA);
 }
 
 void MaxCutGraph::RemoveEdgesInComponent(const vector<int> &component) {
@@ -330,31 +373,34 @@ void MaxCutGraph::RemoveEdgesInComponent(const vector<int> &component) {
     }
 }
 
-vector<int> MaxCutGraph::GetAllExistingNodes() {
+vector<int> MaxCutGraph::GetAllExistingNodes() const {
     vector<int> ret;
     for (int i = 0; i < num_nodes; ++i)
-        if (!removed_node[i])
+        if (MapEqualCheck(removed_node, i, false))
             ret.push_back(i);
     return ret;
 }
 
-vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() {
+vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() const {
     vector<pair<int,int>> ret;
     for (int i = 0; i < num_nodes; ++i) {
-        if (removed_node[i]) continue;
-        for (int w : g_adj_list[i]) {
-            if (removed_node[w] || i >= w) continue;
+        if (MapEqualCheck(removed_node, i, true)) continue;
+        const auto& adj_list = g_adj_list[i];
+        for (int w : adj_list) {
+            if (MapEqualCheck(removed_node, w, true) || i >= w) continue;
             ret.push_back(make_pair(i, w));
         }
     }
     return ret;
 }
 
-bool MaxCutGraph::IsClique(const vector<int>& vertex_set) {
+bool MaxCutGraph::IsClique(const vector<int>& vertex_set) const {
     for (unsigned int i = 0; i < vertex_set.size(); ++i)
-        for (unsigned int j = i + 1; j < vertex_set.size(); ++j)
-            if (edge_exists_lookup[MakeEdgeKey(vertex_set[i], vertex_set[j])] == false)
+        for (unsigned int j = i + 1; j < vertex_set.size(); ++j) {
+            auto edge_key = MakeEdgeKey(vertex_set[i], vertex_set[j]);
+            if (!MapEqualCheck(edge_exists_lookup, edge_key, true))
                 return false;
+        }
     return true;
 }
 
@@ -971,8 +1017,7 @@ int MaxCutGraph::Algorithm3MarkedComputation_Randomized() {
 
 
         if (S.size() < ret) ret = S.size();
-     //   cout << S.size() << " ";
-    }//cout<<endl;
+    }
     return ret;
 }
 
@@ -1035,73 +1080,36 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
     return max_clique;
 }
 
-
+// Right now: not O(|V| + |E|) because of sorting. Only because of that. To achieve full linear time, use counting sort.
 vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const unordered_map<int,bool>& preset_is_external) {
     vector<vector<int>> ret;
     vector<int> current_v = GetAllExistingNodes();
     vector<bool> visited(num_nodes, false);
 
-    /*
-    auto prune_candidates = [&](vector<int> marked, vector<int> candidates) {
-        vector<int> ret;
-        for (auto node : candidates) {
-            auto adj = GetAdjacency(node);
-            auto adj_goal = GetAdjacency(marked[0]);
-            adj_goal = SetSubstract(adj_goal, vector<int>{node});
-            adj_goal = SetUnion(adj_goal, vector<int>{marked[0]});
-            if (adj.size() == adj_goal.size() && SetIntersection(adj, adj_goal).size() == adj.size())
-                ret.push_back(node);
-        }
-        return ret;
-    };
-
-    
-    
-
-    for (auto root : current_v) {
-        if (visited[root]) continue;
-
-        vector<int> marked = vector<int>{root};
-        vector<int> candidates = prune_candidates(marked, GetAdjacency(root));
-        
-        marked = SetUnion(marked, candidates);
-        if (marked.size() > 1 && marked.size() > ((int)GetAdjacency(root).size()) - (marked.size() - 1)) { // -1 since root included here.
-
-            // Just a check to ensure no vertices in X are external. Not used outside of research for new kernelization rules.
-            bool ok = true;
-            for (auto node : marked)
-                if (KeyExists(node, preset_is_external))
-                    ok = false;
-
-            if (ok) ret.push_back(marked);
-            
-            for (auto node : marked)
-                visited[node] = true;
-        }
-    }*/
-
-    
-    map<vector<int>, vector<int>> partitions;
+    trie_r8 partitions;
     for (auto root : current_v) {
         auto key = SetUnion(GetAdjacency(root), vector<int>{root});
         sort(key.begin(), key.end());
-        partitions[key].push_back(root);
+        partitions.Insert(key, root);
     }
 
     for (auto root : current_v) {
         if (visited[root]) continue;
 
-        auto key = SetUnion(GetAdjacency(root), vector<int>{root});
+        auto key = SetUnion(GetAdjacency(root), vector<int>{root}); // O(Ng(root))
         sort(key.begin(), key.end());
         
-        const auto X = partitions[key];
-        const auto NG = SetSubstract(key, X);
+        const auto X = partitions.Retrieve(key); // O(Ng(root))
+        const auto NG = SetSubstract(key, X); // O(Ng(root))
 
-        for (auto x : X) {
+        bool ok = true;
+        for (auto x : X) { // O(Ng(root)), guarantees only that vertices in X are not visited again, not Ng(root)!! Still, an edge is visited at most twice.
             visited[x] = true;
+            if (KeyExists(x, preset_is_external))
+                ok = false;
         }
 
-        if (X.size() > NG.size() && IsClique(X) && X.size() > 1)
+        if (ok && X.size() > NG.size() && IsClique(X) && X.size() > 1)
             ret.push_back(X);
     }
 
@@ -1118,8 +1126,6 @@ void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique, double &cut_change
     cut_change -= GetAdjacency(rem_node1).size();
     RemoveNode(rem_node1);
     RemoveNode(rem_node2);
-
-    // tot: cut_change -= 1/2 (|GetAdjacency(rem_node1)| + |GetAdjacency(rem_node2)|) + 2/4.
 }
 
 vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() {
@@ -1397,7 +1403,7 @@ void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, double &cut_change
         }
     }
 
-    for (auto node : clique) {   
+    for (auto node : clique) {
         for (auto node2 : clique) {
             if (edge_exists_lookup[MakeEdgeKey(node, node2)]) {
                 RemoveEdgesBetween(node, node2);
@@ -1601,7 +1607,8 @@ void MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, double &cut_c
 double MaxCutGraph::ExecuteLinearKernelization() {
     double k_change = 0;
     while (true) {
-        auto res_r8 = GetAllR8Candidates(); // 
+        // <- possibly relabel graph here first before using R8.
+        auto res_r8 = GetAllR8Candidates(); // not yet fully linear! See implementation.
         if (!res_r8.empty()) {
             ApplyR8Candidate(res_r8[0], k_change);
             continue;
@@ -1715,74 +1722,6 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
 
         break;
     }
-}
-
-vector<vector<int>> MaxCutGraph::DecomposeIntoCliques() {
-    vector<vector<int>> ret;
-    vector<int> current;
-
-    int cnt_extra_edges = 0;
-    unordered_map<int,int> is_current;
-    int cdx = 1;
-    int sz = 50;
-    while ((int)current.size() != num_nodes) {
-        vector<int> clique = GetAClique(max(sz--,2), 10, false);
-
-        cout << clique.size() << " : ";
-        for (auto node : clique)
-            cout << node << " ";
-        cout << endl;
-
-        vector<int> clique_intersect = SetIntersection(clique, current);
-
-        if (clique_intersect.size() == clique.size()) continue;
-
-        unordered_map<int,bool> is_intersect;
-        
-        for (auto node : clique_intersect) {
-            is_intersect[node] = true;
-        }
-
-        int mem_cnt_extra_edges = cnt_extra_edges;
-        int typec = 0;
-        for (auto node : clique) {
-            if (is_intersect[node]) continue;
-
-            auto adj = GetAdjacency(node);
-            for (auto w : adj) {
-                if (is_current[w] != 0) {
-                    cnt_extra_edges ++;
-                    if (typec == 0) typec = is_current[w];
-                    else if (typec != is_current[w]) typec = -1;
-                }
-            }
-        }
-
-        //if (cnt_extra_edges > 0) {
-        //    cnt_extra_edges = 0;
-        //    continue;
-        //}
-        if (typec == -1 || cnt_extra_edges > 0) {
-            cnt_extra_edges = mem_cnt_extra_edges;
-            continue;
-        }
-
-        ret.push_back(clique);
-        current = SetUnion(current, clique);
-        cout << "ADD " << clique.size() << " , intersecting @ " << clique_intersect.size() << " vertices. New cover size: " << current.size() << endl;
-        for (auto node : clique)
-            cout << node << " ";
-        cout << endl;
-        cout << "Extra edges between cliques: " << cnt_extra_edges << endl;
-
-        for (auto node : clique)
-            is_current[node] = cdx;
-        cdx++;
-        cout << endl;
-    }
-    
-
-    return ret;
 }
 
 void MaxCutGraph::PrintGraph(std::ostream& out) {

@@ -46,7 +46,7 @@ std::function<void()> suite[] = {
 
             double k_change = 0;
             while (true) {
-                /*
+                
                 auto res_s5 = kernelized.GetAllS5Candidates();
                 if (!res_s5.empty()) {
                     kernelized.ApplyS5Candidate(res_s5[0], k_change);
@@ -83,7 +83,7 @@ std::function<void()> suite[] = {
                     kernelized.ApplyR9XCandidate(res_r9x[0], k_change);
                     case_coverage_cnt[1]++;
                     continue;
-                }*/
+                }
                 
                 auto res_r8 = kernelized.GetAllR8Candidates();
                 if (!res_r8.empty()) {
@@ -92,7 +92,7 @@ std::function<void()> suite[] = {
                     if (DEBUG) cout << "Rule R8 " << serializestr(res_r8[0]) << endl;
                     continue;
                 }
-                /*
+                
                 auto res_r10 = kernelized.GetAllR10Candidates();
                 if (!res_r10.empty()) {
                     kernelized.ApplyR10Candidate(res_r10[0], k_change);
@@ -114,7 +114,7 @@ std::function<void()> suite[] = {
                     kernelized.ApplyR10ASTCandidate(res_r10ast[0], k_change); // THERE SEEMS TO BE SOMETHING OFF HERE, BUT I HAVE NO CLUE WHAT
                     case_coverage_cnt[5]++;
                     continue;
-                }*/
+                }
 
                 break;
             }
