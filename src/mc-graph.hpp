@@ -23,121 +23,74 @@ public:
     // Create graph based on list of edges.
     MaxCutGraph(const vector<pair<int,int>> &elist, int n = 0);
 
-    // Create induced subgraph
-    MaxCutGraph(MaxCutGraph& source, const vector<int>& subset);
+    // Creates induced subgraph.
+    MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset);
 
-    int GetNumNodes() const { return num_nodes; }
-
-    int GetRealNumNodes() { return GetAllExistingNodes().size(); }
-    int GetRealNumEdges() { return GetAllExistingEdges().size(); }
-
-    void AddEdge(int a, int b, int weight = 1) {
-        if(edge_exists_lookup[MakeEdgeKey(a,b)]) {
-            OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b));
-            return;
-        } else if (a == b) {
-            OutputDebugLog("Warning: self-loop on " + to_string(a) + " detected.");
-            return;
-        } else if (weight == 0) {
-            return;
-        }
-
-        g_adj_list[a].push_back(b);
-        g_adj_list[b].push_back(a);
-
-        int keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
-        edge_exists_lookup[keyAB] = true;
-        edge_exists_lookup[keyBA] = true;
-
-        if (weight != 1) {
-            edge_weight_ifnot_1[keyAB] += weight;
-            edge_weight_ifnot_1[keyBA] += weight;
-        }
-
-        bicomponents_computed = false;
-        articulations_computed = false;
-        bridges_computed = false;
-    }
-
-    const vector<int>& GetAdjacency(int node) const { return g_adj_list[node]; }
-    bool AreAdjacent(int n1, int n2) { return edge_exists_lookup[MakeEdgeKey(n1,n2)]; }
-    int Degree(int node) { return GetAdjacency(node).size(); }
-
-    // https://github.com/niklasb/tcr/blob/master/graphentheorie/arti-bruecken.cpp
-    void ComputeArticulationAndBiconnected();
-
-    void CalculateSingleSourceDistance(int source);
-
-    vector<int> GetConnectedComponentOf(int node) const;
-    vector<vector<int>> GetAllConnectedComponents();
-
-    bool DoesDisconnect(vector<int> selection_rem);
-
-    bool Breaks2Connected(vector<int> selection_rem);
-
-    int GetSingleSourceDistance(int dest) const { return single_source_dist.at(dest); }
-
-    // Return: {r,...,dest}
-    vector<int> GetSingleSourcePathFromRoot(int dest) const;
-
+    //  Resets computed articulation vertices, biconnected components, bridges.
     void ResetComputedTopology();
 
+    // Adds an edge between a and b with a weight.
+    void AddEdge(int a, int b, int weight = 1);
+
+
+    /** Often used graph functionalities. All const. */
+    int GetNumNodes() const { return num_nodes; }
+    int GetRealNumNodes() const { return GetAllExistingNodes().size(); }
+    int GetRealNumEdges() const { return GetAllExistingEdges().size(); }
+    vector<int> GetAllExistingNodes() const;
+    const vector<int>& GetAdjacency(int node) const { return g_adj_list.at(node); }
+    bool AreAdjacent(int n1, int n2) const { return MapEqualCheck(edge_exists_lookup, MakeEdgeKey(n1,n2), true); }
+    int Degree(int node) const { return GetAdjacency(node).size(); }
+    vector<int> GetConnectedComponentOf(int node) const;
+    vector<vector<int>> GetAllConnectedComponents() const;
+    bool DoesDisconnect(const vector<int>& selection_rem) const;
+    vector<pair<int,int>> GetAllExistingEdges() const;
+    bool IsClique(const vector<int>& vertex_set) const;
+    ///////////////////////////////////////////////////
+
+
+
+    /** Various topology functions. */
+    // https://github.com/niklasb/tcr/blob/master/graphentheorie/arti-bruecken.cpp
+    void ComputeArticulationAndBiconnected();
+    vector<int> GetArticulationNodes();
+    bool IsArticulation(int node);
+    vector<vector<int>> GetBiconnectedComponents();
+    bool IsBridgeBetween(int nodeA, int nodeB);
+    void CalculateSingleSourceDistance(int source);
+    bool Breaks2Connected(vector<int> selection_rem);
+    int GetSingleSourceDistance(int dest) const { return single_source_dist.at(dest); }
+    // Return: {r,...,dest}
+    vector<int> GetSingleSourcePathFromRoot(int dest) const;
+    // Returns -1 if no component of size >= 1 was found.
+    tuple<vector<int>, int> GetLeafBlockAndArticulation(bool print_components = false);
+    ///////////////////////////////////////////////////
+
     void RemoveNode(int node);
-    // Does not add the previously removed edges with the RemoveNode function!
+    // Does not add the previously removed edges from the RemoveNode function!
     void ReAddNode(int node);
     void RemoveEdgesBetween(int nodex, int nodey);
     void RemoveEdgesInComponent(const vector<int> &component);
 
-    vector<int> GetAllExistingNodes() const;
+    
+    // OneWay reduction rule applications from paper showcasting linear kernel computation. (c_with_v - v) is clique
+    void ApplyOneWayRule3(const vector<int>& c_with_v, const int v);
+    void ApplyOneWayRule5(const vector<int>& c_with_v, const int v);
+    void ApplyOneWayRule6(const vector<int>& induced_2path);
+    void ApplyOneWayRule7(const vector<int>& c, const int v, const int b);
 
-    vector<pair<int,int>> GetAllExistingEdges() const;
-
-    bool IsClique(const vector<int>& vertex_set) const;
-
-    // (c_with_v - v) is clique
-    void ApplyRule3(const vector<int>& c_with_v, const int v);
-
-    void ApplyRule5(const vector<int>& c_with_v, const int v);
-
-    void ApplyRule6(const vector<int>& induced_2path);
-
-    void ApplyRule7(const vector<int>& c, const int v, const int b);
-
+    /** Utilities for onway rules. */
     vector<int> GetInducedPathByLemma2(const vector<int>& component, int r);
-
     vector<int> FindInducedPathForRule6(const vector<int>& component, const int r);
-
     void CalculateLemma4DFSTree(int root, int ui);
-
-    int GetDfsTreeDepthFromRoot(int node) { return dfs_tree_depth[node]; }
-
-    vector<int> GetArticulationNodes();
-
-    bool IsArticulation(int node) {
-        if (!articulations_computed) ComputeArticulationAndBiconnected();
-
-        return is_articulation[node];
-    }
-
-    bool IsBridgeBetween(int nodeA, int nodeB);
+    int GetDfsTreeDepthFromRoot(int node) { return lemma4_dfs_tree_depth[node]; }
 
     bool IsCliqueForest();
 
-    vector<vector<int>> GetBiconnectedComponents();
-
     vector<int> GetMarkedVerticesByOneWayRules() const;
-
     void SetMarkedVertices(const vector<int>& S) { paper_S = S; }
 
     double GetEdwardsErdosBound();
-
-    // Due to the possibility of components disappearing, we need to do this. Otherwise, once a whole
-    // component is deleted, we gain 1/4.0 in EE. In itself, this is good, as a higher bound is achieved.
-    // Although... The kernelization rules' invariants break in those cases.
-    void SaveNumOfComponentsForEdwardsErdosBound();
-
-    // Returns -1 if no component of size >= 1 was found.
-    tuple<vector<int>, int> GetLeafBlockAndArticulation(bool print_components = false);
 
     // Makes assumption(!) that S is subset of G. We can't check this, as this is time-critical.
     tuple<int, vector<int>> MaxCutExtension(const vector<int>& S, const vector<int>& S_color);
@@ -149,9 +102,6 @@ public:
     int Algorithm3MarkedComputation_Randomized();
 
     int ComputeOptimalColoringBruteforce(const vector<int>& S);
-
-    // TODO: A more efficient way to color the graph.
-    int ComputeOptimalColoring(const vector<int>& S, const vector<int>& S_color = {});
 
     vector<int> GetMaxCutColoring() { return computed_maxcut_coloring; }
 
@@ -233,9 +183,9 @@ private:
     // Recursive! MaxCutGraphs generally small, so stack size shouldn't be a problem.
     void CalculateLemma4DFSTree_(int node);
 
-    vector<int> dfs_tree_parent;
-    vector<int> dfs_tree_depth;
-    int dfs_tree_ui;
+    vector<int> lemma4_dfs_tree_parent;
+    vector<int> lemma4_dfs_tree_depth;
+    int lemma4_dfs_tree_ui;
 
     int num_nodes;
 

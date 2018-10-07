@@ -9,7 +9,7 @@
 
 int TryRule5(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k) {
     if (G.IsClique(leaf_block)) { 
-        G.ApplyRule5(leaf_block, r);
+        G.ApplyOneWayRule5(leaf_block, r);
         if (leaf_block.size() % 2 == 0) k--; // We do even instead odd, because here C = component U r
         return 5;
     }
@@ -19,7 +19,7 @@ int TryRule5(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k)
 int TryRule3(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k) {
     auto component_minus_r = SetSubstract(leaf_block, vector<int>{r});
     if (G.IsClique(component_minus_r)) {
-        G.ApplyRule3(leaf_block, r); // TODO(): Make sure leaf_block is right here.
+        G.ApplyOneWayRule3(leaf_block, r); // TODO(): Make sure leaf_block is right here.
         k -= 2;
         return 3;
     }
@@ -43,7 +43,7 @@ int TryRule7(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k)
         vector<int> intersect = SetSubstract(leaf_block, {r, inside_component[0], inside_component[1]});
 
         if (G.IsClique(s1) && G.IsClique(s2)) {
-            G.ApplyRule7(intersect, inside_component[0], inside_component[1]);
+            G.ApplyOneWayRule7(intersect, inside_component[0], inside_component[1]);
             k--;
             return 7;
         }
@@ -62,7 +62,7 @@ int TryRule6(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k)
         assert(G.AreAdjacent(induced_path[1], induced_path[2]));
         assert(!G.AreAdjacent(induced_path[0], induced_path[2]));
 
-        G.ApplyRule6(induced_path);
+        G.ApplyOneWayRule6(induced_path);
         k--;
         return 6;
     }

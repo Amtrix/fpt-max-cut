@@ -100,7 +100,7 @@ MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist, int n) {
         AddEdge(e.first, e.second);
 }
 
-MaxCutGraph::MaxCutGraph(MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {
+MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {
     removed_node.clear();
 
     for (int i = 0; i < num_nodes; ++i)
@@ -118,6 +118,137 @@ MaxCutGraph::MaxCutGraph(MaxCutGraph& source, const vector<int>& subset) : MaxCu
             AddEdge(node, w);
         }
     }
+}
+
+void MaxCutGraph::ResetComputedTopology() {
+    articulations_computed = false;
+    bicomponents_computed = false;
+    bridges_computed = false;
+}
+
+void MaxCutGraph::AddEdge(int a, int b, int weight) {
+    if(edge_exists_lookup[MakeEdgeKey(a,b)]) {
+        OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b));
+        return;
+    } else if (a == b) {
+        OutputDebugLog("Warning: self-loop on " + to_string(a) + " detected.");
+        return;
+    } else if (weight == 0) {
+        return;
+    }
+
+    g_adj_list[a].push_back(b);
+    g_adj_list[b].push_back(a);
+
+    int keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
+    edge_exists_lookup[keyAB] = true;
+    edge_exists_lookup[keyBA] = true;
+
+    if (weight != 1) {
+        edge_weight_ifnot_1[keyAB] += weight;
+        edge_weight_ifnot_1[keyBA] += weight;
+    }
+
+    ResetComputedTopology();
+}
+
+vector<int> MaxCutGraph::GetAllExistingNodes() const {
+    vector<int> ret;
+    for (int i = 0; i < num_nodes; ++i)
+        if (MapEqualCheck(removed_node, i, false))
+            ret.push_back(i);
+    return ret;
+}
+
+vector<int> MaxCutGraph::GetConnectedComponentOf(int node) const {
+    vector<bool> visited(num_nodes, false);
+    queue<int> q;
+    visited[node] = true;
+    q.push(node);
+
+    vector<int> component;
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        component.push_back(u);
+
+        const auto& adj_list = g_adj_list.at(u);
+        for (unsigned int i = 0; i < adj_list.size(); ++i) {
+            int w = adj_list.at(i);
+
+            if (visited[w] || MapEqualCheck(removed_node, w, true)) continue;
+            visited[w] = true;
+            q.push(w);
+        }
+    }
+
+    return component;
+}
+
+vector<vector<int>> MaxCutGraph::GetAllConnectedComponents() const {
+    vector<bool> visited(num_nodes, false);
+    vector<vector<int>> ret;
+
+    for (int curr_node = 0; curr_node < num_nodes; ++curr_node) {
+        if (visited[curr_node] || MapEqualCheck(removed_node, curr_node, true)) continue;
+
+        auto component = GetConnectedComponentOf(curr_node);
+        ret.push_back(component);
+
+        for (auto node : component)
+            visited[node] = true;
+    }
+
+    return ret;
+}
+
+bool MaxCutGraph::DoesDisconnect(const vector<int>& selection_rem) const {
+    auto before = GetAllConnectedComponents();
+    auto vset_after_sub = SetSubstract(GetAllExistingNodes(), selection_rem);
+    MaxCutGraph ng(*this, vset_after_sub); // this is a bit slow....
+    auto after = ng.GetAllConnectedComponents();
+
+    unordered_map<int,bool> mark_rem;
+    for (auto node : selection_rem)
+        mark_rem[node] = true;
+
+    // If a whole component gets deleted, it doesn't make the graph disconnected, so account for these cases.
+    int num_deleted_whole_components = 0;
+    for (auto component : before) {
+        bool wholly_removed = true;
+        for (auto node : component)
+            if (mark_rem[node] == false)
+                wholly_removed = false;
+
+        if (wholly_removed)
+            num_deleted_whole_components++;
+    }
+    
+    return before.size() != (after.size() + num_deleted_whole_components);
+}
+
+vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() const {
+    vector<pair<int,int>> ret;
+    for (int i = 0; i < num_nodes; ++i) {
+        if (MapEqualCheck(removed_node, i, true)) continue;
+        const auto& adj_list = g_adj_list[i];
+        for (int w : adj_list) {
+            if (MapEqualCheck(removed_node, w, true) || i >= w) continue;
+            ret.push_back(make_pair(i, w));
+        }
+    }
+    return ret;
+}
+
+bool MaxCutGraph::IsClique(const vector<int>& vertex_set) const {
+    for (unsigned int i = 0; i < vertex_set.size(); ++i)
+        for (unsigned int j = i + 1; j < vertex_set.size(); ++j) {
+            auto edge_key = MakeEdgeKey(vertex_set[i], vertex_set[j]);
+            if (!MapEqualCheck(edge_exists_lookup, edge_key, true))
+                return false;
+        }
+    return true;
 }
 
 void MaxCutGraph::ComputeArticulationAndBiconnected() {
@@ -198,6 +329,49 @@ void MaxCutGraph::ComputeArticulationAndBiconnected() {
     bicomponents_computed = true;
 }
 
+vector<int> MaxCutGraph::GetArticulationNodes() {
+    if (!articulations_computed) ComputeArticulationAndBiconnected();
+
+    vector<int> ret;
+    for (int i = 0; i < num_nodes; ++i)
+        if (is_articulation[i])
+            ret.push_back(i);
+            
+    return ret;
+}
+
+bool MaxCutGraph::IsArticulation(int node) {
+    if (!articulations_computed) ComputeArticulationAndBiconnected();
+
+    return is_articulation[node];
+}
+
+vector<vector<int>> MaxCutGraph::GetBiconnectedComponents() {
+    if (!bicomponents_computed) ComputeArticulationAndBiconnected();
+
+    return biconnected_components;
+}
+
+bool MaxCutGraph::IsBridgeBetween(int nodeA, int nodeB) {
+    if (bridges_computed == false) {
+        is_bridge_between.clear();
+
+        if (bicomponents_computed == false) ComputeArticulationAndBiconnected();
+
+        auto components = GetBiconnectedComponents();
+        for (auto& component : components) {
+            if (component.size() != 2) continue;
+
+            is_bridge_between[make_pair(component[0], component[1])] = true;
+            is_bridge_between[make_pair(component[1], component[0])] = true;
+        }
+
+        bridges_computed = true;
+    }
+
+    return is_bridge_between[make_pair(nodeA, nodeB)];
+}
+
 void MaxCutGraph::CalculateSingleSourceDistance(int source) {
     single_source_dist.assign(num_nodes, -1);
     single_source_prev.assign(num_nodes, -1);
@@ -222,73 +396,7 @@ void MaxCutGraph::CalculateSingleSourceDistance(int source) {
     }
 }
 
-vector<int> MaxCutGraph::GetConnectedComponentOf(int node) const {
-    vector<bool> visited(num_nodes, false);
-    queue<int> q;
-    visited[node] = true;
-    q.push(node);
 
-    vector<int> component;
-    while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-
-        component.push_back(u);
-
-        const auto& adj_list = g_adj_list.at(u);
-        for (unsigned int i = 0; i < adj_list.size(); ++i) {
-            int w = adj_list.at(i);
-
-            if (visited[w] || MapEqualCheck(removed_node, w, true)) continue;
-            visited[w] = true;
-            q.push(w);
-        }
-    }
-
-    return component;
-}
-
-vector<vector<int>> MaxCutGraph::GetAllConnectedComponents() {
-    vector<bool> visited(num_nodes, false);
-    vector<vector<int>> ret;
-
-    for (int curr_node = 0; curr_node < num_nodes; ++curr_node) {
-        if (visited[curr_node] || removed_node[curr_node]) continue;
-
-        auto component = GetConnectedComponentOf(curr_node);
-        ret.push_back(component);
-
-        for (auto node : component)
-            visited[node] = true;
-    }
-
-    return ret;
-}
-
-bool MaxCutGraph::DoesDisconnect(vector<int> selection_rem) {
-    auto before = GetAllConnectedComponents();
-    auto vset_after_sub = SetSubstract(GetAllExistingNodes(), selection_rem);
-    MaxCutGraph ng(*this, vset_after_sub); // this is a bit slow....
-    auto after = ng.GetAllConnectedComponents();
-
-    unordered_map<int,bool> mark_rem;
-    for (auto node : selection_rem)
-        mark_rem[node] = true;
-
-    // If a whole component gets deleted, it doesn't make the graph disconnected, so account for these cases.
-    int num_deleted_whole_components = 0;
-    for (auto component : before) {
-        bool wholly_removed = true;
-        for (auto node : component)
-            if (mark_rem[node] == false)
-                wholly_removed = false;
-
-        if (wholly_removed)
-            num_deleted_whole_components++;
-    }
-    
-    return before.size() != (after.size() + num_deleted_whole_components);
-}
 
 bool MaxCutGraph::Breaks2Connected(vector<int> selection_rem) {
     if (!bicomponents_computed) ComputeArticulationAndBiconnected();
@@ -318,10 +426,48 @@ vector<int> MaxCutGraph::GetSingleSourcePathFromRoot(int dest) const {
     return ret;
 }
 
-void MaxCutGraph::ResetComputedTopology() {
-    articulations_computed = false;
-    bicomponents_computed = false;
-    bridges_computed = false;
+tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_components) {
+    int selected_block_dx = -1;
+    auto bicomponents = GetBiconnectedComponents();
+    
+    if (print_components) {
+        OutputDebugLog("Number of biconnected components in graph: " + to_string(bicomponents.size()) + ", all components:");
+        for (unsigned int dx = 0; dx < bicomponents.size(); ++dx) {
+            const auto& component = bicomponents[dx];
+            OutputDebugVector("Component " + to_string(dx), component);
+#ifdef DEBUG
+            MaxCutGraph cg(*this, component);
+            OutputDebugVector("  edges", cg.GetAllExistingEdges());
+#endif
+        }
+        OutputDebugLog("-- END-COMPONENTS --");
+    }
+
+    for (unsigned int i = 0; i < bicomponents.size(); ++i) {
+        const auto& component = bicomponents[i];
+        if (component.size() == 1) continue; // We ignore 1-vertex components
+
+        int articulation_count = 0;
+        for (const int node : component) articulation_count += IsArticulation(node);
+        if (articulation_count <= 1 && (selected_block_dx == -1 || component.size() < bicomponents[selected_block_dx].size()))
+            selected_block_dx = i;
+    }
+
+    // No leaf block with more than one vertex found => graph contains only isolated vertices.
+    if (selected_block_dx == -1) return make_tuple(vector<int>(), -1);
+    const auto& component = bicomponents[selected_block_dx];
+
+    // Find r as outlined in paper. r is cut vertex if exists, or arbitrary vertex if not.
+    int r = 0;
+    for (unsigned int i = 1; i < component.size(); ++i)
+        if (IsArticulation(component[i]))
+            r = i;
+    r = component[r];
+    
+    if (print_components)
+        OutputDebugLog("r = " + to_string(r) + ", X = Component " + to_string(selected_block_dx));
+
+    return make_tuple(component, r);
 }
 
 void MaxCutGraph::RemoveNode(int node) {
@@ -373,38 +519,7 @@ void MaxCutGraph::RemoveEdgesInComponent(const vector<int> &component) {
     }
 }
 
-vector<int> MaxCutGraph::GetAllExistingNodes() const {
-    vector<int> ret;
-    for (int i = 0; i < num_nodes; ++i)
-        if (MapEqualCheck(removed_node, i, false))
-            ret.push_back(i);
-    return ret;
-}
-
-vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() const {
-    vector<pair<int,int>> ret;
-    for (int i = 0; i < num_nodes; ++i) {
-        if (MapEqualCheck(removed_node, i, true)) continue;
-        const auto& adj_list = g_adj_list[i];
-        for (int w : adj_list) {
-            if (MapEqualCheck(removed_node, w, true) || i >= w) continue;
-            ret.push_back(make_pair(i, w));
-        }
-    }
-    return ret;
-}
-
-bool MaxCutGraph::IsClique(const vector<int>& vertex_set) const {
-    for (unsigned int i = 0; i < vertex_set.size(); ++i)
-        for (unsigned int j = i + 1; j < vertex_set.size(); ++j) {
-            auto edge_key = MakeEdgeKey(vertex_set[i], vertex_set[j]);
-            if (!MapEqualCheck(edge_exists_lookup, edge_key, true))
-                return false;
-        }
-    return true;
-}
-
-void MaxCutGraph::ApplyRule3(const vector<int>& c_with_v, const int v) {
+void MaxCutGraph::ApplyOneWayRule3(const vector<int>& c_with_v, const int v) {
     int any_adj_to_v_node = -1;
     int any_nonadj_to_v_node = -1;
     for (const int node : c_with_v) {
@@ -432,14 +547,14 @@ void MaxCutGraph::ApplyRule3(const vector<int>& c_with_v, const int v) {
     paper_S.push_back(any_nonadj_to_v_node);
 }
 
-void MaxCutGraph::ApplyRule5(const vector<int>& c_with_v, const int v) {
+void MaxCutGraph::ApplyOneWayRule5(const vector<int>& c_with_v, const int v) {
     for (const int node : c_with_v) {
         if (node == v) continue;
         RemoveNode(node);
     }
 }
 
-void MaxCutGraph::ApplyRule6(const vector<int>& induced_2path) {
+void MaxCutGraph::ApplyOneWayRule6(const vector<int>& induced_2path) {
     assert(induced_2path.size() == 3);
 
     for (auto node : induced_2path) {
@@ -448,7 +563,7 @@ void MaxCutGraph::ApplyRule6(const vector<int>& induced_2path) {
     }
 }
 
-void MaxCutGraph::ApplyRule7(const vector<int>& c, const int v, const int b) {
+void MaxCutGraph::ApplyOneWayRule7(const vector<int>& c, const int v, const int b) {
     RemoveNode(v);
     RemoveNode(b);
     paper_S.push_back(v);
@@ -672,43 +787,12 @@ vector<int> MaxCutGraph::FindInducedPathForRule6(const vector<int>& component, c
 }
 
 void MaxCutGraph::CalculateLemma4DFSTree(int root, int ui) {
-    dfs_tree_parent.assign(num_nodes, -1);
-    dfs_tree_depth.assign(num_nodes, -1);
-    dfs_tree_ui = ui;
+    lemma4_dfs_tree_parent.assign(num_nodes, -1);
+    lemma4_dfs_tree_depth.assign(num_nodes, -1);
+    lemma4_dfs_tree_ui = ui;
 
-    dfs_tree_depth[root] = 0;
+    lemma4_dfs_tree_depth[root] = 0;
     CalculateLemma4DFSTree_(root);
-}
-
-vector<int> MaxCutGraph::GetArticulationNodes() {
-    if (!articulations_computed) ComputeArticulationAndBiconnected();
-
-    vector<int> ret;
-    for (int i = 0; i < num_nodes; ++i)
-        if (is_articulation[i])
-            ret.push_back(i);
-            
-    return ret;
-}
-
-bool MaxCutGraph::IsBridgeBetween(int nodeA, int nodeB) {
-    if (bridges_computed == false) {
-        is_bridge_between.clear();
-
-        if (bicomponents_computed == false) ComputeArticulationAndBiconnected();
-
-        auto components = GetBiconnectedComponents();
-        for (auto& component : components) {
-            if (component.size() != 2) continue;
-
-            is_bridge_between[make_pair(component[0], component[1])] = true;
-            is_bridge_between[make_pair(component[1], component[0])] = true;
-        }
-
-        bridges_computed = true;
-    }
-
-    return is_bridge_between[make_pair(nodeA, nodeB)];
 }
 
 bool MaxCutGraph::IsCliqueForest() {
@@ -720,12 +804,6 @@ bool MaxCutGraph::IsCliqueForest() {
             return false;
 
     return true;
-}
-
-vector<vector<int>> MaxCutGraph::GetBiconnectedComponents() {
-    if (!bicomponents_computed) ComputeArticulationAndBiconnected();
-
-    return biconnected_components;
 }
 
 vector<int> MaxCutGraph::GetMarkedVerticesByOneWayRules() const {
@@ -744,49 +822,7 @@ double MaxCutGraph::GetEdwardsErdosBound() {
     return res;
 }
 
-tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_components) {
-    int selected_block_dx = -1;
-    auto bicomponents = GetBiconnectedComponents();
-    
-    if (print_components) {
-        OutputDebugLog("Number of biconnected components in graph: " + to_string(bicomponents.size()) + ", all components:");
-        for (unsigned int dx = 0; dx < bicomponents.size(); ++dx) {
-            const auto& component = bicomponents[dx];
-            OutputDebugVector("Component " + to_string(dx), component);
-#ifdef DEBUG
-            MaxCutGraph cg(*this, component);
-            OutputDebugVector("  edges", cg.GetAllExistingEdges());
-#endif
-        }
-        OutputDebugLog("-- END-COMPONENTS --");
-    }
 
-    for (unsigned int i = 0; i < bicomponents.size(); ++i) {
-        const auto& component = bicomponents[i];
-        if (component.size() == 1) continue; // We ignore 1-vertex components
-
-        int articulation_count = 0;
-        for (const int node : component) articulation_count += IsArticulation(node);
-        if (articulation_count <= 1 && (selected_block_dx == -1 || component.size() < bicomponents[selected_block_dx].size()))
-            selected_block_dx = i;
-    }
-
-    // No leaf block with more than one vertex found => graph contains only isolated vertices.
-    if (selected_block_dx == -1) return make_tuple(vector<int>(), -1);
-    const auto& component = bicomponents[selected_block_dx];
-
-    // Find r as outlined in paper. r is cut vertex if exists, or arbitrary vertex if not.
-    int r = 0;
-    for (unsigned int i = 1; i < component.size(); ++i)
-        if (IsArticulation(component[i]))
-            r = i;
-    r = component[r];
-    
-    if (print_components)
-        OutputDebugLog("r = " + to_string(r) + ", X = Component " + to_string(selected_block_dx));
-
-    return make_tuple(component, r);
-}
 
 tuple<int, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const vector<int>& S_color) {
     vector<int> weight[2] = {vector<int>(num_nodes, 0), vector<int>(num_nodes, 0)};
@@ -900,21 +936,21 @@ tuple<int, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const
 
 void MaxCutGraph::CalculateLemma4DFSTree_(int node) {
     // ui child of v if (v,ui) in E; here v = root, dfs_tree_ui = ui.
-    if (dfs_tree_depth[node] == 0) {
+    if (lemma4_dfs_tree_depth[node] == 0) {
         for (auto child : g_adj_list[node]) {
-            if (child == dfs_tree_ui) {
-                dfs_tree_parent[child] = node;
-                dfs_tree_depth[child] = dfs_tree_depth[node] + 1;
+            if (child == lemma4_dfs_tree_ui) {
+                lemma4_dfs_tree_parent[child] = node;
+                lemma4_dfs_tree_depth[child] = lemma4_dfs_tree_depth[node] + 1;
                 CalculateLemma4DFSTree_(child);
             }
         }
     }
 
     for (auto child : g_adj_list[node]) {
-        if (dfs_tree_depth[child] > -1) continue; // visited
+        if (lemma4_dfs_tree_depth[child] > -1) continue; // visited
 
-        dfs_tree_parent[child] = node;
-        dfs_tree_depth[child] = dfs_tree_depth[node] + 1;
+        lemma4_dfs_tree_parent[child] = node;
+        lemma4_dfs_tree_depth[child] = lemma4_dfs_tree_depth[node] + 1;
         CalculateLemma4DFSTree_(child);
     }
 }
@@ -1035,29 +1071,6 @@ int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S) {
             computed_maxcut_coloring = get<1>(sol);
     }
     return mx_sol;
-}
-
-int MaxCutGraph::ComputeOptimalColoring(const vector<int>& S, const vector<int>& S_color) {
-    (void) S;
-    (void) S_color;
-
-    for (unsigned i = 0; i < S.size(); ++i) {
-        auto adj = g_adj_list[S[i]];
-        
-
-        vector<int> adjs;
-        for (unsigned i = 0; i < adj.size(); ++i)
-            if (std::find(S.begin(), S.end(), adj[i]) != S.end()) adjs.push_back(adj[i]);
-
-        int adjsz  = adjs.size();
-        cout << S[i] << " = " << adjsz << " ::: ";
-        
-        for (unsigned j = 0; j < adjs.size(); ++j)
-            cout << adjs[j] << " ";
-        cout << endl;
-    }
-
-    return -1;
 }
 
 vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bool make_maximum) {
