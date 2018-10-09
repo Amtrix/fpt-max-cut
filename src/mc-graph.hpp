@@ -167,10 +167,12 @@ public:
     /**
      *  Special kernelization rules: weighted <-> unweighted
      **/
+    bool CandidateSatisfiesSpecialRule1(const tuple<int,int,int,int> &candidate) const;
+    bool CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candidate) const;
     // 3-paths. Used for handling integer weights > 1.
     vector<tuple<int,int,int,int>> GetAllSpecialRule1Candidates() const;
     // 2-paths. Used for handlging integer weights < 0.
-    vector<tuple<int,int,int>> GetAllSpecialRuke2Candidates() const;
+    vector<tuple<int,int,int>> GetAllSpecialRule2Candidates() const;
 
     // Returns all edges with integer weight > 1.
     vector<pair<int,int>> GetAllRevSpecialRule1Candidates() const;

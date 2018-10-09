@@ -38,9 +38,11 @@ std::function<void()> suite[] = {
         {
             MaxCutGraph Gtmp = G;
             double chgtmp = 0;
-            Gtmp.ApplyR8Candidate(res_r8[0], chgtmp);
+            Gtmp.ApplyR8Candidate(res_r8[0]);
+            chgtmp = Gtmp.GetInflictedCutChangeToKernelized();
             VERIFY(chgtmp, -2);
-            Gtmp.ApplyR8Candidate(res_r8[1], chgtmp);
+            Gtmp.ApplyR8Candidate(res_r8[1]);
+            chgtmp = Gtmp.GetInflictedCutChangeToKernelized();
             VERIFY(chgtmp, -4);
         }
     },
@@ -75,9 +77,11 @@ std::function<void()> suite[] = {
         {
             MaxCutGraph Gtmp = G;
             double chgtmp = 0;
-            Gtmp.ApplyR8Candidate(res_r8[0], chgtmp);
+            Gtmp.ApplyR8Candidate(res_r8[0]);
+            chgtmp = Gtmp.GetInflictedCutChangeToKernelized();
             VERIFY(chgtmp, -3);
-            Gtmp.ApplyR8Candidate(res_r8[1], chgtmp);
+            Gtmp.ApplyR8Candidate(res_r8[1]);
+            chgtmp = Gtmp.GetInflictedCutChangeToKernelized();
             VERIFY(chgtmp, -6);
         }
     },

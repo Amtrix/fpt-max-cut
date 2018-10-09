@@ -493,6 +493,7 @@ void MaxCutGraph::RemoveNode(int node) {
 
     removed_node[node] = true;
 }
+
 void MaxCutGraph::ReAddNode(int node) {
     ResetComputedTopology();
 
@@ -1573,7 +1574,7 @@ void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
 vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<pair<int,int>> ret;
 
-    auto current_v = GetAllExistingNodes();
+    const auto &current_v = GetAllExistingNodes();
     for (auto root_A : current_v) { // an internal vertex
         auto adj_root_A = GetAdjacency(root_A);
         if (KeyExists(root_A, preset_is_external) || adj_root_A.size() == 0) continue;
@@ -1603,6 +1604,53 @@ void MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, const unorder
 
     RemoveEdgesBetween(candidate.first, candidate.second);
 }
+
+bool MaxCutGraph::CandidateSatisfiesSpecialRule1(const tuple<int,int,int,int> &candidate) const {
+    int a = get<0>(candidate), b = get<1>(candidate), c = get<2>(candidate), d = get<3>(candidate);
+
+    if (MapEqualCheck(removed_node, a, true)) return false;
+    if (MapEqualCheck(removed_node, b, true)) return false;
+    if (MapEqualCheck(removed_node, c, true)) return false;
+    if (MapEqualCheck(removed_node, d, true)) return false;
+
+    auto adj1 = GetAdjacency(b);
+    auto adj2 = GetAdjacency(c);
+
+    if (adj1.size() != 2 || adj2.size() != 2) return false;
+
+    return min(adj1[0], adj1[1]) == min(a, c) && max(adj1[0], adj1[1]) == max(a, c)
+        && min(adj2[0], adj2[1]) == min(b, d) && max(adj2[0], adj2[1]) == max(b, d);
+}
+
+bool MaxCutGraph::CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candidate) const {
+    if (MapEqualCheck(removed_node, get<0>(candidate), true)) return false;
+    if (MapEqualCheck(removed_node, get<1>(candidate), true)) return false;
+    if (MapEqualCheck(removed_node, get<2>(candidate), true)) return false;
+    
+    auto adj = GetAdjacency(get<1>(candidate));
+    if (adj.size() != 2) return false;
+
+    int a = get<0>(candidate), b = get<2>(candidate);
+
+    return min(adj[0], adj[1]) == min(a,b) && max(adj[0], adj[1]) == max(a,b);
+}
+
+vector<tuple<int,int,int>> MaxCutGraph::GetAllSpecialRule2Candidates() const {
+    vector<tuple<int,int,int>> ret;
+    
+    const auto &current_v = GetAllExistingNodes();
+    for (auto root : current_v) {
+        auto &adj = GetAdjacency(root);
+
+        if (adj.size() != 2) continue;
+        auto candidate = make_tuple(adj[0], root, adj[1]);
+        assert(CandidateSatisfiesSpecialRule2(candidate));
+        ret.push_back(candidate);
+    }
+
+    return ret;
+}
+
 
 double MaxCutGraph::ExecuteLinearKernelization() {
 
