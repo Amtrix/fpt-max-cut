@@ -119,8 +119,8 @@ std::function<void()> suite[] = {
                 break;
             }
 
-            auto heur_sol = G.ComputeMaxCutHeuristically();
-            auto heur_sol_k = kernelized.ComputeMaxCutHeuristically();
+            auto heur_sol = G.ComputeMaxCutWithMQLib();
+            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib();
             VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change);
 
             if (DEBUG) cout << "DOUBLE k_change: " << k_change << endl;

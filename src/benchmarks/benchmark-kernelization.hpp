@@ -101,8 +101,8 @@ public:
 
             double local_search_cut_size = G.ComputeLocalSearchCut().first;
             double local_search_cut_size_k = kernelized.ComputeLocalSearchCut().first;
-            auto heur_sol = G.ComputeMaxCutHeuristically();
-            auto heur_sol_k = kernelized.ComputeMaxCutHeuristically();
+            auto heur_sol = G.ComputeMaxCutWithMQLib();
+            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib();
             double EE = 0;//G.GetEdwardsErdosBound();
             double EE_k = 0;//kernelized.GetEdwardsErdosBound();
             double k = (heur_sol.first - EE);
