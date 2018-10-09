@@ -126,43 +126,56 @@ public:
      **/
     // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
     vector<vector<int>> GetAllR8Candidates(const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyR8Candidate(const vector<int> &clique, double &cut_change);
+    void ApplyR8Candidate(const vector<int> &clique);
 
     // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
     // (x,pair2.first,pair2.second).
     vector<pair<int,vector<pair<int,int>>>> GetAllR9Candidates() const;
-    void ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates, double &cut_change);
+    void ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates);
 
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     // Warning! X >= C/2, therefore, deletion of some vertices in X is necessary when applying the rule.
     vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates() const;
-    void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate, double &cut_change);
+    void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate);
 
     // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 
     vector<tuple<bool, int, int, int>> GetAllR10Candidates(const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate, double &k);
+    void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate);
 
     // Returns a vector of 5-tuples a' b c d d'
     vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates(const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &cut_change);
+    void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
 
     // Returns a vector of odd cliques with less than ceil(n/2) external vertices.
     vector<vector<int>> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS2Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
+    void ApplyS2Candidate(const vector<int>& clique, const unordered_map<int,bool>& preset_is_external = {});
 
     // Get "almost cliques" (missing one edge) with at least one internal vertex.
     vector<vector<int>> GetS3Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS3Candidate(const vector<int> &clique, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
+    void ApplyS3Candidate(const vector<int> &clique, const unordered_map<int,bool>& preset_is_external = {});
 
     vector<tuple<bool,int,int,int,int>> GetAllS4Candidates(const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate, double &cut_change);
+    void ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate);
     
     vector<tuple<int,int,int,int>> GetAllS5Candidates(const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS5Candidate(const tuple<int,int,int,int>& candidate, double &cut_change);
+    void ApplyS5Candidate(const tuple<int,int,int,int>& candidate);
 
     vector<pair<int,int>> GetAllS6Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS6Candidate(const pair<int,int> &candidate, double &cut_change, const unordered_map<int,bool>& preset_is_external = {});
+    void ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external = {});
 
+
+    /**
+     *  Special kernelization rules: weighted <-> unweighted
+     **/
+    // 3-paths. Used for handling integer weights > 1.
+    vector<tuple<int,int,int,int>> GetAllSpecialRule1Candidates() const;
+    // 2-paths. Used for handlging integer weights < 0.
+    vector<tuple<int,int,int>> GetAllSpecialRuke2Candidates() const;
+
+    // Returns all edges with integer weight > 1.
+    vector<pair<int,int>> GetAllRevSpecialRule1Candidates() const;
+    // Returns all edges with integer weight < 0.
+    vector<pair<int,int>> GetAllRevSpecialRuke2Candidates() const;
 
     /**
      *  Transformations of all G / create G' with certain properties.
@@ -170,7 +183,8 @@ public:
     double ExecuteLinearKernelization();
     void ExecuteExhaustiveKernelization();
     void ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool>& preset_is_external);
-
+    void MakeUnweighted();
+    void MakeWeighted();
     
 
     /**
@@ -191,6 +205,7 @@ public:
     string PrintDegrees(const unordered_map<int,bool>& preset_is_external = {}) const;
     // Get cut size according to 0/1 coloring of nodes. grouping is a 0-1 vector. Vertex x is colored by grouping[x]. 
     int GetCutSize(const vector<int> &grouping) const;
+    double GetInflictedCutChangeToKernelized() const { return inflicted_cut_change_to_kernelized; }
 
 private:
     inline long long MakeEdgeKey(int a, int b) const { return a * (long long)(num_nodes+1) + b; }
@@ -225,7 +240,7 @@ private:
 
     map<pair<int,int>, bool> is_bridge_between;
 
-    unordered_map<long long, int> edge_weight_ifnot_1;
+    unordered_map<long long, int> edge_weight;
     unordered_map<long long, bool> edge_exists_lookup;
     vector<vector<int>> g_adj_list;
     vector<vector<int>> biconnected_components;
@@ -239,4 +254,6 @@ private:
 
     // Used by MaxCutExtension
     vector<int> computed_maxcut_coloring;
+
+    double inflicted_cut_change_to_kernelized; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
 };

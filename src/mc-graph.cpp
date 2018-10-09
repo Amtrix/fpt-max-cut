@@ -127,8 +127,12 @@ void MaxCutGraph::ResetComputedTopology() {
 }
 
 void MaxCutGraph::AddEdge(int a, int b, int weight) {
-    if(edge_exists_lookup[MakeEdgeKey(a,b)]) {
-        OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b));
+    int keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
+
+    if(edge_exists_lookup[keyAB]) {
+        OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
+        edge_weight[keyAB] += weight;
+        edge_weight[keyBA] += weight;
         return;
     } else if (a == b) {
         OutputDebugLog("Warning: self-loop on " + to_string(a) + " detected.");
@@ -139,15 +143,12 @@ void MaxCutGraph::AddEdge(int a, int b, int weight) {
 
     g_adj_list[a].push_back(b);
     g_adj_list[b].push_back(a);
-
-    int keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
+    
     edge_exists_lookup[keyAB] = true;
     edge_exists_lookup[keyBA] = true;
 
-    if (weight != 1) {
-        edge_weight_ifnot_1[keyAB] += weight;
-        edge_weight_ifnot_1[keyBA] += weight;
-    }
+    edge_weight[keyAB] += weight;
+    edge_weight[keyBA] += weight;
 
     ResetComputedTopology();
 }
@@ -487,15 +488,8 @@ void MaxCutGraph::RemoveNode(int node) {
 
     g_adj_list[node].clear();
 
-    for (int i = 0; i < num_nodes; ++i) {
+    for (int i = 0; i < num_nodes; ++i)
         RemoveEdgesBetween(i, node);
-        //const auto it = std::find(g_adj_list[i].cbegin(), g_adj_list[i].cend(), node);
-        //if (it != g_adj_list[i].end())
-        //    g_adj_list[i].erase(it);
-        //
-       // edge_exists_lookup.erase(MakeEdgeKey(node, i));
-       // edge_exists_lookup.erase(MakeEdgeKey(i, node));
-    }
 
     removed_node[node] = true;
 }
@@ -519,8 +513,8 @@ void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
     int keyAB = MakeEdgeKey(nodex, nodey), keyBA = MakeEdgeKey(nodey, nodex);
     edge_exists_lookup.erase(keyAB);
     edge_exists_lookup.erase(keyBA);
-    edge_weight_ifnot_1.erase(keyAB);
-    edge_weight_ifnot_1.erase(keyBA);
+    edge_weight.erase(keyAB);
+    edge_weight.erase(keyBA);
 }
 
 void MaxCutGraph::RemoveEdgesInComponent(const vector<int> &component) {
@@ -1126,14 +1120,14 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const unordered_map<int,bool
     return ret;
 }
 
-void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique, double &cut_change) {
+void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     assert(clique.size() >= 2);
 
     int frem = rand() % clique.size();
     int srem = (frem + 1) % clique.size();
     int rem_node1 = clique[frem], rem_node2 = clique[srem];
 
-    cut_change -= GetAdjacency(rem_node1).size();
+    inflicted_cut_change_to_kernelized -= GetAdjacency(rem_node1).size();
     RemoveNode(rem_node1);
     RemoveNode(rem_node2);
 }
@@ -1190,7 +1184,7 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() const 
     return ret;
 }
 
-void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidate, double &cut_change) {
+void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidate) {
     const pair<int,int> &triag1 = candidate.second[0];
     const pair<int,int> &triag2 = candidate.second[1];
     AddEdge(triag1.first, triag2.first);
@@ -1199,7 +1193,7 @@ void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candid
     AddEdge(triag1.second, triag2.first);
     AddEdge(triag1.second, triag2.second);
 
-    cut_change += 2; // increases (4 edges / 2 in EE)
+    inflicted_cut_change_to_kernelized += 2; // increases (4 edges / 2 in EE)
 }
 
 vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() const {
@@ -1233,11 +1227,11 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() const 
 
     return ret;
 }
-void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate, double &cut_change) {
+void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate) {
     assert(candidate.second.size() >= 1);
 
     int rem_node = candidate.second[rand() % candidate.second.size()];
-    cut_change -= (2*GetAdjacency(rem_node).size() + 2 /* +1 for cut change, +1 for removal of node in EE */) / 4.0; // why is this an integer? GetAdjacency(rem_node).size() is odd, since clique is even and doesnt contain itself.
+    inflicted_cut_change_to_kernelized -= (2*GetAdjacency(rem_node).size() + 2 /* +1 for cut change, +1 for removal of node in EE */) / 4.0; // why is this an integer? GetAdjacency(rem_node).size() is odd, since clique is even and doesnt contain itself.
 
     RemoveNode(rem_node);
 }
@@ -1285,7 +1279,7 @@ vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates(const unorde
     
     return ret;
 }
-void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate, double &k) {
+void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate) {
     bool bridge_case = get<0>(candidate);
     int u = get<1>(candidate);
     int nodex = get<2>(candidate);
@@ -1296,29 +1290,29 @@ void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate,
         vector<int> adj_nodey = GetAdjacency(nodey);
         vector<int> adj = SetUnion(adj_nodex, adj_nodey);
 
-        k -= (2 * GetAdjacency(u).size() + 1) / 4.0;
+        inflicted_cut_change_to_kernelized -= (2 * GetAdjacency(u).size() + 1) / 4.0;
         RemoveNode(u);
 
-        k -= (2 * GetAdjacency(nodex).size() + 1) / 4.0;
+        inflicted_cut_change_to_kernelized -= (2 * GetAdjacency(nodex).size() + 1) / 4.0;
         RemoveNode(nodex);
 
-        k -= (2 * GetAdjacency(nodey).size() + 1) / 4.0;
+        inflicted_cut_change_to_kernelized -= (2 * GetAdjacency(nodey).size() + 1) / 4.0;
         RemoveNode(nodey);
 
-        k += 1 / 4.0;
+        inflicted_cut_change_to_kernelized += 1 / 4.0;
         ReAddNode(u);
 
         for (auto v : adj) {
             if (v != u && v != nodex && v != nodey) {
-                k += 1 / 2.0;
+                inflicted_cut_change_to_kernelized += 1 / 2.0;
                 AddEdge(u, v);
             }
         }
     } else {
-        k -= (2 * GetAdjacency(u).size() + 2 /* +1 for node (/4 before already) and +1 for the change in cut (/4 before already) */) / 4.0; // k-- in EE included here.
+        inflicted_cut_change_to_kernelized -= (2 * GetAdjacency(u).size() + 2 /* +1 for node (/4 before already) and +1 for the change in cut (/4 before already) */) / 4.0; // k-- in EE included here.
         RemoveNode(u);
 
-        k -= 1 / 2.0; // m/2 in EE
+        inflicted_cut_change_to_kernelized -= 1 / 2.0; // m/2 in EE
         RemoveEdgesBetween(nodex, nodey);
     }
 }
@@ -1347,7 +1341,7 @@ vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates(const uno
     }
     return ret;
 }
-void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate, double &cut_change) {
+void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate) {
     int ex_L = get<0>(candidate), a = get<1>(candidate), b = get<2>(candidate),
            c = get<3>(candidate), ex_R = get<4>(candidate);
 
@@ -1355,7 +1349,7 @@ void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
     RemoveNode(c);
     AddEdge(ex_L, b);
     AddEdge(b, ex_R);
-    cut_change -= 2;
+    inflicted_cut_change_to_kernelized -= 2;
 }
 
 // Interesting facts on this rule:
@@ -1392,7 +1386,7 @@ vector<vector<int>> MaxCutGraph::GetS2Candidates(const bool break_on_first, cons
 
     return ret;
 }
-void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external) {// Clique cut.
+void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, const unordered_map<int,bool>& preset_is_external) {// Clique cut.
     int n = clique.size();
     int add_tot = 0;
     for (int i = 1; i <= n; ++i) {
@@ -1400,7 +1394,7 @@ void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, double &cut_change
         if (add <= 0) break;
         add_tot += add;
     }
-    cut_change -= add_tot;
+    inflicted_cut_change_to_kernelized -= add_tot;
     
     // Apply changes to graph:
     vector<int> rem_nodes;
@@ -1481,8 +1475,7 @@ vector<vector<int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, cons
     return ret;
 }
 
-void MaxCutGraph::ApplyS3Candidate(const vector<int>& clique, double &cut_change, const unordered_map<int,bool>& preset_is_external) {
-    (void) cut_change;
+void MaxCutGraph::ApplyS3Candidate(const vector<int>& clique, const unordered_map<int,bool>& preset_is_external) {
     (void) preset_is_external;
 
     for (int i = 0; i < (int)clique.size(); ++i)
@@ -1524,7 +1517,7 @@ vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetAllS4Candidates(const unorde
     }
     return ret;
 }
-void MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate, double &cut_change) {
+void MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate) {
     bool type = get<0>(candidate);
     int nodeA = get<1>(candidate);
     int nodeB = get<2>(candidate);
@@ -1536,10 +1529,10 @@ void MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate, doubl
         RemoveEdgesBetween(nodeA, nodeD);
         RemoveEdgesBetween(nodeB, nodeC);
         RemoveEdgesBetween(nodeB, nodeD);
-        cut_change -= 4;
+        inflicted_cut_change_to_kernelized -= 4;
     } else {
         RemoveNode(nodeC); // or nodeD
-        cut_change -= 2;
+        inflicted_cut_change_to_kernelized -= 2;
     }
 }
 
@@ -1566,14 +1559,14 @@ vector<tuple<int,int,int,int>> MaxCutGraph::GetAllS5Candidates(const unordered_m
     }
     return ret;
 }
-void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate, double &cut_change) {
+void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
     int ex_L = get<0>(candidate), a = get<1>(candidate), b = get<2>(candidate),
         ex_R = get<3>(candidate);
 
     RemoveNode(a);
     RemoveNode(b);
     AddEdge(ex_L, ex_R);
-    cut_change -= 2;
+    inflicted_cut_change_to_kernelized -= 2;
 }
 
 
@@ -1605,71 +1598,69 @@ vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first,
     return ret;
 }
 
-void MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, double &cut_change, const unordered_map<int,bool>& preset_is_external) {
-    (void) cut_change;
+void MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external) {
     (void) preset_is_external;
 
     RemoveEdgesBetween(candidate.first, candidate.second);
 }
 
 double MaxCutGraph::ExecuteLinearKernelization() {
-    double k_change = 0;
+
     while (true) {
         // <- possibly relabel graph here first before using R8.
         auto res_r8 = GetAllR8Candidates(); // not yet fully linear! See implementation.
         if (!res_r8.empty()) {
-            ApplyR8Candidate(res_r8[0], k_change);
+            ApplyR8Candidate(res_r8[0]);
             continue;
         }
         
         auto res_r9 = GetAllR9Candidates();
         if (!res_r9.empty()) {
-            ApplyR9Candidate(res_r9[0], k_change);
+            ApplyR9Candidate(res_r9[0]);
             continue;
         }
 
         break;
     }
 
-    return k_change;
+    return GetInflictedCutChangeToKernelized();
 }
 
 void MaxCutGraph::ExecuteExhaustiveKernelization() {
-    double k_change = 0;
     while (true) {
         auto res_rs2 = GetS2Candidates(true);
         if (!res_rs2.empty()) {
-            ApplyS2Candidate(res_rs2[0], k_change);
+            ApplyS2Candidate(res_rs2[0]);
             continue;
         }
 
         auto res_r9x = GetAllR9XCandidates();
         if (!res_r9x.empty()) {
-            ApplyR9XCandidate(res_r9x[0], k_change);
+            ApplyR9XCandidate(res_r9x[0]);
             continue;
         }
         
         auto res_r8 = GetAllR8Candidates();
         if (!res_r8.empty()) {
-            ApplyR8Candidate(res_r8[0], k_change);
+            ApplyR8Candidate(res_r8[0]);
             continue;
         }
         
         auto res_r10 = GetAllR10Candidates();
         if (!res_r10.empty()) {
-            ApplyR10Candidate(res_r10[0], k_change);
+            ApplyR10Candidate(res_r10[0]);
             continue;
         }
         
         auto res_r9 = GetAllR9Candidates();
         if (!res_r9.empty()) {
-            ApplyR9Candidate(res_r9[0], k_change);
+            ApplyR9Candidate(res_r9[0]);
             continue;
         }
 
         auto res_r10ast = GetAllR10ASTCandidates();
         if (!res_r10ast.empty()) {
-            ApplyR10ASTCandidate(res_r10ast[0], k_change);
+            ApplyR10ASTCandidate(res_r10ast[0]);
             continue;
         }
         
@@ -1678,7 +1669,6 @@ void MaxCutGraph::ExecuteExhaustiveKernelization() {
 }
 
 void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool> &preset_is_external) {
-    double k_change = 0;
     while (true) {
         /*
         auto res_rs2 = GetS2Candidates(true, preset_is_external);
@@ -1690,26 +1680,26 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
         
         auto res_s3 = GetS3Candidates(true, preset_is_external);
         if (!res_s3.empty()) {
-            ApplyS3Candidate(res_s3[0], k_change, preset_is_external);
+            ApplyS3Candidate(res_s3[0], preset_is_external);
             continue;
         }
 
         auto res_r10ast = GetAllR10ASTCandidates(preset_is_external);
         if (!res_r10ast.empty()) {
-            ApplyR10ASTCandidate(res_r10ast[0], k_change);
+            ApplyR10ASTCandidate(res_r10ast[0]);
             continue;
         }
 
         auto res_r8 = GetAllR8Candidates(preset_is_external);
         if (!res_r8.empty()) {
-            ApplyR8Candidate(res_r8[0], k_change);
+            ApplyR8Candidate(res_r8[0]);
             continue;
         }
 
         
         auto res_s4 = GetAllS4Candidates(preset_is_external);
         if (!res_s4.empty()) {
-            ApplyS4Candidate(res_s4[0], k_change);
+            ApplyS4Candidate(res_s4[0]);
             continue;
         }
 
@@ -1717,14 +1707,14 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
         
         auto res_s5 = GetAllS5Candidates(preset_is_external);
         if (!res_s5.empty()) {
-            ApplyS5Candidate(res_s5[0], k_change);
+            ApplyS5Candidate(res_s5[0]);
             continue;
         }
         
         
         auto res_s6 = GetAllS6Candidates(true, preset_is_external);
         if (!res_s6.empty()) {
-            ApplyS6Candidate(res_s6[0], k_change, preset_is_external);
+            ApplyS6Candidate(res_s6[0], preset_is_external);
             continue;
         }
 
