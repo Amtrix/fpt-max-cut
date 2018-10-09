@@ -1635,6 +1635,32 @@ bool MaxCutGraph::CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candi
     return min(adj[0], adj[1]) == min(a,b) && max(adj[0], adj[1]) == max(a,b);
 }
 
+vector<tuple<int,int,int,int>> MaxCutGraph::GetAllSpecialRule1Candidates() const {
+    vector<tuple<int,int,int, int>> ret;
+    
+    const auto &current_v = GetAllExistingNodes();
+    for (auto b : current_v) {
+        auto &adj1 = GetAdjacency(b);
+
+        if (adj1.size() != 2) continue;
+
+        for (int i = 0; i < (int)adj1.size(); ++i) {
+            int c = adj1[i];
+            auto &adj2 = GetAdjacency(c);
+            if (adj2.size() != 2) continue;
+
+            int a = adj1[1 - i];
+            int d = adj2[0] == b ? adj2[1] : adj2[0];
+
+            auto candidate = make_tuple(a, b, c, d);
+            assert(CandidateSatisfiesSpecialRule1(candidate));
+            ret.push_back(candidate);
+        }
+    }
+
+    return ret;
+}
+
 vector<tuple<int,int,int>> MaxCutGraph::GetAllSpecialRule2Candidates() const {
     vector<tuple<int,int,int>> ret;
     
@@ -1650,7 +1676,6 @@ vector<tuple<int,int,int>> MaxCutGraph::GetAllSpecialRule2Candidates() const {
 
     return ret;
 }
-
 
 double MaxCutGraph::ExecuteLinearKernelization() {
 
