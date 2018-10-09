@@ -5,6 +5,31 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+enum class RuleIds : int {
+    SpecialRule1,
+    SpecialRule2,
+    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6
+};
+
+const map<RuleIds, string> kRuleDescriptions = {
+    {RuleIds::SpecialRule1,   "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 3 to a single edge."},
+    {RuleIds::SpecialRule2,   "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 2 to a single edge."},
+    {RuleIds::Rule8,          "Reduction Rule for handling cliques with uniform neighbhor set. Rule 8 in linear kernel paper."},
+    {RuleIds::Rule9,          "Reduction Rule for handling special triangles sharing one common vertex. Rule 9 in linear kernel paper."},
+    {RuleIds::Rule9X,         "Reduction Rule for handling cliques in cliques with > /2 size. Rule 9 in max-balanced-subgraph paper."},
+    {RuleIds::Rule10,         "Reduction Rule for handling special bridge induced by a single vertex 'u'. Rule 10 in max-balanced-subgraph paper."},
+    {RuleIds::Rule10AST,      "Reduction Rule for handling induced paths of length 4. Rule 10 in AST paper."},
+    {RuleIds::RuleS2,         "Selfmade Reduction Rule for handling cliques with <= n/2 external vertices."},
+    {RuleIds::RuleS3,         "Selfmade Reduction Rule for handling cliques with an missing edge -> adds it to it."},
+    {RuleIds::RuleS4,         "Selfmade Reduction Rule for handling two quads cases."},
+    {RuleIds::RuleS5,         "Selfmade Reduction Rule for handling induced paths of length 3."},
+    {RuleIds::RuleS6,         "?????????????????"},
+};
+
+const vector<RuleIds> kAllRuleIds = {
+    RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
+};
+
 // Definition articulation node:
 // Its removal parts the graph in at least two non-empty graphs.
 
@@ -13,6 +38,7 @@ using namespace std;
 // All node indices are 0-based.
 class MaxCutGraph {
 public:
+    
     MaxCutGraph();
 
     MaxCutGraph(int n, int m);
@@ -147,7 +173,7 @@ public:
     vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates(const unordered_map<int,bool>& preset_is_external = {}) const;
     void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
 
-    // Returns a vector of odd cliques with less than ceil(n/2) external vertices.
+    // Returns a vector of cliques with less than ceil(n/2) external vertices.
     vector<vector<int>> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     void ApplyS2Candidate(const vector<int>& clique, const unordered_map<int,bool>& preset_is_external = {});
 
@@ -182,6 +208,8 @@ public:
     // Returns all edges with integer weight < 0.
     vector<pair<int,int>> GetAllRevSpecialRuke2Candidates() const;
 
+
+
     /**
      *  Transformations of all G / create G' with certain properties.
      **/
@@ -208,6 +236,8 @@ public:
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false) const;
     void PrintGraph(std::ostream& out) const;
     string PrintDegrees(const unordered_map<int,bool>& preset_is_external = {}) const;
+    void PrintReductionsUsage() const;
+    vector<int> GetUsageVector() const;
     // Get cut size according to 0/1 coloring of nodes. grouping is a 0-1 vector. Vertex x is colored by grouping[x]. 
     int GetCutSize(const vector<int> &grouping) const;
     double GetInflictedCutChangeToKernelized() const { return inflicted_cut_change_to_kernelized; }
@@ -261,4 +291,5 @@ private:
     vector<int> computed_maxcut_coloring;
 
     double inflicted_cut_change_to_kernelized; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
+    unordered_map<RuleIds, int> rules_usage_count;
 };

@@ -1132,6 +1132,8 @@ void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     inflicted_cut_change_to_kernelized -= GetAdjacency(rem_node1).size();
     RemoveNode(rem_node1);
     RemoveNode(rem_node2);
+
+    rules_usage_count[RuleIds::Rule8]++;
 }
 
 vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() const {
@@ -1196,6 +1198,7 @@ void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candid
     AddEdge(triag1.second, triag2.second);
 
     inflicted_cut_change_to_kernelized += 2; // increases (4 edges / 2 in EE)
+    rules_usage_count[RuleIds::Rule9]++;
 }
 
 vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() const {
@@ -1236,6 +1239,7 @@ void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candid
     inflicted_cut_change_to_kernelized -= (2*GetAdjacency(rem_node).size() + 2 /* +1 for cut change, +1 for removal of node in EE */) / 4.0; // why is this an integer? GetAdjacency(rem_node).size() is odd, since clique is even and doesnt contain itself.
 
     RemoveNode(rem_node);
+    rules_usage_count[RuleIds::Rule9X]++;
 }
 
 vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates(const unordered_map<int,bool>& preset_is_external) const {
@@ -1317,6 +1321,8 @@ void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate)
         inflicted_cut_change_to_kernelized -= 1 / 2.0; // m/2 in EE
         RemoveEdgesBetween(nodex, nodey);
     }
+
+    rules_usage_count[RuleIds::Rule10]++; // beware of possibly having return in one of if above!
 }
 
 // O(|V| + |E|)
@@ -1341,6 +1347,7 @@ vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates(const uno
 
         ret.push_back(make_tuple(ex_L, a, b, c, ex_R));
     }
+
     return ret;
 }
 void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate) {
@@ -1352,6 +1359,7 @@ void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
     AddEdge(ex_L, b);
     AddEdge(b, ex_R);
     inflicted_cut_change_to_kernelized -= 2;
+    rules_usage_count[RuleIds::Rule10AST]++;
 }
 
 // Interesting facts on this rule:
@@ -1417,6 +1425,8 @@ void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, const unordered_ma
 
     for (auto node : rem_nodes)
         RemoveNode(node);
+    
+    rules_usage_count[RuleIds::RuleS2]++;
 }
 
 vector<vector<int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
@@ -1484,6 +1494,7 @@ void MaxCutGraph::ApplyS3Candidate(const vector<int>& clique, const unordered_ma
         for (int j = i + 1; j < (int)clique.size(); ++j)
             if (AreAdjacent(clique[i], clique[j]) == false)
                 AddEdge(clique[i], clique[j]);
+    rules_usage_count[RuleIds::RuleS3]++;
 }
 
 vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetAllS4Candidates(const unordered_map<int,bool>& preset_is_external) const {
@@ -1536,6 +1547,8 @@ void MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate) {
         RemoveNode(nodeC); // or nodeD
         inflicted_cut_change_to_kernelized -= 2;
     }
+
+    rules_usage_count[RuleIds::RuleS4]++;
 }
 
 // O(|V| + |E|)
@@ -1569,6 +1582,7 @@ void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
     RemoveNode(b);
     AddEdge(ex_L, ex_R);
     inflicted_cut_change_to_kernelized -= 2;
+    rules_usage_count[RuleIds::RuleS5]++;
 }
 
 
@@ -1604,6 +1618,7 @@ void MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, const unorder
     (void) preset_is_external;
 
     RemoveEdgesBetween(candidate.first, candidate.second);
+    rules_usage_count[RuleIds::RuleS6]++;
 }
 
 bool MaxCutGraph::CandidateSatisfiesSpecialRule1(const tuple<int,int,int,int> &candidate) const {
@@ -1680,6 +1695,8 @@ bool MaxCutGraph::ApplySpecialRule1(const tuple<int,int,int,int> &candidate) {
     RemoveNode(c);
     AddEdge(a, d, min(w1, min(w2, w3)));
     inflicted_cut_change_to_kernelized -= w1 + w2 + w3 - min(w1, min(w2, w3));
+
+    rules_usage_count[RuleIds::SpecialRule1]++;
     return true;
 }
 
@@ -1692,6 +1709,8 @@ bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate) {
     RemoveNode(b);
     AddEdge(a, c, -min(w1, w2));
     inflicted_cut_change_to_kernelized -= w1 + w2;
+
+    rules_usage_count[RuleIds::SpecialRule2]++;
     return true;
 }
 
@@ -1859,6 +1878,27 @@ void MaxCutGraph::PrintGraph(std::ostream& out) const {
                 out << i + 1<< " " << node + 1<< " " << 1 << endl;
         }
     }
+}
+
+void MaxCutGraph::PrintReductionsUsage() const {
+    for (auto key : kAllRuleIds) {
+        cout << "//  Rule with id " << static_cast<int>(key) << endl;
+        cout << "//  Description: " << kRuleDescriptions.at(key) << endl;
+        cout << "//  Number of times used: " << (rules_usage_count.find(key) != rules_usage_count.end() ? rules_usage_count.at(key) : 0) << endl;
+        cout << endl;
+    }
+}
+
+vector<int> MaxCutGraph::GetUsageVector() const {
+    vector<int> ret;
+    for (auto key : kAllRuleIds) {
+        if (rules_usage_count.find(key) != rules_usage_count.end())
+            ret.push_back(rules_usage_count.at(key));
+        else
+            ret.push_back(0);
+    }
+
+    return ret;
 }
 
 string MaxCutGraph::PrintDegrees(const unordered_map<int,bool>& preset_is_external) const {

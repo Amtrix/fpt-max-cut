@@ -37,7 +37,7 @@ std::function<void()> suite[] = {
         }
 
         double k_change_hash_tot = 0;
-        vector<int> case_coverage_cnt(10, 0);
+        vector<int> case_coverage_cnt(kAllRuleIds.size(), 0); // hacky size init.
         for (string data_filepath : all_sets_to_evaluate) {
             cout << "================ RUNNING TEST INSTANCE ON " + data_filepath + " ================ " << endl;
 
@@ -48,7 +48,6 @@ std::function<void()> suite[] = {
                 auto res_s5 = kernelized.GetAllS5Candidates();
                 if (!res_s5.empty()) {
                     kernelized.ApplyS5Candidate(res_s5[0]);
-                    case_coverage_cnt[8]++;
                     if (DEBUG) cout << "Rule S5 " << endl;
                     continue;
                 }
@@ -56,7 +55,6 @@ std::function<void()> suite[] = {
                 auto res_s4 = kernelized.GetAllS4Candidates();
                 if (!res_s4.empty()) {
                     kernelized.ApplyS4Candidate(res_s4[0]);
-                    case_coverage_cnt[7]++;
                     if (DEBUG) cout << "Rule S4 " << endl;
                     continue;
                 }
@@ -64,7 +62,6 @@ std::function<void()> suite[] = {
                 auto res_rs2 = kernelized.GetS2Candidates(true);
                 if (!res_rs2.empty()) {
                     kernelized.ApplyS2Candidate(res_rs2[0]);
-                    case_coverage_cnt[0]++;
                     if (DEBUG) cout << "Rule S2 " << serializestr(res_rs2[0]) << endl;
                     continue;
                 }
@@ -72,21 +69,18 @@ std::function<void()> suite[] = {
                 auto res_rs3 = kernelized.GetS3Candidates(true);
                 if (!res_rs3.empty()) {
                     kernelized.ApplyS3Candidate(res_rs3[0]);
-                    case_coverage_cnt[6]++;
                     continue;
                 }
 
                 auto res_r9x = kernelized.GetAllR9XCandidates();
                 if (!res_r9x.empty()) {
                     kernelized.ApplyR9XCandidate(res_r9x[0]);
-                    case_coverage_cnt[1]++;
                     continue;
                 }
                 
                 auto res_r8 = kernelized.GetAllR8Candidates();
                 if (!res_r8.empty()) {
                     kernelized.ApplyR8Candidate(res_r8[0]);
-                    case_coverage_cnt[2]++;
                     if (DEBUG) cout << "Rule R8 " << serializestr(res_r8[0]) << endl;
                     continue;
                 }
@@ -94,7 +88,6 @@ std::function<void()> suite[] = {
                 auto res_r10 = kernelized.GetAllR10Candidates();
                 if (!res_r10.empty()) {
                     kernelized.ApplyR10Candidate(res_r10[0]);
-                    case_coverage_cnt[3]++;
                     continue;
                 }
                 
@@ -102,7 +95,6 @@ std::function<void()> suite[] = {
                 auto res_r9 = kernelized.GetAllR9Candidates();
                 if (!res_r9.empty()) {
                     kernelized.ApplyR9Candidate(res_r9[0]);
-                    case_coverage_cnt[4]++;
                     continue;
                 }
 
@@ -110,7 +102,6 @@ std::function<void()> suite[] = {
                 auto res_r10ast = kernelized.GetAllR10ASTCandidates();
                 if (!res_r10ast.empty()) {
                     kernelized.ApplyR10ASTCandidate(res_r10ast[0]); // THERE SEEMS TO BE SOMETHING OFF HERE, BUT I HAVE NO CLUE WHAT
-                    case_coverage_cnt[5]++;
                     continue;
                 }
 
@@ -124,13 +115,17 @@ std::function<void()> suite[] = {
             auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib();
             VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change);
 
+            auto rule_usages = kernelized.GetUsageVector();
+            for (unsigned int i = 0 ; i < rule_usages.size(); ++i)
+                case_coverage_cnt[i] += rule_usages[i];
+
             if (DEBUG) cout << "DOUBLE k_change: " << k_change << endl;
             k_change_hash_tot += k_change;
         }
 
         cout << "Total k_change: " << k_change_hash_tot << endl;
         cout << "Case coverage (=number of applications) = ";
-        for (int r = 0; r < 10; ++r) cout << case_coverage_cnt[r] << " ";
+        for (unsigned int r = 0; r < kAllRuleIds.size(); ++r) cout << case_coverage_cnt[r] << " ";
         cout << endl;
     }
 };
