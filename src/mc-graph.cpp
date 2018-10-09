@@ -133,6 +133,7 @@ void MaxCutGraph::AddEdge(int a, int b, int weight) {
         OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
         edge_weight[keyAB] += weight;
         edge_weight[keyBA] += weight;
+        if (edge_weight[keyAB] == 0) RemoveEdgesBetween(a, b);
         return;
     } else if (a == b) {
         OutputDebugLog("Warning: self-loop on " + to_string(a) + " detected.");
@@ -151,6 +152,49 @@ void MaxCutGraph::AddEdge(int a, int b, int weight) {
     edge_weight[keyBA] += weight;
 
     ResetComputedTopology();
+}
+
+void MaxCutGraph::RemoveNode(int node) {
+    ResetComputedTopology();
+
+    g_adj_list[node].clear();
+
+    for (int i = 0; i < num_nodes; ++i)
+        RemoveEdgesBetween(i, node);
+
+    removed_node[node] = true;
+}
+
+void MaxCutGraph::ReAddNode(int node) {
+    ResetComputedTopology();
+
+    removed_node[node] = false;
+}
+
+void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
+    ResetComputedTopology();
+
+    auto it = std::find(g_adj_list[nodex].cbegin(), g_adj_list[nodex].cend(), nodey);
+    if (it != g_adj_list[nodex].end())
+        g_adj_list[nodex].erase(it);
+    
+    it = std::find(g_adj_list[nodey].cbegin(), g_adj_list[nodey].cend(), nodex);
+    if (it != g_adj_list[nodey].end())
+        g_adj_list[nodey].erase(it);
+    
+    int keyAB = MakeEdgeKey(nodex, nodey), keyBA = MakeEdgeKey(nodey, nodex);
+    edge_exists_lookup.erase(keyAB);
+    edge_exists_lookup.erase(keyBA);
+    edge_weight.erase(keyAB);
+    edge_weight.erase(keyBA);
+}
+
+void MaxCutGraph::RemoveEdgesInComponent(const vector<int> &component) {
+    for (int i = 0; i < (int)component.size(); ++i) {
+        for (int j = i + 1; j < (int)component.size(); ++j) {
+            RemoveEdgesBetween(component[i], component[j]);
+        }
+    }
 }
 
 vector<int> MaxCutGraph::GetAllExistingNodes() const {
@@ -481,49 +525,6 @@ tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_comp
         OutputDebugLog("r = " + to_string(r) + ", X = Component " + to_string(selected_block_dx));
 
     return make_tuple(component, r);
-}
-
-void MaxCutGraph::RemoveNode(int node) {
-    ResetComputedTopology();
-
-    g_adj_list[node].clear();
-
-    for (int i = 0; i < num_nodes; ++i)
-        RemoveEdgesBetween(i, node);
-
-    removed_node[node] = true;
-}
-
-void MaxCutGraph::ReAddNode(int node) {
-    ResetComputedTopology();
-
-    removed_node[node] = false;
-}
-
-void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
-    ResetComputedTopology();
-
-    auto it = std::find(g_adj_list[nodex].cbegin(), g_adj_list[nodex].cend(), nodey);
-    if (it != g_adj_list[nodex].end())
-        g_adj_list[nodex].erase(it);
-    
-    it = std::find(g_adj_list[nodey].cbegin(), g_adj_list[nodey].cend(), nodex);
-    if (it != g_adj_list[nodey].end())
-        g_adj_list[nodey].erase(it);
-    
-    int keyAB = MakeEdgeKey(nodex, nodey), keyBA = MakeEdgeKey(nodey, nodex);
-    edge_exists_lookup.erase(keyAB);
-    edge_exists_lookup.erase(keyBA);
-    edge_weight.erase(keyAB);
-    edge_weight.erase(keyBA);
-}
-
-void MaxCutGraph::RemoveEdgesInComponent(const vector<int> &component) {
-    for (int i = 0; i < (int)component.size(); ++i) {
-        for (int j = i + 1; j < (int)component.size(); ++j) {
-            RemoveEdgesBetween(component[i], component[j]);
-        }
-    }
 }
 
 void MaxCutGraph::ApplyOneWayRule3(const vector<int>& c_with_v, const int v) {
@@ -1618,6 +1619,10 @@ bool MaxCutGraph::CandidateSatisfiesSpecialRule1(const tuple<int,int,int,int> &c
 
     if (adj1.size() != 2 || adj2.size() != 2) return false;
 
+   // if (MapEqualCheck(edge_weight, MakeEdgeKey(a,b), 1) == false) return false;
+   // if (MapEqualCheck(edge_weight, MakeEdgeKey(b,c), 1) == false) return false;
+  //  if (MapEqualCheck(edge_weight, MakeEdgeKey(c,d), 1) == false) return false;
+
     return min(adj1[0], adj1[1]) == min(a, c) && max(adj1[0], adj1[1]) == max(a, c)
         && min(adj2[0], adj2[1]) == min(b, d) && max(adj2[0], adj2[1]) == max(b, d);
 }
@@ -1627,12 +1632,16 @@ bool MaxCutGraph::CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candi
     if (MapEqualCheck(removed_node, get<1>(candidate), true)) return false;
     if (MapEqualCheck(removed_node, get<2>(candidate), true)) return false;
     
-    auto adj = GetAdjacency(get<1>(candidate));
+    int b = get<1>(candidate);
+    auto adj = GetAdjacency(b);
     if (adj.size() != 2) return false;
 
-    int a = get<0>(candidate), b = get<2>(candidate);
+    int a = get<0>(candidate), c = get<2>(candidate);
 
-    return min(adj[0], adj[1]) == min(a,b) && max(adj[0], adj[1]) == max(a,b);
+   //// if (MapEqualCheck(edge_weight, MakeEdgeKey(a,b), 1) == false) return false;
+   // if (MapEqualCheck(edge_weight, MakeEdgeKey(b,c), 1) == false) return false;
+
+    return min(adj[0], adj[1]) == min(a,c) && max(adj[0], adj[1]) == max(a,c);
 }
 
 vector<tuple<int,int,int,int>> MaxCutGraph::GetAllSpecialRule1Candidates() const {
@@ -1661,6 +1670,31 @@ vector<tuple<int,int,int,int>> MaxCutGraph::GetAllSpecialRule1Candidates() const
     return ret;
 }
 
+bool MaxCutGraph::ApplySpecialRule1(const tuple<int,int,int,int> &candidate) {
+    if (!CandidateSatisfiesSpecialRule1(candidate))
+        return false;
+
+    int a = get<0>(candidate), b = get<1>(candidate), c = get<2>(candidate), d = get<3>(candidate);
+    int w1 = edge_weight.at(MakeEdgeKey(a,b)), w2 = edge_weight.at(MakeEdgeKey(b,c)), w3 = edge_weight.at(MakeEdgeKey(c,d));
+    RemoveNode(b);
+    RemoveNode(c);
+    AddEdge(a, d, min(w1, min(w2, w3)));
+    inflicted_cut_change_to_kernelized -= w1 + w2 + w3 - min(w1, min(w2, w3));
+    return true;
+}
+
+bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate) {
+    if (!CandidateSatisfiesSpecialRule2(candidate))
+        return false;
+
+    int a = get<0>(candidate), b = get<1>(candidate), c = get<2>(candidate);
+    int w1 = edge_weight.at(MakeEdgeKey(a,b)), w2 = edge_weight.at(MakeEdgeKey(b,c));
+    RemoveNode(b);
+    AddEdge(a, c, -min(w1, w2));
+    inflicted_cut_change_to_kernelized -= w1 + w2;
+    return true;
+}
+
 vector<tuple<int,int,int>> MaxCutGraph::GetAllSpecialRule2Candidates() const {
     vector<tuple<int,int,int>> ret;
     
@@ -1675,6 +1709,26 @@ vector<tuple<int,int,int>> MaxCutGraph::GetAllSpecialRule2Candidates() const {
     }
 
     return ret;
+}
+
+void MaxCutGraph::MakeUnweighted() {
+
+}
+
+void MaxCutGraph::MakeWeighted() {
+
+    while (true) {
+        const auto &r1_candidates = GetAllSpecialRule1Candidates();
+        for (auto candidate : r1_candidates)
+            ApplySpecialRule1(candidate);
+
+        const auto &r2_candidates = GetAllSpecialRule2Candidates();
+        for (auto candidate : r2_candidates)
+            ApplySpecialRule2(candidate);
+
+        if (r1_candidates.empty() && r2_candidates.empty())
+            break;
+    }
 }
 
 double MaxCutGraph::ExecuteLinearKernelization() {
@@ -1929,8 +1983,9 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib() const {
         auto adj = GetAdjacency(i);
         for (auto w : adj) {
             if (MapEqualCheck(removed_node, w, true) || i >= w) continue;
-            assert(MapEqualCheck(edge_exists_lookup, MakeEdgeKey(w, i), true));
-            edgeList.push_back(Instance::InstanceTuple(std::make_pair(i+1, w+1), 1));
+            auto edge_key = MakeEdgeKey(w, i);
+            assert(MapEqualCheck(edge_exists_lookup, edge_key, true));
+            edgeList.push_back(Instance::InstanceTuple(std::make_pair(i+1, w+1), edge_weight.at(edge_key)));
         }
     }
 

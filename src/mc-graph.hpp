@@ -29,8 +29,19 @@ public:
     //  Resets computed articulation vertices, biconnected components, bridges.
     void ResetComputedTopology();
 
+
+    /**
+     * Core functions for modifying graph. In a perfect world,
+     * all modifications should happen with these functions.
+     **/
     // Adds an edge between a and b with a weight.
     void AddEdge(int a, int b, int weight = 1);
+    void RemoveNode(int node);
+    // Does not add the previously removed edges from the RemoveNode function!
+    void ReAddNode(int node);
+    void RemoveEdgesBetween(int nodex, int nodey);
+    void RemoveEdgesInComponent(const vector<int> &component);
+
 
 
     /**
@@ -71,16 +82,6 @@ public:
     tuple<vector<int>, int> GetLeafBlockAndArticulation(bool print_components = false);
     bool IsCliqueForest(); // all of G
 
-
-    /**
-     * Core functions for modifying graph. In a perfect world,
-     * all modifications should happen with these functions.
-     **/
-    void RemoveNode(int node);
-    // Does not add the previously removed edges from the RemoveNode function!
-    void ReAddNode(int node);
-    void RemoveEdgesBetween(int nodex, int nodey);
-    void RemoveEdgesInComponent(const vector<int> &component);
 
     
     /**
@@ -173,7 +174,9 @@ public:
     vector<tuple<int,int,int,int>> GetAllSpecialRule1Candidates() const;
     // 2-paths. Used for handlging integer weights < 0.
     vector<tuple<int,int,int>> GetAllSpecialRule2Candidates() const;
-
+    // Applications.
+    bool ApplySpecialRule1(const tuple<int,int,int,int> &candidate);
+    bool ApplySpecialRule2(const tuple<int,int,int> &candidate);
     // Returns all edges with integer weight > 1.
     vector<pair<int,int>> GetAllRevSpecialRule1Candidates() const;
     // Returns all edges with integer weight < 0.
@@ -182,11 +185,11 @@ public:
     /**
      *  Transformations of all G / create G' with certain properties.
      **/
+    void MakeUnweighted();
+    void MakeWeighted();
     double ExecuteLinearKernelization();
     void ExecuteExhaustiveKernelization();
     void ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool>& preset_is_external);
-    void MakeUnweighted();
-    void MakeWeighted();
     
 
     /**

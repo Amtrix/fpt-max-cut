@@ -45,7 +45,6 @@ std::function<void()> suite[] = {
             MaxCutGraph kernelized = G;
 
             while (true) {
-                
                 auto res_s5 = kernelized.GetAllS5Candidates();
                 if (!res_s5.empty()) {
                     kernelized.ApplyS5Candidate(res_s5[0]);
@@ -117,6 +116,8 @@ std::function<void()> suite[] = {
 
                 break;
             }
+
+            kernelized.MakeWeighted();
 
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             auto heur_sol = G.ComputeMaxCutWithMQLib();
