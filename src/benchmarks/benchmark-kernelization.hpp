@@ -14,7 +14,7 @@ using namespace std;
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
     Benchmark_Kernelization() {
-        tot_case_coverage_cnt = vector<int>(20, 0);
+        tot_case_coverage_cnt = vector<int>(kAllRuleIds.size(), 0);
     }
 
     void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
@@ -30,73 +30,69 @@ public:
            // kernelized.SaveNumOfComponentsForEdwardsErdosBound();
            // G.SaveNumOfComponentsForEdwardsErdosBound();
 
-            vector<int> case_coverage_cnt(10, 0);
+            kernelized.MakeUnweighted();
+
             while (true) {
                 auto res_rs2 = kernelized.GetS2Candidates(true);
                 if (!res_rs2.empty()) {
                     kernelized.ApplyS2Candidate(res_rs2[0]);
-                    case_coverage_cnt[0]++;
                     continue;
                 }
 
                 auto res_r9x = kernelized.GetAllR9XCandidates();
                 if (!res_r9x.empty()) {
                     kernelized.ApplyR9XCandidate(res_r9x[0]);
-                    case_coverage_cnt[1]++;
                     continue;
                 }
                 
                 auto res_r8 = kernelized.GetAllR8Candidates();
                 if (!res_r8.empty()) {
                     kernelized.ApplyR8Candidate(res_r8[0]);
-                    case_coverage_cnt[2]++;
                     continue;
                 }
                 
                 auto res_r10 = kernelized.GetAllR10Candidates();
                 if (!res_r10.empty()) {
                     kernelized.ApplyR10Candidate(res_r10[0]);
-                    case_coverage_cnt[3]++;
                     continue;
                 }
                 
                 auto res_r9 = kernelized.GetAllR9Candidates();
                 if (!res_r9.empty()) {
                     kernelized.ApplyR9Candidate(res_r9[0]);
-                    case_coverage_cnt[4]++;
                     continue;
                 }
 
                 auto res_r10ast = kernelized.GetAllR10ASTCandidates();
                 if (!res_r10ast.empty()) {
                     kernelized.ApplyR10ASTCandidate(res_r10ast[0]);
-                    case_coverage_cnt[5]++;
                     continue;
                 }
 
                 auto res_s5 = kernelized.GetAllS5Candidates();
                 if (!res_s5.empty()) {
                     kernelized.ApplyS5Candidate(res_s5[0]);
-                    case_coverage_cnt[8]++;
                     continue;
                 }
 
                 auto res_s4 = kernelized.GetAllS4Candidates();
                 if (!res_s4.empty()) {
                     kernelized.ApplyS4Candidate(res_s4[0]);
-                    case_coverage_cnt[7]++;
                     continue;
                 }
 
                 auto res_rs3 = kernelized.GetS3Candidates(true);
                 if (!res_rs3.empty()) {
                     kernelized.ApplyS3Candidate(res_rs3[0]);
-                    case_coverage_cnt[6]++;
                     continue;
                 }
                 
                 break;
             }
+
+            kernelized.MakeWeighted();
+            kernelized.MakeUnweighted();
+            kernelized.MakeWeighted();
 
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             double local_search_cut_size = G.ComputeLocalSearchCut().first;
@@ -112,8 +108,10 @@ public:
             //cout << k << " --- " << k_k << " same value proves correctness! (But different does not incorrectness!)" << endl;
             cout << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
             cout << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
+
+            auto case_coverage_cnt = kernelized.GetUsageVector();
             cout << "Case coverage (=number of applications) = ";
-            for (int r = 0; r < 10; ++r) {
+            for (unsigned int r = 0; r < case_coverage_cnt.size(); ++r) {
                 cout << case_coverage_cnt[r] << " ";
                 tot_case_coverage_cnt[r] += case_coverage_cnt[r];
             }

@@ -109,6 +109,8 @@ std::function<void()> suite[] = {
             }
 
             kernelized.MakeWeighted();
+            kernelized.MakeUnweighted();
+            kernelized.MakeWeighted();
 
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             auto heur_sol = G.ComputeMaxCutWithMQLib();

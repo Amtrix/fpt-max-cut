@@ -65,6 +65,7 @@ public:
     void RemoveNode(int node);
     // Does not add the previously removed edges from the RemoveNode function!
     void ReAddNode(int node);
+    int CreateANode();
     void RemoveEdgesBetween(int nodex, int nodey);
     void RemoveEdgesInComponent(const vector<int> &component);
 
@@ -206,8 +207,10 @@ public:
     // Returns all edges with integer weight > 1.
     vector<pair<int,int>> GetAllRevSpecialRule1Candidates() const;
     // Returns all edges with integer weight < 0.
-    vector<pair<int,int>> GetAllRevSpecialRuke2Candidates() const;
-
+    vector<pair<int,int>> GetAllRevSpecialRule2Candidates() const;
+    //Applications.
+    bool ApplyRevSpecialRule1(const pair<int,int> &candidate);
+    bool ApplyRevSpecialRule2(const pair<int,int> &candidate);
 
 
     /**
@@ -244,6 +247,7 @@ public:
 
 private:
     inline long long MakeEdgeKey(int a, int b) const { return a * (long long)(num_nodes+1) + b; }
+    inline long long MakeEdgeKey(const pair<int,int> &e) const { return MakeEdgeKey(e.first, e.second); }
 
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,
@@ -290,6 +294,6 @@ private:
     // Used by MaxCutExtension
     vector<int> computed_maxcut_coloring;
 
-    double inflicted_cut_change_to_kernelized; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
+    double inflicted_cut_change_to_kernelized = 0; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
     unordered_map<RuleIds, int> rules_usage_count;
 };
