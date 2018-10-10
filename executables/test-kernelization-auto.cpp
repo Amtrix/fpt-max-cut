@@ -44,6 +44,7 @@ std::function<void()> suite[] = {
             MaxCutGraph G(data_filepath);
             MaxCutGraph kernelized = G;
 
+            kernelized.MakeUnweighted();
             while (true) {
                 auto res_s5 = kernelized.GetAllS5Candidates();
                 if (!res_s5.empty()) {

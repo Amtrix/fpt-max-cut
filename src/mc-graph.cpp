@@ -60,26 +60,31 @@ MaxCutGraph::MaxCutGraph(const string path) {
         for (int i = 0; i < num_edges; ++i) {
             sparams = ReadLine(in);
             if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
-            AddEdge(stoi(sparams[0 + (sparams[0]=="e")]) - 1, stoi(sparams[1 + (sparams[0]=="e")]) - 1);
+
+            int offset = sparams[0]=="e";
+            int a = stoi(sparams[0 + offset]) - 1;
+            int b = stoi(sparams[1 + offset]) - 1;
+            int w = 2 + offset < (int)sparams.size() && sparams[2 + offset].size() > 0 ? stoi(sparams[2 + offset]) : 1;
+            AddEdge(a, b, w);
         }
     } else {
         num_nodes = 0;
-        g_adj_list.resize(2000);
-        vector<pair<int,int>> elist;
+        vector<tuple<int,int,int>> elist;
         while (in.eof() == false) {
             sparams = ReadLine(in);
             if (sparams.size() == 0) continue;
             if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(-1));
+
             int a = stoi(sparams[0]);
             int b = stoi(sparams[1]);
-            if (a >= 2000 || b >= 2000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
+            int w = 2 < sparams.size() && sparams[2].size() > 0 ? stoi(sparams[2]) : 1;
             num_nodes = max(num_nodes, max(a + 1, b + 1));
-            elist.push_back(make_pair(a,b));
-            //AddEdge(a, b);
+            elist.push_back(make_tuple(a, b, w));
         }
         
+        g_adj_list.resize(num_nodes);
         for (auto e : elist)
-            AddEdge(e.first, e.second);
+            AddEdge(get<0>(e), get<1>(e), get<2>(e));
     }
     
     OutputDebugLog("Reading from file done.");
@@ -87,15 +92,14 @@ MaxCutGraph::MaxCutGraph(const string path) {
 
 MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist, int n) {
     num_nodes = n;
-    g_adj_list.resize(2000);
+    
     for (auto e : elist) {
         int a = e.first;
         int b = e.second;
-        if (a >= 2000 || b >= 2000) throw std::logic_error("Graph size not supported.. yet. Input line: " + to_string(-1));
         num_nodes = max(num_nodes, max(a + 1, b + 1));
-        //AddEdge(a, b);
     }
 
+    g_adj_list.resize(num_nodes);
     for (auto e : elist)
         AddEdge(e.first, e.second);
 }
@@ -112,7 +116,7 @@ MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) :
             if (w <= node || removed_node[w]) // The added condition w >= node may actually influence results. It creates differently ordered adjacency lists in the graph.
                 continue;
             
-            AddEdge(node, w);
+            AddEdge(node, w, source.GetEdgeWeight(make_pair(node, w)));
         }
     }
 }
@@ -124,7 +128,7 @@ void MaxCutGraph::ResetComputedTopology() {
 }
 
 void MaxCutGraph::AddEdge(int a, int b, int weight) {
-    int keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
+    auto keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
 
     if(edge_exists_lookup[keyAB]) {
         OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
@@ -182,6 +186,7 @@ int MaxCutGraph::CreateANode() {
     }
 
     if (num_nodes <= sel_node) num_nodes = sel_node + 1; // expand num_nodes to accommodate.
+    g_adj_list.resize(num_nodes);
     return sel_node;
 }
 
@@ -196,7 +201,7 @@ void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
     if (it != g_adj_list[nodey].end())
         g_adj_list[nodey].erase(it);
     
-    int keyAB = MakeEdgeKey(nodex, nodey), keyBA = MakeEdgeKey(nodey, nodex);
+    auto keyAB = MakeEdgeKey(nodex, nodey), keyBA = MakeEdgeKey(nodey, nodex);
     edge_exists_lookup.erase(keyAB);
     edge_exists_lookup.erase(keyBA);
     edge_weight.erase(keyAB);
@@ -1772,7 +1777,6 @@ vector<pair<int,int>> MaxCutGraph::GetAllRevSpecialRule2Candidates() const {
 bool MaxCutGraph::ApplyRevSpecialRule1(const pair<int,int> &candidate) {
     int a = candidate.first, b = candidate.second;
     int w = edge_weight.at(MakeEdgeKey(candidate));
-
     assert(w > 1);
 
     RemoveEdgesBetween(a, b);
@@ -1786,6 +1790,7 @@ bool MaxCutGraph::ApplyRevSpecialRule1(const pair<int,int> &candidate) {
         inflicted_cut_change_to_kernelized += 2;
     }
 
+    rules_usage_count[RuleIds::RevSpecialRule1]++;
     return true;
 }
 
@@ -1803,6 +1808,7 @@ bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
         inflicted_cut_change_to_kernelized += 2;
     }
 
+    rules_usage_count[RuleIds::RevSpecialRule2]++;
     return true;
 }
 
@@ -2102,7 +2108,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> preg
 }
 
 // https://github.com/MQLib/MQLib
-pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib() const {
+pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec_time) const {
     std::vector<Instance::InstanceTuple> edgeList;
     for (int i = 0; i < num_nodes; ++i) {
         if (MapEqualCheck(removed_node, i, true)) continue;
@@ -2117,7 +2123,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib() const {
     }
 
     MaxCutInstance mi(edgeList, num_nodes + 1);
-    Burer2002 heur(mi, 1, false, NULL);
+    Burer2002 heur(mi, max_exec_time, false, NULL);
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
     return make_pair(mcSol.get_weight(), mcSol.get_assignments());

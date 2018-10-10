@@ -8,26 +8,31 @@ using namespace std;
 enum class RuleIds : int {
     SpecialRule1,
     SpecialRule2,
+    RevSpecialRule1,
+    RevSpecialRule2,
     Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6
 };
 
 const map<RuleIds, string> kRuleDescriptions = {
-    {RuleIds::SpecialRule1,   "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 3 to a single edge."},
-    {RuleIds::SpecialRule2,   "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 2 to a single edge."},
-    {RuleIds::Rule8,          "Reduction Rule for handling cliques with uniform neighbhor set. Rule 8 in linear kernel paper."},
-    {RuleIds::Rule9,          "Reduction Rule for handling special triangles sharing one common vertex. Rule 9 in linear kernel paper."},
-    {RuleIds::Rule9X,         "Reduction Rule for handling cliques in cliques with > /2 size. Rule 9 in max-balanced-subgraph paper."},
-    {RuleIds::Rule10,         "Reduction Rule for handling special bridge induced by a single vertex 'u'. Rule 10 in max-balanced-subgraph paper."},
-    {RuleIds::Rule10AST,      "Reduction Rule for handling induced paths of length 4. Rule 10 in AST paper."},
-    {RuleIds::RuleS2,         "Selfmade Reduction Rule for handling cliques with <= n/2 external vertices."},
-    {RuleIds::RuleS3,         "Selfmade Reduction Rule for handling cliques with an missing edge -> adds it to it."},
-    {RuleIds::RuleS4,         "Selfmade Reduction Rule for handling two quads cases."},
-    {RuleIds::RuleS5,         "Selfmade Reduction Rule for handling induced paths of length 3."},
-    {RuleIds::RuleS6,         "?????????????????"},
+    {RuleIds::SpecialRule1,    "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 3 to a single edge."},
+    {RuleIds::SpecialRule2,    "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 2 to a single edge."},
+    {RuleIds::RevSpecialRule1, "Reversed Special Reduction Rule for handling weighted<->unweighted."},
+    {RuleIds::RevSpecialRule2, "Reversed Special Reduction Rule for handling weighted<->unweighted."},
+    {RuleIds::Rule8,           "Reduction Rule for handling cliques with uniform neighbhor set. Rule 8 in linear kernel paper."},
+    {RuleIds::Rule9,           "Reduction Rule for handling special triangles sharing one common vertex. Rule 9 in linear kernel paper."},
+    {RuleIds::Rule9X,          "Reduction Rule for handling cliques in cliques with > /2 size. Rule 9 in max-balanced-subgraph paper."},
+    {RuleIds::Rule10,          "Reduction Rule for handling special bridge induced by a single vertex 'u'. Rule 10 in max-balanced-subgraph paper."},
+    {RuleIds::Rule10AST,       "Reduction Rule for handling induced paths of length 4. Rule 10 in AST paper."},
+    {RuleIds::RuleS2,          "Selfmade Reduction Rule for handling cliques with <= n/2 external vertices."},
+    {RuleIds::RuleS3,          "Selfmade Reduction Rule for handling cliques with an missing edge -> adds it to it."},
+    {RuleIds::RuleS4,          "Selfmade Reduction Rule for handling two quads cases."},
+    {RuleIds::RuleS5,          "Selfmade Reduction Rule for handling induced paths of length 3."},
+    {RuleIds::RuleS6,          "?????????????????"},
 };
 
 const vector<RuleIds> kAllRuleIds = {
-    RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
+    RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
+    RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
 };
 
 // Definition articulation node:
@@ -79,6 +84,7 @@ public:
     int GetRealNumEdges() const { return GetAllExistingEdges().size(); }
     vector<int> GetAllExistingNodes() const;
     const vector<int>& GetAdjacency(int node) const { return g_adj_list.at(node); }
+    int GetEdgeWeight(const pair<int,int> &e) const { return edge_weight.at(MakeEdgeKey(e)); }
     bool AreAdjacent(int n1, int n2) const { return MapEqualCheck(edge_exists_lookup, MakeEdgeKey(n1,n2), true); }
     int Degree(int node) const { return GetAdjacency(node).size(); }
     vector<int> GetConnectedComponentOf(int node) const;
@@ -228,7 +234,7 @@ public:
      **/
     // Pregroup[i] in {-1,0,1}. -1 = no predefined group, 0/1 group 0 or 1.
     pair<int, vector<int>> ComputeLocalSearchCut(const vector<int> pregroup = {}) const;
-    pair<int, vector<int>> ComputeMaxCutWithMQLib() const;
+    pair<int, vector<int>> ComputeMaxCutWithMQLib(const double max_exec_time = 0.2) const;
 
 
 
@@ -246,7 +252,8 @@ public:
     double GetInflictedCutChangeToKernelized() const { return inflicted_cut_change_to_kernelized; }
 
 private:
-    inline long long MakeEdgeKey(int a, int b) const { return a * (long long)(num_nodes+1) + b; }
+    constexpr static long long kMaxNumNodes = 1000000000LL;
+    inline long long MakeEdgeKey(int a, int b) const { return a * kMaxNumNodes + b; }
     inline long long MakeEdgeKey(const pair<int,int> &e) const { return MakeEdgeKey(e.first, e.second); }
 
     enum class tarjan_dfs_data_type {

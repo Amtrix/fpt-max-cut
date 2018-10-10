@@ -91,8 +91,6 @@ public:
             }
 
             kernelized.MakeWeighted();
-            kernelized.MakeUnweighted();
-            kernelized.MakeWeighted();
 
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             double local_search_cut_size = G.ComputeLocalSearchCut().first;
