@@ -48,43 +48,77 @@ MaxCutGraph::MaxCutGraph(const string path) {
         throw std::logic_error("File doesn't exist.");
     }
 
+    const string adj_sfx = ".graph";
+    bool treat_as_adj_list_file = path.size() > adj_sfx.size() && path.substr(path.size() - adj_sfx.size()) == adj_sfx;
+
     vector<string> sparams = ReadLine(in);
 
     // we take last two entries as dimacs prefixes each line with type of line
-    if (sparams[0] != "#edge-list-0") {
-        num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
+    if (!treat_as_adj_list_file) {
+        if (sparams[0] != "#edge-list-0") {
+            num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
 
-        int num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
-        g_adj_list.resize(num_nodes);
+            int num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
+            g_adj_list.resize(num_nodes);
 
-        for (int i = 0; i < num_edges; ++i) {
-            sparams = ReadLine(in);
-            if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
+            for (int i = 0; i < num_edges; ++i) {
+                sparams = ReadLine(in);
+                if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(i));
 
-            int offset = sparams[0]=="e";
-            int a = stoi(sparams[0 + offset]) - 1;
-            int b = stoi(sparams[1 + offset]) - 1;
-            int w = 2 + offset < (int)sparams.size() && sparams[2 + offset].size() > 0 ? stoi(sparams[2 + offset]) : 1;
-            AddEdge(a, b, w);
+                int offset = sparams[0]=="e";
+                int a = stoi(sparams[0 + offset]) - 1;
+                int b = stoi(sparams[1 + offset]) - 1;
+                int w = 2 + offset < (int)sparams.size() && sparams[2 + offset].size() > 0 ? stoi(sparams[2 + offset]) : 1;
+                AddEdge(a, b, w, false);
+            }
+        } else {
+            num_nodes = 0;
+            vector<tuple<int,int,int>> elist;
+            while (in.eof() == false) {
+                sparams = ReadLine(in);
+                if (sparams.size() == 0) continue;
+                if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(-1));
+
+                int a = stoi(sparams[0]);
+                int b = stoi(sparams[1]);
+                int w = 2 < sparams.size() && sparams[2].size() > 0 ? stoi(sparams[2]) : 1;
+                num_nodes = max(num_nodes, max(a + 1, b + 1));
+                elist.push_back(make_tuple(a, b, w));
+            }
+            
+            g_adj_list.resize(num_nodes);
+            for (auto e : elist)
+                AddEdge(get<0>(e), get<1>(e), get<2>(e), false);
         }
     } else {
-        num_nodes = 0;
-        vector<tuple<int,int,int>> elist;
-        while (in.eof() == false) {
-            sparams = ReadLine(in);
-            if (sparams.size() == 0) continue;
-            if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(-1));
+        const bool is_weighted_instance = sparams.size() >= 3 && stoi(sparams[2]); 
+        OutputDebugLog("Adjacency list. Is weighted: " + to_string(is_weighted_instance));
 
-            int a = stoi(sparams[0]);
-            int b = stoi(sparams[1]);
-            int w = 2 < sparams.size() && sparams[2].size() > 0 ? stoi(sparams[2]) : 1;
-            num_nodes = max(num_nodes, max(a + 1, b + 1));
-            elist.push_back(make_tuple(a, b, w));
-        }
-        
+        num_nodes = stoi(sparams[0]);
         g_adj_list.resize(num_nodes);
-        for (auto e : elist)
-            AddEdge(get<0>(e), get<1>(e), get<2>(e));
+
+        if (is_weighted_instance && stoi(sparams[2]) != 1) {
+            OutputDebugLog("UNSUPPORTED FORMAT. Skipping.");
+            return;
+        }
+
+        for (int i = 0; i < num_nodes; ++i) {
+            sparams = ReadLine(in);
+
+            if (sparams.size() % 2 != 0 && is_weighted_instance) {
+                cout << "ERROR: ";
+                for (unsigned int j = 0; j < sparams.size(); ++j)
+                    cout << sparams[j] << " ";
+                cout << endl;
+                throw std::logic_error("Line malformed: " + to_string(i) + " -- odd count, but weighted instance.");
+            }
+
+            for (unsigned int j = 0; j < sparams.size(); j += 1 + is_weighted_instance) {
+                int dest = stoi(sparams[j]) - 1;
+                int weight = is_weighted_instance ? stoi(sparams[j + 1]) : 1;
+                AddEdge(i, dest, weight, false);
+            }
+        }
     }
     
     OutputDebugLog("Reading from file done.");
@@ -127,14 +161,17 @@ void MaxCutGraph::ResetComputedTopology() {
     bridges_computed = false;
 }
 
-void MaxCutGraph::AddEdge(int a, int b, int weight) {
+void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
     auto keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
 
     if(edge_exists_lookup[keyAB]) {
         OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
-        edge_weight[keyAB] += weight;
-        edge_weight[keyBA] += weight;
-        if (edge_weight[keyAB] == 0) RemoveEdgesBetween(a, b);
+
+        if (inc_weight_on_double) {
+            edge_weight[keyAB] += weight;
+            edge_weight[keyBA] += weight;
+            if (edge_weight[keyAB] == 0) RemoveEdgesBetween(a, b);
+        }
         return;
     } else if (a == b) {
         OutputDebugLog("Warning: self-loop on " + to_string(a) + " detected.");
@@ -1106,7 +1143,7 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
 }
 
 // Right now: not O(|V| + |E|) because of sorting. Only because of that. To achieve full linear time, use counting sort.
-vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const unordered_map<int,bool>& preset_is_external) const {
+vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<vector<int>> ret;
     vector<int> current_v = GetAllExistingNodes();
     vector<bool> visited(num_nodes, false);
@@ -1134,8 +1171,12 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const unordered_map<int,bool
                 ok = false;
         }
 
-        if (ok && X.size() > NG.size() && IsClique(X) && X.size() > 1)
+        if (ok && X.size() > NG.size() && IsClique(X) && X.size() > 1) {
             ret.push_back(X);
+
+            if (break_on_first)
+                return ret;
+        }
     }
 
     return ret;
@@ -1155,7 +1196,7 @@ void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     rules_usage_count[RuleIds::Rule8]++;
 }
 
-vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() const {
+vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates(const bool break_on_first) const {
     vector<pair<int,vector<pair<int,int>>>> ret;
     vector<int> current_v = GetAllExistingNodes();
     vector<bool> makes_nonspecial(num_nodes + 1, false);
@@ -1199,7 +1240,11 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates() const 
                             ok = false;
 
                 if (!ok) continue;
+
                 ret.push_back(make_pair(root, vector<pair<int,int>>{b1,b2}));
+
+                if (break_on_first)
+                    return ret;
             }
         }
     }
@@ -1220,7 +1265,7 @@ void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candid
     rules_usage_count[RuleIds::Rule9]++;
 }
 
-vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() const {
+vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates(const bool break_on_first) const {
     vector<pair<vector<int>, vector<int>>> ret;
 
     vector<bool> visited(num_nodes, false);
@@ -1245,7 +1290,11 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates() const 
         if (clique.size() % 2 == 0 && clique.size() / 2 <= X.size()) {
             for (auto x : X)
                 visited[x] = true;
+
             ret.push_back(make_pair(clique, X));
+
+            if (break_on_first)
+                return ret;
         }
     }
 
@@ -1261,7 +1310,7 @@ void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candid
     rules_usage_count[RuleIds::Rule9X]++;
 }
 
-vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates(const unordered_map<int,bool>& preset_is_external) const {
+vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<tuple<bool, int, int, int>> ret;
 
     vector<int> current_v = GetAllExistingNodes();
@@ -1294,11 +1343,17 @@ vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates(const unorde
             if (has_external(C1) == false || has_external(C2) == false) {
                 ret.push_back(make_tuple(true, u, nodex, nodey));
                 bridge_case = true;
+
+                if (break_on_first)
+                    return ret;
             }
         }
 
         if (!bridge_case) {
             ret.push_back(make_tuple(false, u, nodex, nodey));
+
+            if (break_on_first)
+                return ret;
         }
     }
     
@@ -1345,7 +1400,7 @@ void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate)
 }
 
 // O(|V| + |E|)
-vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates(const unordered_map<int,bool>& preset_is_external) const {
+vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<tuple<int,int,int,int,int>> ret;
 
     vector<int> current_v = GetAllExistingNodes();
@@ -1365,6 +1420,9 @@ vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates(const uno
         if (ex_L == ex_R) continue; // ------------------------------ THIS COULD! BE SUPPORTED, BUT REQUIRED DOUBLE EDGES. USED TO BE A BUG BECAUSE THIS CONDITION MISSED.
 
         ret.push_back(make_tuple(ex_L, a, b, c, ex_R));
+
+        if (break_on_first)
+            return ret;
     }
 
     return ret;
@@ -1467,8 +1525,6 @@ vector<vector<int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, cons
         if (missingnodes.empty()) continue;
         clique = SetUnion(clique, {missingnodes[0]});
 
-        bool ok = true;
-
         vector<int> externals;
         unordered_map<int,bool> is_external = preset_is_external;
         for (auto node : clique) {
@@ -1480,6 +1536,10 @@ vector<vector<int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, cons
             }
         }
 
+        if (clique.size() % 2 == 0 && (int)externals.size() == ((int)clique.size()) - 2)
+            continue;
+
+        bool ok = true;
         int missing_edges_cnt = 0;
         for (int i = 0; i < (int)clique.size() && ok; ++i) {
             for (int j = i + 1; j < (int)clique.size() && ok; ++j) {
@@ -1493,8 +1553,7 @@ vector<vector<int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, cons
         }
 
         ok = ok && (missing_edges_cnt == 1);
-        if (clique.size() % 2 == 0 && (int)externals.size() == ((int)clique.size()) - 2)
-            ok = false;
+        
 
         if (ok) {
             ret.push_back(clique);
@@ -1516,16 +1575,13 @@ void MaxCutGraph::ApplyS3Candidate(const vector<int>& clique, const unordered_ma
     rules_usage_count[RuleIds::RuleS3]++;
 }
 
-vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetAllS4Candidates(const unordered_map<int,bool>& preset_is_external) const {
+vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetAllS4Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<tuple<bool,int,int,int,int>> ret;
     auto current_v = GetAllExistingNodes();
     for (int i = 0; i < (int)current_v.size(); ++i) {
-        for (int j = i + 1; j < (int)current_v.size(); ++j) {
-            int nodeA = current_v[i];
-            int nodeB = current_v[j];
-            if (AreAdjacent(nodeA, nodeB)) continue;
-
-            const auto adjA = GetAdjacency(nodeA);
+        int nodeA = current_v[i];
+        const auto &adjA = GetAdjacency(nodeA);
+        for (auto nodeB : adjA) {
             int nodeC = -1, nodeD = -1;
             bool ok = false;
             for (int k = 0; k < (int)adjA.size() && !ok; ++k) {
@@ -1545,6 +1601,9 @@ vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetAllS4Candidates(const unorde
                 ret.push_back(make_tuple(0, nodeA, nodeB, nodeC, nodeD));
             else if (Degree(nodeC) == 3 && Degree(nodeD) == 3 && AreAdjacent(nodeC, nodeD))
                 ret.push_back(make_tuple(1, nodeA, nodeB, nodeC, nodeD));
+
+            if (ret.empty() == false && break_on_first)
+                return ret;
         }
     }
     return ret;
@@ -1571,7 +1630,7 @@ void MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate) {
 }
 
 // O(|V| + |E|)
-vector<tuple<int,int,int,int>> MaxCutGraph::GetAllS5Candidates(const unordered_map<int,bool>& preset_is_external) const {
+vector<tuple<int,int,int,int>> MaxCutGraph::GetAllS5Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<tuple<int,int,int,int>> ret;
 
     vector<int> current_v = GetAllExistingNodes();
@@ -1590,6 +1649,9 @@ vector<tuple<int,int,int,int>> MaxCutGraph::GetAllS5Candidates(const unordered_m
         if (ex_L == ex_R || AreAdjacent(ex_L, ex_R)) continue; // ------------------------------ THIS COULD! BE SUPPORTED, BUT REQUIRED DOUBLE EDGES. USED TO BE A BUG BECAUSE THIS CONDITION MISSED.
 
         ret.push_back(make_tuple(ex_L, a, b, ex_R));
+
+        if (break_on_first)
+            return ret;
     }
     return ret;
 }
@@ -1622,12 +1684,11 @@ vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first,
             
             if (NG == SetSubstract(adj_root_B, {root_A}) && IsClique(NG)) {
                 ret.push_back(make_pair(root_A, root_B));
-                if (break_on_first) break;
+
+                if (break_on_first)
+                    return ret;
             }
         }
-        
-        if (break_on_first && !ret.empty())
-            break;
     }
 
     return ret;
@@ -1923,20 +1984,20 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
             continue;
         }
 
-        auto res_r10ast = GetAllR10ASTCandidates(preset_is_external);
+        auto res_r10ast = GetAllR10ASTCandidates(true, preset_is_external);
         if (!res_r10ast.empty()) {
             ApplyR10ASTCandidate(res_r10ast[0]);
             continue;
         }
 
-        auto res_r8 = GetAllR8Candidates(preset_is_external);
+        auto res_r8 = GetAllR8Candidates(true, preset_is_external);
         if (!res_r8.empty()) {
             ApplyR8Candidate(res_r8[0]);
             continue;
         }
 
         
-        auto res_s4 = GetAllS4Candidates(preset_is_external);
+        auto res_s4 = GetAllS4Candidates(true, preset_is_external);
         if (!res_s4.empty()) {
             ApplyS4Candidate(res_s4[0]);
             continue;
@@ -1944,7 +2005,7 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
 
       
         
-        auto res_s5 = GetAllS5Candidates(preset_is_external);
+        auto res_s5 = GetAllS5Candidates(true, preset_is_external);
         if (!res_s5.empty()) {
             ApplyS5Candidate(res_s5[0]);
             continue;

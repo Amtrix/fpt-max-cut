@@ -26,3 +26,4 @@ FLAGS:
 
 Helpful stuff:
     To get 1-indexed in KaGen: +1 within generator.io.h
+    To input a graph through adjacency list format, append ".graph" suffix to file.

@@ -132,5 +132,6 @@ vector<string> ReadLine(std::istream& in) {
         ret.push_back(val);
     }
 
+    while (ret.empty() == false && ret.back() == "") ret.pop_back();
     return ret;
 }

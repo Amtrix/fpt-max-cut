@@ -37,6 +37,7 @@ list(APPEND TARGET_LIBS
 add_executable(benchmark executables/benchmark.cpp)
 target_sources(benchmark PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(benchmark PRIVATE ${TARGET_LIBS})
+target_compile_definitions(benchmark PRIVATE NDEBUG)
 
 add_executable(benchmark-debug executables/benchmark.cpp)
 target_sources(benchmark-debug PRIVATE ${ALL_CPP_FILES})

@@ -66,7 +66,7 @@ public:
      * all modifications should happen with these functions.
      **/
     // Adds an edge between a and b with a weight.
-    void AddEdge(int a, int b, int weight = 1);
+    void AddEdge(int a, int b, int weight = 1, bool inc_weight_on_double = true);
     void RemoveNode(int node);
     // Does not add the previously removed edges from the RemoveNode function!
     void ReAddNode(int node);
@@ -159,25 +159,25 @@ public:
      *  Two way reduction rules.
      **/
     // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
-    vector<vector<int>> GetAllR8Candidates(const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<vector<int>> GetAllR8Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     void ApplyR8Candidate(const vector<int> &clique);
 
     // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
     // (x,pair2.first,pair2.second).
-    vector<pair<int,vector<pair<int,int>>>> GetAllR9Candidates() const;
+    vector<pair<int,vector<pair<int,int>>>> GetAllR9Candidates(const bool break_on_first = false) const;
     void ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates);
 
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     // Warning! X >= C/2, therefore, deletion of some vertices in X is necessary when applying the rule.
-    vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates() const;
+    vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates(const bool break_on_first = false) const;
     void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate);
 
     // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 
-    vector<tuple<bool, int, int, int>> GetAllR10Candidates(const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<tuple<bool, int, int, int>> GetAllR10Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate);
 
     // Returns a vector of 5-tuples a' b c d d'
-    vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates(const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
 
     // Returns a vector of cliques with less than ceil(n/2) external vertices.
@@ -188,10 +188,10 @@ public:
     vector<vector<int>> GetS3Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     void ApplyS3Candidate(const vector<int> &clique, const unordered_map<int,bool>& preset_is_external = {});
 
-    vector<tuple<bool,int,int,int,int>> GetAllS4Candidates(const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<tuple<bool,int,int,int,int>> GetAllS4Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     void ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate);
     
-    vector<tuple<int,int,int,int>> GetAllS5Candidates(const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<tuple<int,int,int,int>> GetAllS5Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     void ApplyS5Candidate(const tuple<int,int,int,int>& candidate);
 
     vector<pair<int,int>> GetAllS6Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;

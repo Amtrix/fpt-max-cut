@@ -17,6 +17,25 @@ public:
         tot_case_coverage_cnt = vector<int>(kAllRuleIds.size(), 0);
     }
 
+    inline void LogTime(vector<double> &times, auto &t0) {
+        auto t1 = std::chrono::high_resolution_clock::now();
+        times.push_back(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.);
+        t0 = t1;
+    }
+
+    inline void FlushTimes(vector<double> &times, const bool print = true) {
+        if (print) {
+            cout << "Times from previous run: ";
+            double cumm = 0;
+            for (unsigned int i = 0; i < times.size(); ++i) {
+                cout << times[i] << " ";
+                cumm += times[i];
+            }
+            cout << " = " << cumm << endl;
+        }
+        times.clear();
+    }
+
     void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {
@@ -27,61 +46,73 @@ public:
         for (int iteration = 1; iteration <= num_iterations; ++iteration) {
             MaxCutGraph G(data_filepath);
             MaxCutGraph kernelized = G;
-           // kernelized.SaveNumOfComponentsForEdwardsErdosBound();
-           // G.SaveNumOfComponentsForEdwardsErdosBound();
 
             kernelized.MakeUnweighted();
 
+            vector<double> times;
+            auto t0 = std::chrono::high_resolution_clock::now();
             while (true) {
+                FlushTimes(times, false);
+
                 auto res_rs2 = kernelized.GetS2Candidates(true);
+                LogTime(times, t0);
                 if (!res_rs2.empty()) {
                     kernelized.ApplyS2Candidate(res_rs2[0]);
                     continue;
                 }
 
-                auto res_r9x = kernelized.GetAllR9XCandidates();
+                auto res_r9x = kernelized.GetAllR9XCandidates(true);
+                LogTime(times, t0);
                 if (!res_r9x.empty()) {
                     kernelized.ApplyR9XCandidate(res_r9x[0]);
                     continue;
                 }
                 
-                auto res_r8 = kernelized.GetAllR8Candidates();
+                auto res_r8 = kernelized.GetAllR8Candidates(true);
+                LogTime(times, t0);
                 if (!res_r8.empty()) {
                     kernelized.ApplyR8Candidate(res_r8[0]);
                     continue;
                 }
                 
-                auto res_r10 = kernelized.GetAllR10Candidates();
+                auto res_r10 = kernelized.GetAllR10Candidates(true);
+                LogTime(times, t0);
                 if (!res_r10.empty()) {
                     kernelized.ApplyR10Candidate(res_r10[0]);
                     continue;
                 }
                 
-                auto res_r9 = kernelized.GetAllR9Candidates();
+                auto res_r9 = kernelized.GetAllR9Candidates(true);
+                LogTime(times, t0);
                 if (!res_r9.empty()) {
                     kernelized.ApplyR9Candidate(res_r9[0]);
                     continue;
                 }
 
-                auto res_r10ast = kernelized.GetAllR10ASTCandidates();
+                auto res_r10ast = kernelized.GetAllR10ASTCandidates(true);
+                LogTime(times, t0);
                 if (!res_r10ast.empty()) {
                     kernelized.ApplyR10ASTCandidate(res_r10ast[0]);
                     continue;
                 }
 
-                auto res_s5 = kernelized.GetAllS5Candidates();
+                auto res_s5 = kernelized.GetAllS5Candidates(true);
+                LogTime(times, t0);
                 if (!res_s5.empty()) {
                     kernelized.ApplyS5Candidate(res_s5[0]);
                     continue;
                 }
 
-                auto res_s4 = kernelized.GetAllS4Candidates();
+                auto res_s4 = kernelized.GetAllS4Candidates(true);
+                LogTime(times, t0);
+                LogTime(times, t0);
                 if (!res_s4.empty()) {
                     kernelized.ApplyS4Candidate(res_s4[0]);
                     continue;
                 }
 
                 auto res_rs3 = kernelized.GetS3Candidates(true);
+                LogTime(times, t0);
                 if (!res_rs3.empty()) {
                     kernelized.ApplyS3Candidate(res_rs3[0]);
                     continue;
@@ -89,6 +120,7 @@ public:
                 
                 break;
             }
+            FlushTimes(times);
 
             kernelized.MakeWeighted();
 
