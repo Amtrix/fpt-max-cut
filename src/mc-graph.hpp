@@ -234,6 +234,7 @@ public:
      **/
     // Pregroup[i] in {-1,0,1}. -1 = no predefined group, 0/1 group 0 or 1.
     pair<int, vector<int>> ComputeLocalSearchCut(const vector<int> pregroup = {}) const;
+    // max_exec_time in seconds.
     pair<int, vector<int>> ComputeMaxCutWithMQLib(const double max_exec_time = 0.2) const;
 
 

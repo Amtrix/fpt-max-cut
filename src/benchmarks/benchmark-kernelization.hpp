@@ -39,7 +39,7 @@ public:
     void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {
-            num_iterations = stoi(input.getCmdOption("-num-iterations"));
+            num_iterations = stoi(input.getCmdOption("-iterations"));
         }
 
         vector<vector<double>> accum;
@@ -127,8 +127,8 @@ public:
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             double local_search_cut_size = G.ComputeLocalSearchCut().first;
             double local_search_cut_size_k = kernelized.ComputeLocalSearchCut().first;
-            auto heur_sol = G.ComputeMaxCutWithMQLib();
-            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib();
+            auto heur_sol = G.ComputeMaxCutWithMQLib(1);
+            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib(1);
             double EE = G.GetEdwardsErdosBound();
             double EE_k = kernelized.GetEdwardsErdosBound();
             //double k = (heur_sol.first - EE);
