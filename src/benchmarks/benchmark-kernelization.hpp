@@ -129,10 +129,9 @@ public:
             double local_search_cut_size_k = kernelized.ComputeLocalSearchCut().first;
             auto heur_sol = G.ComputeMaxCutWithMQLib();
             auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib();
-            double EE = 0;//G.GetEdwardsErdosBound();
-            double EE_k = 0;//kernelized.GetEdwardsErdosBound();
-            double k = (heur_sol.first - EE);
-            double k_k = (heur_sol_k.first - EE_k) - k_change;
+            double EE = G.GetEdwardsErdosBound();
+            double EE_k = kernelized.GetEdwardsErdosBound();
+            //double k = (heur_sol.first - EE);
 
             cout << "VERIFY CUT VAL: " << heur_sol_k.first - k_change << " =?= " << heur_sol.first << endl;
             //cout << k << " --- " << k_k << " same value proves correctness! (But different does not incorrectness!)" << endl;
@@ -157,22 +156,18 @@ public:
                                 test_id, iteration,
                                 G.GetRealNumNodes(), G.GetRealNumEdges(),
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
-                                k, k_k,
-                                heur_sol.first, heur_sol_k.first,
-                                local_search_cut_size, local_search_cut_size_k, local_search_cut_size_k + (EE - (EE_k + k_change)),
-                                heur_sol_k.first - k_change,
-                                EE, EE_k,
-                                -k_change);
+                                -k_change,
+                                heur_sol.first, heur_sol_k.first - k_change,
+                                local_search_cut_size, local_search_cut_size_k - k_change,
+                                EE, EE_k);
             
             accum.push_back({(double)test_id, (double)iteration,
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
-                                k, k_k,
-                                (double)heur_sol.first, (double)heur_sol_k.first,
-                                local_search_cut_size, local_search_cut_size_k, local_search_cut_size_k + (EE - (EE_k + k_change)),
-                                local_search_cut_size_k + (EE - (EE_k + k_change)) + (heur_sol_k.first - local_search_cut_size_k),
-                                EE, EE_k,
-                                -k_change});
+                                k_change,
+                                (double)heur_sol.first, (double)heur_sol_k.first - k_change,
+                                local_search_cut_size, local_search_cut_size_k - k_change,
+                                EE, EE_k});
         }
         
         vector<double> avg;
@@ -185,8 +180,7 @@ public:
             avg.push_back(sum / accum.size());
         }
 
-        OutputKernelization(input, data_filepath, avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12],
-            avg[13], avg[14], avg[15], avg[16], "-avg");
+        OutputKernelization(input, data_filepath, avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], "-avg");
 
         test_id++;
     }

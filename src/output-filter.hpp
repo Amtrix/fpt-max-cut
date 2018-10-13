@@ -47,7 +47,7 @@ vector<string> kOutputSubtyping = {"", "-avg"};
 vector<int> kMarkedSizeColumnDescriptor =   {10, 10, 15, 22, 15, 50};
 vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
 vector<int> kernelizationCountDescriptor =  {10, 10, 10, 10, 10, 10, 60};
-vector<int> kernelizationDescriptor =       {5, 5, 10, 10, 10, 10, 15, 15, 15, 15, 15, 15, 20, 30, 10, 10, 10, 60};
+vector<int> kernelizationDescriptor =       {10, 10, 10, 10, 10, 10, 20, 20, 20, 20, 20, 20, 20, 60};
 vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,100};
 
 void InitOutputFiles(const InputParser& input) {
@@ -77,7 +77,7 @@ void InitOutputFiles(const InputParser& input) {
 
             for (auto sub : kOutputSubtyping) {
                 ofstream out(output_path + sub);
-                print_row(out, kernelizationDescriptor, "ssssssssssssssssss", "#sec", "#it", "#|V(G)|", "#|E(G)|", "#|V(Gk)|", "#|E(Gk)|", "#LOW_B(k)","#LOW_B(kk)", "#MQLIB(G)", "#MQLIB(Gk)", "#locsearch(G)", "#locsearch(Gk)", "#locsearch_ext(Gk)", "#locsearch_ext+MQLIB_OFF(Gk)", "#EE(G)", "#EE(Gk)", "#+kk", "#file");
+                print_row(out, kernelizationDescriptor, "ssssssssssssss", "#sec", "#it", "#|V(G)|", "#|E(G)|", "#|V(Gk)|", "#|E(Gk)|", "#CUTDIFF", "#MQLIB(G)", "#MQLIB(Gk)+DIFF", "#locsearch(G)", "#locsearch(Gk)+DIFF", "#EE(G)", "#EE(Gk)", "#file");
             }
         }
         
@@ -144,22 +144,18 @@ void OutputKernelization(
                                 const int num_nodes_k,
                                 const int num_edges_k,
                                 const double k,
-                                const double k_k,
                                 const int mqlib_sol,
                                 const int mqlib_sol_k,
                                 const int locsearch,
                                 const int locsearch_k,
-                                const double localsearch_k_extended,
-                                const double localsearch_k_extended_add_mqliboffset,
                                 const double EE,
                                 const double EE_k,
-                                const double add_kk,
                                 const string subtyping_output = "") {
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output") + subtyping_output;
         ofstream out(output_path, fstream::app);
-        print_row(out, kernelizationDescriptor, "ddddddffddddfffffs", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, k, k_k, mqlib_sol, mqlib_sol_k,
-            locsearch, locsearch_k, localsearch_k_extended, localsearch_k_extended_add_mqliboffset, EE, EE_k, add_kk, dataset.c_str());
+        print_row(out, kernelizationDescriptor, "ddddddfddddffs", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, k, mqlib_sol, mqlib_sol_k,
+            locsearch, locsearch_k, EE, EE_k, dataset.c_str());
     }
 }
 
