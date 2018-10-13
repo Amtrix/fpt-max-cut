@@ -2116,8 +2116,9 @@ int MaxCutGraph::GetCutSize(const vector<int> &grouping) const {
         for (auto x : adj) {
             if (MapEqualCheck(removed_node, x, true) || i >= x) continue;
 
-            adj0 += grouping[x] == 0;
-            adj1 += grouping[x] == 1;
+            const auto ekey = MakeEdgeKey(i, x);
+            adj0 += (grouping[x] == 0) * edge_weight.at(ekey);
+            adj1 += (grouping[x] == 1) * edge_weight.at(ekey);
         }
 
         ret += (grouping[i] == 0) * adj1;
@@ -2149,8 +2150,9 @@ pair<int, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> preg
             for (auto x : adj) {
                 if (MapEqualCheck(removed_node, x, true)) continue;
 
-                adj0 += grouping[x] == 0;
-                adj1 += grouping[x] == 1;
+                const auto ekey = MakeEdgeKey(i, x);
+                adj0 += (grouping[x] == 0) * edge_weight.at(ekey);
+                adj1 += (grouping[x] == 1) * edge_weight.at(ekey);
             }
 
             if (adj0 > adj1 && grouping[i] != 1) {
