@@ -124,18 +124,25 @@ MaxCutGraph::MaxCutGraph(const string path) {
     OutputDebugLog("Reading from file done.");
 }
 
-MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist, int n) {
+MaxCutGraph::MaxCutGraph(const vector<tuple<int,int,int>> &elist, int n) {
     num_nodes = n;
     
     for (auto e : elist) {
-        int a = e.first;
-        int b = e.second;
+        int a = get<0>(e);
+        int b = get<1>(e);
         num_nodes = max(num_nodes, max(a + 1, b + 1));
     }
 
     g_adj_list.resize(num_nodes);
     for (auto e : elist)
-        AddEdge(e.first, e.second);
+        AddEdge(get<0>(e), get<1>(e), get<2>(e));
+}
+
+MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist, int n) {
+    vector<tuple<int,int,int>> nelist;
+    for (auto e : elist)
+        nelist.push_back(make_tuple(e.first, e.second, 1));
+    MaxCutGraph(nelist, n);
 }
 
 MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {

@@ -164,7 +164,7 @@ public:
             accum.push_back({(double)test_id, (double)iteration,
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
-                                k_change,
+                                -k_change,
                                 (double)heur_sol.first, (double)heur_sol_k.first - k_change,
                                 local_search_cut_size, local_search_cut_size_k - k_change,
                                 EE, EE_k});

@@ -53,6 +53,7 @@ public:
 
     // Create graph based on list of edges.
     MaxCutGraph(const vector<pair<int,int>> &elist, int n = 0);
+    MaxCutGraph(const vector<tuple<int,int,int>> &elist, int n = 0);
 
     // Creates induced subgraph.
     MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset);

@@ -75,6 +75,12 @@ add_executable(find-kernelization-general executables/find-kernelization-general
 target_sources(find-kernelization-general PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(find-kernelization-general PRIVATE ${TARGET_LIBS})
 
+add_executable(find-kernelization-weighted executables/find-kernelization-weighted.cpp)
+target_sources(find-kernelization-weighted PRIVATE ${ALL_CPP_FILES})
+target_link_libraries(find-kernelization-weighted PRIVATE ${TARGET_LIBS})
+
+
+
 add_executable(find-kernelization-clique executables/find-kernelization-clique.cpp)
 target_sources(find-kernelization-clique PRIVATE ${ALL_CPP_FILES})
 target_link_libraries(find-kernelization-clique PRIVATE ${TARGET_LIBS})

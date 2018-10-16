@@ -26,7 +26,8 @@ const string paths[] = {
   //  "../data/KaGen/rhg",
   //  "../data/KaGen-2/rhg_1024_g2.4"//,
 
-    "../data/thesis-tests/cschulz/tests"
+    "../data/thesis-tests/kagen-large-sparse/tests"
+    //"../data/thesis-tests/cschulz/tests"
 };
 
 /*
