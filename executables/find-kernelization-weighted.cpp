@@ -19,8 +19,14 @@ const bool kRemoveIsomorphisms = true;
 
 const int kSampleMode = -1; // -1 for normal mode, -2 for specific sampling, -3 for bfs with <=2-removal(take first entry from specific_sampling_set as start)
 
-int n = 4;
-int nc = 2;
+int n = 7; 
+int nc = 3;
+
+// when nc = 2:
+// 2=>2 classes, 3=>3 classes, 4=>7 classes, 5=> 5 classes, 6=>11 classes, 7=>7 classes, 
+
+// when nc = 3:
+// 3=>5 classes, 4=>34 classes, 5=> 55 classes, 6=>311 classes, 7=>153 classes, 
 
 map<pair<int,int>, bool> preadd = {
 };
@@ -73,19 +79,31 @@ string EncodeDiff(const vector<int> &cuts) {
 }
 
 vector<int> GetWeightedMaxcutDependentOnNc(const vector<tuple<int,int,int>> &edges) {
+    /*for (auto edge : edges)
+        cout << "(" << (get<0>(edge)) << ", " << (get<1>(edge)) << ", " << (get<2>(edge)) << ") ";
+    cout << endl;*/
+
     vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
     for (int nc_mask = 0; nc_mask * 2 < (1 << nc); ++nc_mask) { // simetry!
         int mx_cut = 0;
+        vector<int> color_nc;
+        for (int i = 0; i < nc; ++i) color_nc.push_back((nc_mask & (1 << i)) != 0);
+
         for (int nrem_mask = 0; nrem_mask < (1 << (n-nc)); ++nrem_mask) {
-            vector<int> color;
-            for (int i = 0; i < nc; ++i) color.push_back((nc_mask & (1 << i)) != 0);
+            vector<int> color = color_nc;
             for (int i = 0; i < n - nc; ++i) color.push_back((nrem_mask & (1 << i)) != 0);
 
             int cut = 0;
-            for (auto e : edges) cut += ((get<0>(e)) != (get<1>(e))) * (get<2>(e));
+            for (auto e : edges) cut += (color[get<0>(e)] != color[get<1>(e)]) * (get<2>(e));
             mx_cut = max(mx_cut, cut);
         }
         maxcut_dependent_on_nc.push_back(mx_cut);
+
+        /*
+        cout << "  ";
+        for (int i = 0; i < (int)color_nc.size(); ++i)
+            cout << color_nc[i];
+        cout << " = " << mx_cut << endl;*/
     }
     return maxcut_dependent_on_nc;
 }
@@ -193,20 +211,27 @@ void TryAllEdgeSets(int n, std::function<void(const vector<pair<int,int>>&)> cal
 void TryAllWeightedCliqueEdgeSets(int n, std::function<void(const vector<tuple<int,int,int>>&)> callback) {
     int mx_edges = (n * (n - 1)) / 2;
 
-    int bound = 1 << mx_edges;
+    int bound = pow(2, mx_edges);
+    cout << "NUM OF EDGE SETS: " << bound << endl;
     if (kSampleMode != -1) bound = kSampleMode;
     for (int i = 0; i < bound; ++i) {
         int mask = i;
         if (kSampleMode != -1) mask = rand();
 
+        vector<int> c;
+        for (int i = 0; i < mx_edges; ++i) {
+            c.push_back(mask % 2);
+            mask /= 2;
+        }
+
         vector<tuple<int,int,int>> cumm;
         int dx = 0;
         for (int i = 0; i < n; ++i) {
             for (int j = i + 1; j < n; ++j) {
-                if ((mask & (1 << dx)))
+                if (c[dx] == 0)
+                    cumm.push_back(make_tuple(i,j,1));
+                else if (c[dx] == 1)
                     cumm.push_back(make_tuple(i,j,-1));
-                else
-                    cumm.push_back(make_tuple(i,j,+1));
                 dx++;
             }
         }
@@ -266,7 +291,7 @@ pair<int,int> RevPair(pair<int,int> p) { return make_pair(p.second, p.first); }
 
 int main() {
     ios_base::sync_with_stdio(false);
-    //cin >> n >> nc;
+    cin >> n >> nc;
 
     for (int i = 0; i < nc; ++i) preset_is_external[i] = true;
     for (int i = 0; i < n; ++i)
@@ -377,8 +402,21 @@ int main() {
             cout << "[sz: " << graph_edges.size() << ", mx(0): " << e.first << ", clsid: " << num_of_classes << "] = ";
 
             // Print edges and check if they contain subset_in_result as a subset.
+            map<tuple<int,int,int>,bool> visi;
+            int cnt_minus_one = 0, cnt_one = 0;
+            for (int i = 0; i < (int)graph_edges.size(); ++i) {
+                auto edge = graph_edges[i];
+                
+                cout << "(" << (get<0>(edge)) << ", " << (get<1>(edge)) << ", " << (get<2>(edge)) << ") ";
+
+                if (get<2>(edge) == -1) cnt_minus_one++;
+                if (get<2>(edge) == 1)  cnt_one++;
+                
+                visi[edge] = true;
+            }
 
             cout << "      [";
+            cout << cnt_minus_one << " " << cnt_one << " = " << -cnt_minus_one + cnt_one <<"     ";
 
             auto G = MaxCutGraph(graph_edges, n);
             cout << "clique(L,R)=(" << G.IsClique(L_vertex) << "," << G.IsClique(R_vertex) << "      ";
