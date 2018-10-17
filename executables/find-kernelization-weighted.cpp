@@ -79,13 +79,13 @@ string EncodeDiff(const vector<int> &cuts) {
 }
 
 vector<int> GetWeightedMaxcutDependentOnNc(const vector<tuple<int,int,int>> &edges) {
-    /*for (auto edge : edges)
+    for (auto edge : edges)
         cout << "(" << (get<0>(edge)) << ", " << (get<1>(edge)) << ", " << (get<2>(edge)) << ") ";
-    cout << endl;*/
+    cout << endl;
 
     vector<int> maxcut_dependent_on_nc; // sorted according to lex bitmask of nc
     for (int nc_mask = 0; nc_mask * 2 < (1 << nc); ++nc_mask) { // simetry!
-        int mx_cut = 0;
+        int mx_cut = -99999999;
         vector<int> color_nc;
         for (int i = 0; i < nc; ++i) color_nc.push_back((nc_mask & (1 << i)) != 0);
 
@@ -99,12 +99,13 @@ vector<int> GetWeightedMaxcutDependentOnNc(const vector<tuple<int,int,int>> &edg
         }
         maxcut_dependent_on_nc.push_back(mx_cut);
 
-        /*
-        cout << "  ";
+        
+       cout << "  ";
         for (int i = 0; i < (int)color_nc.size(); ++i)
             cout << color_nc[i];
-        cout << " = " << mx_cut << endl;*/
+        cout << " = " << mx_cut << endl;
     }
+    exit(0);
     return maxcut_dependent_on_nc;
 }
 
@@ -114,99 +115,6 @@ vector<int> GetMaxcutDependentOnNc(const vector<pair<int,int>> &edges) {
 
 
 
-void TryAllEdgeSets(int n, std::function<void(const vector<pair<int,int>>&)> callback) {
-    if (kSampleMode == -2) {
-        for (const auto &edges : specific_sampling_set)
-            callback(edges);
-        return;
-    } else if (kSampleMode == -3) {
-        const auto start_node = specific_sampling_set[0];
-        string cutid = EncodeDiff(GetMaxcutDependentOnNc(start_node));
-        queue<graph_edges> Q;
-        Q.push(start_node);
-
-        map<string,bool>visi;
-        visi[GetGraphKey(start_node)] = true;
-
-        while (!Q.empty()) {
-            graph_edges u = Q.front(); Q.pop();
-            cout << "Graph: " << GetGraphKey(u) << "     ";
-
-            auto G = MaxCutGraph(u, n);
-            cout << "clique(L,R)=(" << G.IsClique(L_vertex) << "," << G.IsClique(R_vertex) << "      ";
-
-            
-            cout << G.PrintDegrees(preset_is_external);
-            cout << "  CONNECTED=" << (G.GetAllConnectedComponents().size() == 1u);
-            cout << "]" << endl;
-
-            callback(u);
-
-            for (int i = 0; i < (int)u.size(); ++i) {
-                
-                graph_edges nw = u;
-                nw.erase(nw.begin() + i);
-
-                string key = GetGraphKey(nw);
-                if (!visi[key]) {
-                    visi[key] = true;
-                    string nwcutid = EncodeDiff(GetMaxcutDependentOnNc(nw));
-                    if (nwcutid == cutid) Q.push(nw);
-                }
-
-                for (int j = i + 1; j < (int)u.size(); ++j) {
-                    nw = u;
-                    nw.erase(nw.begin() + i);
-                    nw.erase(nw.begin() + j - 1); // cuz i deleted and i < j
-
-                    key = GetGraphKey(nw);
-                    if (!visi[key]) {
-                        visi[key] = true;
-                        string nwcutid = EncodeDiff(GetMaxcutDependentOnNc(nw));
-                        if (nwcutid == cutid) Q.push(nw);
-                    }
-
-                    for (int k = j + 1; k < (int)u.size(); ++k) {
-                        nw = u;
-                        nw.erase(nw.begin() + i);
-                        nw.erase(nw.begin() + j - 1); // cuz i deleted and i < j
-                        nw.erase(nw.begin() + k - 2);
-
-                        key = GetGraphKey(nw);
-                        if (!visi[key]) {
-                            visi[key] = true;
-                            string nwcutid = EncodeDiff(GetMaxcutDependentOnNc(nw));
-                            if (nwcutid == cutid) Q.push(nw);
-                        }
-                    }
-                }
-            }
-
-        }
-        return;
-    }
-
-    int mx_edges = (n * (n - 1)) / 2;
-
-    int bound = 1 << mx_edges;
-    if (kSampleMode != -1) bound = kSampleMode;
-    for (int i = 0; i < bound; ++i) {
-        int mask = i;
-        if (kSampleMode != -1) mask = rand();
-
-        vector<pair<int,int>> cumm;
-        int dx = 0;
-        for (int i = 0; i < n; ++i) {
-            for (int j = i + 1; j < n; ++j) {
-                if ((mask & (1 << dx)) || preadd[make_pair(i,j)] || preadd[make_pair(j,i)])
-                    cumm.push_back(make_pair(i,j));
-                dx++;
-            }
-        }
-
-        callback(cumm);
-    }
-}
 
 void TryAllWeightedCliqueEdgeSets(int n, std::function<void(const vector<tuple<int,int,int>>&)> callback) {
     int mx_edges = (n * (n - 1)) / 2;
@@ -229,9 +137,9 @@ void TryAllWeightedCliqueEdgeSets(int n, std::function<void(const vector<tuple<i
         for (int i = 0; i < n; ++i) {
             for (int j = i + 1; j < n; ++j) {
                 if (c[dx] == 0)
-                    cumm.push_back(make_tuple(i,j,1));
-                else if (c[dx] == 1)
                     cumm.push_back(make_tuple(i,j,-1));
+              //  else if (c[dx] == 1)
+                //    cumm.push_back(make_tuple(i,j,-1));
                 dx++;
             }
         }
@@ -312,37 +220,7 @@ int main() {
             all_graphs_edges.push_back(init_edges);
         });
     } else {
-        unordered_map<string, bool> init_visited_graph_key;
-        TryAllEdgeSets(n, [&](const vector<pair<int,int>>& init_edges){
-            const string init_key = GetGraphKey(init_edges);
-            if (init_visited_graph_key[init_key]) return;
-
-            if (kRequireLClique) {
-                MaxCutGraph G(init_edges);
-                if (G.IsClique(L_vertex) == false)
-                    return;
-            }
-
-            vector<pair<int,int>> sel = init_edges;
-            auto mxcutnc = GetMaxcutDependentOnNc(sel);
-
-            if (kRemoveIsomorphisms) {
-                GetAllIsomorphisms(init_edges,  [&](vector<pair<int,int>>& edges){
-                    auto mxcutnc_candidate = GetMaxcutDependentOnNc(edges);
-                    tot_class_count[EncodeDiff(mxcutnc_candidate)] = true;
-                    if (mxcutnc_candidate > mxcutnc) {
-                        sel = edges;
-                        mxcutnc = mxcutnc_candidate;
-                    }
-                    const string isokey = GetGraphKey(edges);
-                    init_visited_graph_key[isokey] = true;
-                });
-            }
-
-            
-            class_count[EncodeDiff(mxcutnc)] = true;
-            all_graphs_edges.push_back(MakeUnweighted(sel));
-        });
+     
     }
 
     
