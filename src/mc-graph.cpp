@@ -1449,15 +1449,26 @@ void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
 // Interesting facts on this rule:
 // -- in case of RGG graphs: manages to process ALL cliques with at least one internal vertex -- therefore, cliques tend to be small.
 // 
-vector<vector<int>> MaxCutGraph::GetS2Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
-    vector<vector<int>> ret;
+vector<int> MaxCutGraph::GetS2Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+    vector<int> ret;
 
+    auto cmp = [&](int a, int b) {
+        return Degree(a) < Degree(b);
+    };
+
+    vector<bool> visited(num_nodes, false);
     auto current_v = GetAllExistingNodes();
+    sort(current_v.begin(), current_v.end(), cmp);
+
     for (auto root : current_v) { // an internal vertex
+        if (visited[root]) continue;
         if (KeyExists(root, preset_is_external)) continue;
 
         const auto adj_root = GetAdjacency(root);
         vector<int> curr_clique = SetUnion(adj_root, {root});
+
+        for (auto node : curr_clique)
+            visited[node] = true;
 
         if (!IsClique(curr_clique))
             continue;
@@ -1469,8 +1480,8 @@ vector<vector<int>> MaxCutGraph::GetS2Candidates(const bool break_on_first, cons
                 externals.push_back(node);
         }
 
-        if (externals.size() <= ((curr_clique.size() >> 1) + (curr_clique.size() % 2))) {
-            ret.push_back(curr_clique);
+        if (externals.size() <= ((curr_clique.size() >> 1) + (curr_clique.size() % 2))){
+            ret.push_back(root);
             if (break_on_first) return ret;
         }
 
@@ -1480,7 +1491,10 @@ vector<vector<int>> MaxCutGraph::GetS2Candidates(const bool break_on_first, cons
 
     return ret;
 }
-void MaxCutGraph::ApplyS2Candidate(const vector<int>& clique, const unordered_map<int,bool>& preset_is_external) {// Clique cut.
+void MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>& preset_is_external) {// Clique cut.
+    vector<int> clique = GetAdjacency(root);
+    clique = SetUnion(clique, {root});
+
     int n = clique.size();
     int add_tot = 0;
     for (int i = 1; i <= n; ++i) {

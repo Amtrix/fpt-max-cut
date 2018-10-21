@@ -54,12 +54,12 @@ public:
             while (true) {
                 FlushTimes(times, false);
 
-                auto res_rs2 = kernelized.GetS2Candidates(true);
+                auto res_rs2 = kernelized.GetS2Candidates();
                 LogTime(times, t0);
-                if (!res_rs2.empty()) {
-                    kernelized.ApplyS2Candidate(res_rs2[0]);
-                    continue;
-                }
+                for (auto candidate : res_rs2)
+                    kernelized.ApplyS2Candidate(candidate);
+
+                if (!res_rs2.empty()) continue;
 
                 auto res_r9x = kernelized.GetAllR9XCandidates(true);
                 LogTime(times, t0);

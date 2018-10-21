@@ -27,6 +27,7 @@ public:
         MaxCutGraph processed = G;
         tot_num_edges += G.GetRealNumEdges();
 
+        /*
         while(1) {
             // Chose one(!):
             //auto cliques = processed.GetCliquesWithAtLeastOneInternal();
@@ -45,7 +46,7 @@ public:
                 processed.RemoveEdgesInComponent(component);
                 rem_num_edges += (component.size() * (((int)component.size()) - 1)) / 2;
             }
-        }
+        }*/
             
         test_id++;
     }

@@ -94,6 +94,7 @@ public:
     vector<pair<int,int>> GetAllExistingEdges() const;
     bool IsClique(const vector<int>& vertex_set) const;
     double GetEdwardsErdosBound() const;
+    int CountExternalVertices(const vector<int> &vertex_set) const; // G[vertex_set] considered.
     ///////////////////////////////////////////////////
 
 
@@ -182,8 +183,8 @@ public:
     void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
 
     // Returns a vector of cliques with less than ceil(n/2) external vertices.
-    vector<vector<int>> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS2Candidate(const vector<int>& clique, const unordered_map<int,bool>& preset_is_external = {});
+    vector<int> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    void ApplyS2Candidate(const int root, const unordered_map<int,bool>& preset_is_external = {});
 
     // Get "almost cliques" (missing one edge) with at least one internal vertex.
     vector<vector<int>> GetS3Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
