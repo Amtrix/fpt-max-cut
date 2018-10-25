@@ -19,7 +19,7 @@ public:
         tot_used_twoway_rules = vector<int>(20, 0);
     }
 
-    void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
+    void Evaluate(InputParser& input, const string data_filepath) {
         BenchmarkAction::Evaluate(input, data_filepath);
         string data_filepath_key = BenchmarkAction::GetKey(data_filepath);
 
@@ -89,7 +89,7 @@ public:
             cout << endl;
 
 
-            OutputLinearKernelAnalysis(input, data_filepath, mixingid[data_filepath_key], iteration,
+            OutputLinearKernelAnalysis(input, G.GetGraphNaming(), BenchmarkAction::GetMixingId(G), iteration,
                 G.GetRealNumNodes(), G.GetRealNumEdges(), G_processing_twoway.GetRealNumNodes(), G_processing_twoway.GetRealNumEdges(),
                 s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc, oneway_time, twoway_time, oneway_reduc_time);
         }

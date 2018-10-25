@@ -95,6 +95,7 @@ public:
     bool IsClique(const vector<int>& vertex_set) const;
     double GetEdwardsErdosBound() const;
     int CountExternalVertices(const vector<int> &vertex_set) const; // G[vertex_set] considered.
+    string GetGraphNaming() const;
     ///////////////////////////////////////////////////
 
 
@@ -253,6 +254,8 @@ public:
     // Get cut size according to 0/1 coloring of nodes. grouping is a 0-1 vector. Vertex x is colored by grouping[x]. 
     int GetCutSize(const vector<int> &grouping) const;
     double GetInflictedCutChangeToKernelized() const { return inflicted_cut_change_to_kernelized; }
+    void SetMixingId(int id) { mixing_id = id; }
+    int GetMixingId() const { return mixing_id; }
 
 private:
     constexpr static long long kMaxNumNodes = 1000000000LL;
@@ -306,4 +309,7 @@ private:
 
     double inflicted_cut_change_to_kernelized = 0; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
     unordered_map<RuleIds, int> rules_usage_count;
+
+    string graph_naming;
+    int mixing_id;
 };

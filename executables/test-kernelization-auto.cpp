@@ -63,7 +63,7 @@ std::function<void()> suite[] = {
                 auto res_rs2 = kernelized.GetS2Candidates(true);
                 if (!res_rs2.empty()) {
                     kernelized.ApplyS2Candidate(res_rs2[0]);
-                    if (DEBUG) cout << "Rule S2 " << serializestr(res_rs2[0]) << endl;
+                    if (DEBUG) cout << "Rule S2 " << serializestr(res_rs2) << endl;
                     continue;
                 }
 

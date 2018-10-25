@@ -36,7 +36,9 @@ public:
         times.clear();
     }
 
-    void Evaluate(InputParser& input, const string data_filepath /*, vector<int>& tot_used_rules*/) {
+    void Evaluate(InputParser &input, const MaxCutGraph &main_graph) {
+        BenchmarkAction::Evaluate(input, main_graph.GetGraphNaming());
+
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {
             num_iterations = stoi(input.getCmdOption("-iterations"));
@@ -44,7 +46,7 @@ public:
 
         vector<vector<double>> accum;
         for (int iteration = 1; iteration <= num_iterations; ++iteration) {
-            MaxCutGraph G(data_filepath);
+            MaxCutGraph G = main_graph;
             MaxCutGraph kernelized = G;
 
             kernelized.MakeUnweighted();
@@ -105,7 +107,6 @@ public:
 
                 auto res_s4 = kernelized.GetAllS4Candidates(true);
                 LogTime(times, t0);
-                LogTime(times, t0);
                 if (!res_s4.empty()) {
                     kernelized.ApplyS4Candidate(res_s4[0]);
                     continue;
@@ -152,7 +153,7 @@ public:
             cout << "Gk = " << local_search_cut_size_k << " <= " << heur_sol_k.first << " (something weird if not)." << endl;
             
 
-            OutputKernelization(input, data_filepath,
+            OutputKernelization(input, main_graph.GetGraphNaming(),
                                 test_id, iteration,
                                 G.GetRealNumNodes(), G.GetRealNumEdges(),
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
@@ -180,9 +181,14 @@ public:
             avg.push_back(sum / accum.size());
         }
 
-        OutputKernelization(input, data_filepath, avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], "-avg");
+        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], "-avg");
 
         test_id++;
+    }
+
+    void Evaluate(InputParser& input, const string data_filepath) {
+        MaxCutGraph G(data_filepath);
+        Evaluate(input, G);
     }
 
     void PostProcess(InputParser& /* input */) override {

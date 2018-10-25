@@ -27,6 +27,11 @@ public:
         if (mixingid[key] == 0) mixingid[key] = mixingid_giver++;
     }
 
+    int GetMixingId(const MaxCutGraph &G) const {
+        if (G.GetMixingId() != -1) return G.GetMixingId();
+        return mixingid.at(G.GetGraphNaming());
+    }
+
     vector<int> tot_used_rules;
 
 protected:
