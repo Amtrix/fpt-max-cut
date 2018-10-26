@@ -14,8 +14,8 @@ using namespace std;
 
 class Benchmark_MarkedSet : public BenchmarkAction {
 public:
-    void Evaluate(InputParser& input, const string data_filepath) {
-        MaxCutGraph G(data_filepath);
+    void Evaluate(InputParser& input, const MaxCutGraph& main_graph) {
+        MaxCutGraph G = main_graph;
 
         int k = 0, rule_taken;
         MaxCutGraph G_processing_oneway = G; // ! make sure no pointers in G !
@@ -34,6 +34,6 @@ public:
         const int s_size_adhoc = G.Algorithm3MarkedComputation_Randomized();
 
 
-        OutputFilterMarkedVertices(input, data_filepath, G.GetNumNodes(), G.GetRealNumEdges(), s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc);
+        OutputFilterMarkedVertices(input, main_graph.GetGraphNaming(), G.GetNumNodes(), G.GetRealNumEdges(), s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc);
     }
 };

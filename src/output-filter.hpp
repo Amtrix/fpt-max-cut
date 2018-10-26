@@ -1,5 +1,11 @@
 #pragma once
 
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+#include <cstdarg>
+using namespace std;
+
 #include "./output-filter.hpp"
 #include "./utils.hpp"
 

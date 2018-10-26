@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <cassert>
+#include <algorithm>
+
 #include "mc-graph.hpp"
 #include "utils.hpp"
 

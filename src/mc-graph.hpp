@@ -1,8 +1,9 @@
 #pragma once
 
-#include "./utils.hpp"
-
-#include <bits/stdc++.h>
+#include "utils.hpp"
+#include <vector>
+#include <unordered_map>
+#include <map>
 using namespace std;
 
 enum class RuleIds : int {

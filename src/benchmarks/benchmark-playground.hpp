@@ -17,13 +17,13 @@ public:
         accum_clique_size = vector<int>(10000, 0);
     }
 
-    void Evaluate(InputParser& /* input */, const string data_filepath /*, vector<int>& tot_used_rules*/) {
+    void Evaluate(InputParser& /* input */, const MaxCutGraph& main_graph /*, vector<int>& tot_used_rules*/) {
         //int num_iterations = 1;
         //if (input.cmdOptionExists("-iterations")) {
         //    num_iterations = stoi(input.getCmdOption("-num-iterations"));
         //}
 
-        MaxCutGraph G(data_filepath);
+        MaxCutGraph G = main_graph;
         MaxCutGraph processed = G;
         tot_num_edges += G.GetRealNumEdges();
 

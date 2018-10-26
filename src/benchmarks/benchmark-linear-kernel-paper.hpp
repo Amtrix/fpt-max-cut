@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <sstream>
 using namespace std;
 
 class Benchmark_LinearKernelPaper : public BenchmarkAction {
@@ -19,9 +20,9 @@ public:
         tot_used_twoway_rules = vector<int>(20, 0);
     }
 
-    void Evaluate(InputParser& input, const string data_filepath) {
-        BenchmarkAction::Evaluate(input, data_filepath);
-        string data_filepath_key = BenchmarkAction::GetKey(data_filepath);
+    void Evaluate(InputParser& input, const MaxCutGraph& main_graph) {
+        BenchmarkAction::Evaluate(input, main_graph);
+        string data_filepath_key = BenchmarkAction::GetKey(main_graph.GetGraphNaming());
 
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {
@@ -32,7 +33,7 @@ public:
         for (int iteration = 1; iteration <= num_iterations; ++iteration) {
             vector<int> curr_tot_used_rules(20, 0), curr_tot_used_twoway_rules(20, 0);
 
-            MaxCutGraph G(data_filepath);
+            MaxCutGraph G = main_graph;
             MaxCutGraph kernelized = G;
             int change_tmp = 0;
             MaxCutGraph G_processing_oneway = G; // ! make sure no pointers in G !

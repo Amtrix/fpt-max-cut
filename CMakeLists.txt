@@ -20,6 +20,7 @@ find_package(Threads REQUIRED)
 list(APPEND ALL_CPP_FILES
     "src/mc-graph.cpp"
     "src/utils.cpp"
+    "src/graph-database.cpp"
 )
 message(${CMAKE_FIND_ROOT_PATH}/solvers/MQLib/bin/)
 

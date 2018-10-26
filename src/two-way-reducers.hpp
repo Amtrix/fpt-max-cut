@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+#include <algorithm>
+#include <cassert>
+
 #include "mc-graph.hpp"
 #include "utils.hpp"
 

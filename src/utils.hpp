@@ -1,7 +1,9 @@
 #pragma once
 
-#include <bits/stdc++.h>
 #include <experimental/filesystem>
+#include <unordered_map>
+#include <iostream>
+
 using namespace std;
 using namespace std::experimental;
 

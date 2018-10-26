@@ -22,8 +22,8 @@ public:
 
     }
     
-    virtual void Evaluate(InputParser& /*input*/, const string data_filepath) {
-        string key = GetKey(data_filepath);    
+    virtual void Evaluate(InputParser& /*input*/, const MaxCutGraph& main_graph) {
+        string key = GetKey(main_graph.GetGraphNaming());    
         if (mixingid[key] == 0) mixingid[key] = mixingid_giver++;
     }
 
