@@ -2,8 +2,12 @@ cmake_minimum_required (VERSION 2.8)
 
 #### USER DEFINED ##############################################################
 
+
 #### BASIC SETTINGS ############################################################
 
+message("Add KaGen")
+add_subdirectory(./test-generators/KaGen/)
+message("Include MQLIB includes")
 include_directories(. ./solvers/MQLib/include)
 
 set (CMAKE_CXX_COMPILER /usr/bin/g++-7)
@@ -15,22 +19,18 @@ find_package(Threads REQUIRED)
 
 #### TARGETS ###################################################################
 
-#ALL_CPP_FILES = src/mc-graph.cpp src/utils.cpp
-
 list(APPEND ALL_CPP_FILES
     "src/mc-graph.cpp"
     "src/utils.cpp"
     "src/graph-database.cpp"
 )
-message(${CMAKE_FIND_ROOT_PATH}/solvers/MQLib/bin/)
 
 find_library(MQLIB NAMES "MQLib.a" PATHS ./solvers/MQLib/bin/)
 
-list(APPEND TARGET_LIBS
-    "Threads::Threads"
-    "-lstdc++fs"
-    ${MQLIB}
-)
+set(TARGET_LIBS Threads::Threads -lstdc++fs ${MQLIB} generators)
+
+message("LIBS:")
+message(${TARGET_LIBS})
 
 #list(APPEND OUTPUT_NAME "benchmark-kernelization-by-clique")
 #list(APPEND FLAGS "BENCH_KERNELIZATION_CLIQUE")

@@ -23,7 +23,6 @@ int main(int argc, char **argv){
     InitOutputFiles(input);
 
     GraphDatabase graph_db(input);
-
     
 
     const string action = input.getCmdOption("-action");

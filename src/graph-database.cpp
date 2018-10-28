@@ -7,6 +7,11 @@ using namespace std;
 
 
 GraphDatabase::GraphDatabase(InputParser& input) {
+    if (input.cmdOptionExists("-sample-kagen")) {
+        graph_generation_mode = GraphGenerationMode::KagenSample;
+        return;
+    }
+
     if (input.cmdOptionExists("-f")) {
         const string data_filepath = input.getCmdOption("-f");
         all_sets_to_evaluate.push_back(data_filepath);

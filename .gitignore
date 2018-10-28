@@ -10,5 +10,3 @@ solvers/localsolver/maxcut
 
 utils/build
 !utils/built/.keep
-
-test-generators
