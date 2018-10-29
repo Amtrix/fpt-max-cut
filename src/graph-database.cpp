@@ -9,6 +9,7 @@ using namespace std;
 GraphDatabase::GraphDatabase(InputParser& input) {
     if (input.cmdOptionExists("-sample-kagen")) {
         cout << "Sample kagen mode activated" << endl;
+        graphs_per_type = stoi(input.getCmdOption("-sample-kagen"));
         graph_generation_mode = GraphGenerationMode::KagenSampling;
 
         const auto is_smaller = [](const KagenGraphCollectionDescriptor& x1, const KagenGraphCollectionDescriptor& x2) {
@@ -58,7 +59,7 @@ MaxCutGraph GraphDatabase::GetGraphById(const long id) const {
     if (graph_generation_mode == GraphGenerationMode::KagenSampling) {
         auto elist = all_kagen_sets_to_evaluate.at(id).GenerateEdgeList();
         MaxCutGraph ret(elist);
-        ret.SetGraphNaming("X");
+        ret.SetGraphNaming(all_kagen_sets_to_evaluate.at(id).Serialize());
         return ret;
     } else {
         return MaxCutGraph(all_sets_to_evaluate[id]);

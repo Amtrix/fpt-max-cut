@@ -49,27 +49,28 @@ public:
         // GNM collection generation param range:
         static constexpr int gnm_lo_num_edges = 0, gnm_hi_num_edges = 4; // num_nodes * 2^x
         // RGG 2D collection generation param range:
-        static constexpr double rgg_2d_lo_rad = 0.005, rgg_2d_hi_rad = 0.04;
+        static constexpr double rgg_2d_lo_rad = 0.001, rgg_2d_hi_rad = 0.05;
         // RGG 3D collection generation param range:
-        static constexpr double rgg_3d_lo_rad = 0.03, rgg_3d_hi_rad = 0.105;
+        static constexpr double rgg_3d_lo_rad = 0.001, rgg_3d_hi_rad = 0.11;
         // RHG collection generation param range:
         static constexpr double rhg_lo_e = 1.9, rhg_hi_e = 6.5;
         static constexpr int rhg_lo_avg_vertex_deg = 2, rhg_hi_avg_vertex_deg = 64;
 
         Type graph_type;
         int num_nodes;
-        int powerlaw_exponent;
+        int sel_seed;
         double rparam;
         int iparam;
         mt19937 gen;
-        uniform_int_distribution<>  idist;
-        uniform_real_distribution<> rdist;
+        uniform_int_distribution<>  idist = std::uniform_int_distribution<>(-1, -1);
+        uniform_real_distribution<> rdist = std::uniform_real_distribution<>(-1, -1);
         
         KagenGraphCollectionDescriptor(Type type, int seed, int it, int _num_nodes = 8192) {
             graph_type = type;
             num_nodes = _num_nodes;
+            sel_seed = (seed + it * 13333337) % 100019;
             std::random_device rd;  //Will be used to obtain a seed for the random number engine
-            gen = mt19937(seed + it * 13333337); //Standard mersenne_twister_engine seeded with rd()
+            gen = mt19937(sel_seed); //Standard mersenne_twister_engine seeded with rd()
 
             if (type == Type::GNM)
                 idist = std::uniform_int_distribution<>(gnm_lo_num_edges * num_nodes, gnm_hi_num_edges * num_nodes);
@@ -82,8 +83,6 @@ public:
             if (type == Type::RHG) {
                 idist = std::uniform_int_distribution<>(rhg_lo_avg_vertex_deg, rhg_hi_avg_vertex_deg);
                 rdist = std::uniform_real_distribution<>(rhg_lo_e, rhg_hi_e);
-
-                powerlaw_exponent = rdist(gen);
             }
         
             iparam = idist(gen);
@@ -98,15 +97,15 @@ public:
             EdgeList edge_list_undirected;
             
             if (graph_type == KagenGraphCollectionDescriptor::Type::GNM)
-                edge_list_undirected= gen.GenerateUndirectedGNM(num_nodes, iparam);
+                edge_list_undirected= gen.GenerateUndirectedGNM(num_nodes, iparam, 0, sel_seed);
             if (graph_type == KagenGraphCollectionDescriptor::Type::RGG2D)
-                edge_list_undirected= gen.Generate2DRGG(num_nodes, rparam);
+                edge_list_undirected= gen.Generate2DRGG(num_nodes, rparam, 0, sel_seed);
             if (graph_type == KagenGraphCollectionDescriptor::Type::RGG3D)
-                edge_list_undirected= gen.Generate2DRGG(num_nodes, rparam);
+                edge_list_undirected= gen.Generate2DRGG(num_nodes, rparam, 0, sel_seed);
             if (graph_type == KagenGraphCollectionDescriptor::Type::BA)
-                edge_list_undirected= gen.GenerateBA(8192, 5);
+                edge_list_undirected= gen.GenerateBA(num_nodes, iparam, 0, sel_seed);
             if (graph_type == KagenGraphCollectionDescriptor::Type::RHG)
-                edge_list_undirected= gen.GenerateRHG(num_nodes, rparam, iparam);
+                edge_list_undirected= gen.GenerateRHG(num_nodes, rparam, iparam, 0, sel_seed);
             
             edge_list_undirected = RemoveAnyMultipleEdgesAndSelfLoops(edge_list_undirected); // warning! if the input is directed, it will remove one direction.
 
@@ -119,6 +118,14 @@ public:
             }
 
             return ret;
+        }
+
+        string Serialize() const {
+            std::ostringstream out;
+            out.precision(4);
+            out << "i" << iparam << "_r" << std::fixed << rparam;
+
+            return kKagenNaming.at(graph_type) + "-" + out.str() + "." + to_string(sel_seed);
         }
     };
     

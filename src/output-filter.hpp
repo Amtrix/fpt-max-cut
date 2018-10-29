@@ -13,7 +13,8 @@ template <class T>
 void print(std::ostream& out, const T& t, size_t w)
 {
     out.width(w);
-    out       << t << " " << std::flush;
+    out.precision(4);
+    out       << std::fixed << t << " " << std::flush;
   //  std::cout.width(w);
   //  std::cout << t << " " << std::flush;
 }
@@ -53,7 +54,7 @@ vector<string> kOutputSubtyping = {"", "-avg"};
 vector<int> kMarkedSizeColumnDescriptor =   {10, 10, 15, 22, 15, 50};
 vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
 vector<int> kernelizationCountDescriptor =  {10, 10, 10, 10, 10, 10, 60};
-vector<int> kernelizationDescriptor =       {10, 10, 10, 10, 10, 10, 20, 20, 20, 20, 20, 20, 20, 60};
+vector<int> kernelizationDescriptor =       {10, 10, 10, 10, 10, 10, 20, 20, 20, 20, 20, 20, 20, 20, 60};
 vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,100};
 
 void InitOutputFiles(const InputParser& input) {
@@ -83,7 +84,7 @@ void InitOutputFiles(const InputParser& input) {
 
             for (auto sub : kOutputSubtyping) {
                 ofstream out(output_path + sub);
-                print_row(out, kernelizationDescriptor, "ssssssssssssss", "#sec", "#it", "#|V(G)|", "#|E(G)|", "#|V(Gk)|", "#|E(Gk)|", "#CUTDIFF", "#MQLIB(G)", "#MQLIB(Gk)+DIFF", "#locsearch(G)", "#locsearch(Gk)+DIFF", "#EE(G)", "#EE(Gk)", "#file");
+                print_row(out, kernelizationDescriptor, "sssssssssssssss", "#sec", "#it", "#|V(G)|", "#|E(G)|", "#|V(Gk)|", "#|E(Gk)|", "#|Erem|", "#CUTDIFF", "#MQLIB(G)", "#MQLIB(Gk)+DIFF", "#locsearch(G)", "#locsearch(Gk)+DIFF", "#EE(G)", "#EE(Gk)", "#file");
             }
         }
         
@@ -160,7 +161,7 @@ void OutputKernelization(
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output") + subtyping_output;
         ofstream out(output_path, fstream::app);
-        print_row(out, kernelizationDescriptor, "ddddddfddddffs", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, k, mqlib_sol, mqlib_sol_k,
+        print_row(out, kernelizationDescriptor, "ddddddffddddffs", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, (1 - (num_edges_k / (double)num_edges)) * 100, k, mqlib_sol, mqlib_sol_k,
             locsearch, locsearch_k, EE, EE_k, dataset.c_str());
     }
 }
