@@ -35,57 +35,24 @@ message(${TARGET_LIBS})
 #list(APPEND OUTPUT_NAME "benchmark-kernelization-by-clique")
 #list(APPEND FLAGS "BENCH_KERNELIZATION_CLIQUE")
 
-add_executable(benchmark executables/benchmark.cpp)
-target_sources(benchmark PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(benchmark PRIVATE ${TARGET_LIBS})
-target_compile_definitions(benchmark PRIVATE NDEBUG)
 
-add_executable(benchmark-debug executables/benchmark.cpp)
-target_sources(benchmark-debug PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(benchmark-debug PRIVATE ${TARGET_LIBS})
-target_compile_definitions(benchmark-debug PRIVATE DEBUG)
+macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
+    add_executable(${TARGETNAME} ${ENTRYCPP})
+    target_sources(${TARGETNAME} PRIVATE ${ALL_CPP_FILES})
+    target_link_libraries(${TARGETNAME} PRIVATE ${TARGET_LIBS})
+    target_compile_definitions(${TARGETNAME} PRIVATE ${DEBUGMODE})
+endmacro(add_binary_exec)
 
-add_executable(test-articulation-and-biconnected executables/test-articulation-and-biconnected.cpp)
-target_sources(test-articulation-and-biconnected PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(test-articulation-and-biconnected ${TARGET_LIBS})
-
-add_executable(test-graph-functionality executables/test-graph-functionality.cpp)
-target_sources(test-graph-functionality PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(test-graph-functionality ${TARGET_LIBS})
-
-add_executable(test-kernelization-all executables/test-kernelization-all.cpp)
-target_sources(test-kernelization-all PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(test-kernelization-all ${TARGET_LIBS})
-
-add_executable(test-kernelization-auto executables/test-kernelization-auto.cpp)
-target_sources(test-kernelization-auto PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(test-kernelization-auto ${TARGET_LIBS})
-
-add_executable(unweight-an-instance executables/utils/unweight-an-instance.cpp)
-target_link_libraries(unweight-an-instance ${TARGET_LIBS})
-
-add_executable(double-clique-solver executables/double-clique-solver.cpp)
-target_sources(double-clique-solver PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(double-clique-solver PRIVATE ${TARGET_LIBS})
-
-add_executable(random-playground executables/random-playground.cpp)
-target_sources(random-playground PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(random-playground PRIVATE ${TARGET_LIBS})
-
-add_executable(find-kernelization-general executables/find-kernelization-general.cpp)
-target_sources(find-kernelization-general PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(find-kernelization-general PRIVATE ${TARGET_LIBS})
-
-add_executable(find-kernelization-weighted executables/find-kernelization-weighted.cpp)
-target_sources(find-kernelization-weighted PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(find-kernelization-weighted PRIVATE ${TARGET_LIBS})
-
-
-add_executable(lower-bound-num-of-class-computation executables/lower-bound-num-of-class-computation.cpp)
-target_sources(lower-bound-num-of-class-computation PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(lower-bound-num-of-class-computation PRIVATE ${TARGET_LIBS})
-
-
-add_executable(remove-double-edges executables/remove-double-edges.cpp)
-target_sources(remove-double-edges PRIVATE ${ALL_CPP_FILES})
-target_link_libraries(remove-double-edges PRIVATE ${TARGET_LIBS})
+add_binary_exec(benchmark                            NDEBUG  executables/benchmark.cpp)
+add_binary_exec(benchmark-debug                      DEBUG   executables/benchmark.cpp)
+add_binary_exec(test-articulation-and-biconnected    DEBUG   executables/test-articulation-and-biconnected.cpp)
+add_binary_exec(test-graph-functionality             DEBUG   executables/test-graph-functionality.cpp)
+add_binary_exec(test-kernelization-all               DEBUG   executables/test-kernelization-all.cpp)
+add_binary_exec(test-kernelization-auto              DEBUG   executables/test-kernelization-auto.cpp)
+add_binary_exec(unweight-an-instance                 NDEBUG  executables/utils/unweight-an-instance.cpp)
+add_binary_exec(double-clique-solver                 NDEBUG  executables/double-clique-solver.cpp)
+add_binary_exec(random-playground                    DEBUG   executables/random-playground.cpp)
+add_binary_exec(find-kernelization-general           NDEBUG  executables/find-kernelization-general.cpp)
+add_binary_exec(find-kernelization-weighted          NDEBUG  executables/find-kernelization-weighted.cpp)
+add_binary_exec(lower-bound-num-of-class-computation NDEBUG  executables/lower-bound-num-of-class-computation.cpp)
+add_binary_exec(remove-double-edges                  NDEBUG  executables/remove-double-edges.cpp)

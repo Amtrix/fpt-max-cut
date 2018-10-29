@@ -1,4 +1,7 @@
 #include "./utils.hpp"
+#include <sstream>
+#include <string>
+#include <map>
 #include <experimental/filesystem>
 using namespace std;
 using namespace std::experimental;
@@ -106,6 +109,19 @@ vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_sma
     vector<int> ret;
     for (int i = 0; i < sz; ++i)
         ret.push_back(A[i] + B[i]);
+    return ret;
+}
+
+vector<pair<unsigned long long,unsigned long long>> RemoveAnyMultipleEdgesAndSelfLoops(const vector<pair<unsigned long long,unsigned long long>>& elems) {
+    vector<pair<unsigned long long,unsigned long long>> ret;
+    map<pair<unsigned long long,unsigned long long>, bool> visi;
+
+    for (auto e : elems) {
+        if (visi[e] || e.first == e.second) continue;
+        ret.push_back(e);
+        visi[e] = true;
+        visi[make_pair(e.second, e.first)] = true;
+    }
     return ret;
 }
 

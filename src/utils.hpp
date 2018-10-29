@@ -37,6 +37,9 @@ bool IsASubsetOfB(const vector<int>& A, const vector<int>& B);
 vector<pair<int, string>> ZipVec(const vector<int> A, const vector<string> B);
 vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_smaller = false);
 
+//warning! if the input is directed, it will remove one direction.
+vector<pair<unsigned long long,unsigned long long>> RemoveAnyMultipleEdgesAndSelfLoops(const vector<pair<unsigned long long,unsigned long long>>& elems);
+
 // ignores README.md !
 vector<string> GetAllDatasets(const string path);
 

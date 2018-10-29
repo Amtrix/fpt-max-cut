@@ -97,6 +97,7 @@ public:
     double GetEdwardsErdosBound() const;
     int CountExternalVertices(const vector<int> &vertex_set) const; // G[vertex_set] considered.
     string GetGraphNaming() const;
+    void SetGraphNaming(const string name) { graph_naming = name; }
     ///////////////////////////////////////////////////
 
 

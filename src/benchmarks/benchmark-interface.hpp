@@ -12,8 +12,11 @@ public:
     string GetKey(const string data_filepath) {
         string key = "";
         int dx = ((int)data_filepath.size()) - 1;
-        while (data_filepath[dx] != '/' && data_filepath[dx] != '\\')
+        while (dx >= 0 && data_filepath[dx] != '/' && data_filepath[dx] != '\\')
             key += data_filepath[dx--];
+        if (key.find('.') == string::npos)
+            return key;
+        
         key = key.substr(key.find('.'));
         return key;
     }

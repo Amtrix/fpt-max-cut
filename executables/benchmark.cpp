@@ -17,8 +17,16 @@ using namespace std;
 
 vector<int> tot_used_rules(10, 0);
 int main(int argc, char **argv){
+    // Init MPI
+    MPI_Init(&argc, &argv);
+    PEID rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
     //srand((unsigned)time(0));
     //ios_base::sync_with_stdio(false);
+    std::cout << std::fixed;
+    std::cout << std::setprecision(5);
     InputParser input(argc, argv);
     InitOutputFiles(input);
 
@@ -48,6 +56,7 @@ int main(int argc, char **argv){
             cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
             benchmark_action->Evaluate(input, graph);
             tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
+            cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;
         }
 
         benchmark_action->PostProcess(input);

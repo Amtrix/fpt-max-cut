@@ -37,7 +37,7 @@ public:
     }
 
     void Evaluate(InputParser &input, const MaxCutGraph &main_graph) {
-        BenchmarkAction::Evaluate(input, main_graph.GetGraphNaming());
+        BenchmarkAction::Evaluate(input, main_graph);
 
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {
@@ -123,7 +123,9 @@ public:
             }
             FlushTimes(times);
 
+            OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
             kernelized.MakeWeighted();
+            OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
 
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             double local_search_cut_size = G.ComputeLocalSearchCut().first;

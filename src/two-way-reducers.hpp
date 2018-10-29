@@ -123,8 +123,10 @@ int TryRule8(MaxCutGraph& G_0, MaxCutGraph& G_minus_S, const vector<int>& S) {
         auto S_intersect_NX = SetIntersection(S, key_descr[largest_key]); // S operator(intersect) N_{G}(X)
 
 #ifdef DEBUG
-        for (auto node : partition[largest_key])
-            assert(G_minus_S.IsArticulation(node) == false);
+        for (auto node : partition[largest_key]) {
+           (void) node;
+           assert(G_minus_S.IsArticulation(node) == false);
+        }
 #endif
 
         double sz = (component.size() + S_intersect_NX.size()) / 2.0;
