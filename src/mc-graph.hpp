@@ -31,6 +31,23 @@ const map<RuleIds, string> kRuleDescriptions = {
     {RuleIds::RuleS6,          "?????????????????"},
 };
 
+const map<RuleIds, string> kRuleNames = {
+    {RuleIds::SpecialRule1,    "SpecialRule1"},
+    {RuleIds::SpecialRule2,    "SpecialRule2"},
+    {RuleIds::RevSpecialRule1, "RevSpecialRule1"},
+    {RuleIds::RevSpecialRule2, "RevSpecialRule2"},
+    {RuleIds::Rule8,           "Rule8"},
+    {RuleIds::Rule9,           "Rule9"},
+    {RuleIds::Rule9X,          "Rule9X"},
+    {RuleIds::Rule10,          "Rule10"},
+    {RuleIds::Rule10AST,       "Rule10AST"},
+    {RuleIds::RuleS2,          "RuleS2"},
+    {RuleIds::RuleS3,          "RuleS3"},
+    {RuleIds::RuleS4,          "RuleS4"},
+    {RuleIds::RuleS5,          "RuleS5"},
+    {RuleIds::RuleS6,          "RuleS6"},
+};
+
 const vector<RuleIds> kAllRuleIds = {
     RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
     RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
@@ -227,6 +244,7 @@ public:
     /**
      *  Transformations of all G / create G' with certain properties.
      **/
+    bool PerformKernelization(const RuleIds rule_id);
     void MakeUnweighted();
     void MakeWeighted();
     double ExecuteLinearKernelization();
@@ -252,6 +270,7 @@ public:
     void PrintGraph(std::ostream& out) const;
     string PrintDegrees(const unordered_map<int,bool>& preset_is_external = {}) const;
     void PrintReductionsUsage() const;
+    int GetRuleUsage(RuleIds rule) const;
     vector<int> GetUsageVector() const;
     // Get cut size according to 0/1 coloring of nodes. grouping is a 0-1 vector. Vertex x is colored by grouping[x]. 
     int GetCutSize(const vector<int> &grouping) const;

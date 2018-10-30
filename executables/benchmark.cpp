@@ -30,6 +30,7 @@ int main(int argc, char **argv){
     InputParser input(argc, argv);
     InitOutputFiles(input);
 
+    GraphDatabase::KagenGraphCollectionDescriptor::InitializeParamBounds(input);
     GraphDatabase graph_db(input);
     
 

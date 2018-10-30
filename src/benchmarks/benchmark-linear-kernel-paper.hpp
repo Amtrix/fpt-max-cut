@@ -26,7 +26,7 @@ public:
 
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {
-            num_iterations = stoi(input.getCmdOption("-num-iterations"));
+            num_iterations = stoi(input.getCmdOption("-iterations"));
         }
 
         vector<vector<double>> accum;
@@ -48,14 +48,12 @@ public:
             auto t1 = std::chrono::high_resolution_clock::now();
             double oneway_time = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
 
-            auto marked = G_processing_oneway.GetMarkedVerticesByOneWayRules();
-
             auto marked_vertex_set = G_processing_oneway.GetMarkedVerticesByOneWayRules();
             G.SetMarkedVertices(marked_vertex_set);
-            const int s_size_oneway = G.GetMarkedVerticesByOneWayRules().size();
+            const int s_size_oneway = marked_vertex_set.size();
 
-            // Try reduce size of S
-            string perform_reduce = "yes";
+            ///////////// Try reduce size of S
+            string perform_reduce = "no";
             if (input.cmdOptionExists("-do-reduce"))
                 perform_reduce = input.getCmdOption("-do-reduce");
 
@@ -70,6 +68,7 @@ public:
                 oneway_reduc_time = std::chrono::duration_cast<std::chrono::microseconds> (t2 - t0).count()/1000.;
                 s_size_adhoc = G.Algorithm3MarkedComputation_Randomized();
             }
+            ///////////////////////////
 
             MaxCutGraph G_processing_twoway = G;
             auto tk0 = std::chrono::high_resolution_clock::now();

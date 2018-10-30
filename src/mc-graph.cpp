@@ -1908,6 +1908,95 @@ bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
     return true;
 }
 
+bool MaxCutGraph::PerformKernelization(const RuleIds rule_id) {
+    switch(rule_id) {
+        case RuleIds::RuleS2: {
+            auto candidates = GetS2Candidates();
+            for (auto candidate : candidates)
+                ApplyS2Candidate(candidate);
+
+            return !candidates.empty();
+        }
+        case RuleIds::Rule8: { 
+            auto candidates = GetAllR8Candidates(true);
+            if (!candidates.empty()) {
+                ApplyR8Candidate(candidates[0]);
+                return true;
+            }
+            return false;
+        }
+        case RuleIds::Rule9: { 
+            auto candidates = GetAllR9Candidates(true);
+            if (!candidates.empty()) {
+                ApplyR9Candidate(candidates[0]);
+                return true;
+            }
+            return false;
+        }
+        case RuleIds::Rule9X: { 
+            auto candidates = GetAllR9XCandidates(true);
+            if (!candidates.empty()) {
+                ApplyR9XCandidate(candidates[0]);
+                return true;
+            }
+            return false;
+        }
+        case RuleIds::Rule10: {
+            auto candidates = GetAllR10Candidates(true);
+            if (!candidates.empty()) {
+                ApplyR10Candidate(candidates[0]);
+                return true;
+            }
+            return false;
+        }
+        case RuleIds::Rule10AST: {
+            auto candidates = GetAllR10ASTCandidates(true);
+            if (!candidates.empty()) {
+                ApplyR10ASTCandidate(candidates[0]);
+                return true;
+            }
+            return false;
+        }
+        case RuleIds::RuleS3: {
+            auto candidates = GetS3Candidates(true);
+            if (!candidates.empty()) {
+                ApplyS3Candidate(candidates[0]);
+                return true;
+            }
+            return false;
+        }
+        case RuleIds::RuleS4: {
+            auto candidates = GetAllS4Candidates(true);
+            if (!candidates.empty()) {
+                ApplyS4Candidate(candidates[0]);
+                return true;
+            }
+            return false;
+        }
+        case RuleIds::RuleS5: {
+            auto candidates = GetAllS5Candidates(true);
+            if (!candidates.empty()) {
+                ApplyS5Candidate(candidates[0]);
+                return true;
+            }
+            return false;
+        }
+        case RuleIds::RuleS6: {
+            // maybe i realized this doesnt make sense? verify and delete if so with implication in commit comment.
+        }
+        
+        
+
+        case RuleIds::SpecialRule1:
+        case RuleIds::SpecialRule2:
+        case RuleIds::RevSpecialRule1:
+        case RuleIds::RevSpecialRule2:
+            break;
+    }
+
+    return false;
+}
+
 void MaxCutGraph::MakeUnweighted() {
     while (true) {
         const auto &r1_candidates = GetAllRevSpecialRule1Candidates();
@@ -2076,6 +2165,13 @@ void MaxCutGraph::PrintReductionsUsage() const {
         cout << "//  Number of times used: " << (rules_usage_count.find(key) != rules_usage_count.end() ? rules_usage_count.at(key) : 0) << endl;
         cout << endl;
     }
+}
+
+int MaxCutGraph::GetRuleUsage(RuleIds rule) const {
+    if (rules_usage_count.find(rule) != rules_usage_count.end())
+        return rules_usage_count.at(rule);
+    else
+        return 0;
 }
 
 vector<int> MaxCutGraph::GetUsageVector() const {

@@ -17,19 +17,16 @@ GraphDatabase::GraphDatabase(InputParser& input) {
             int p2 = distance(kKagenTypeListing.begin(), find(kKagenTypeListing.begin(), kKagenTypeListing.end(), x2.graph_type));
             if (p1 != p2) return p1 < p2;
 
-            auto type = x1.graph_type;
-            if (type == KagenGraphCollectionDescriptor::Type::GNM)   return x1.iparam < x2.iparam;
-            if (type == KagenGraphCollectionDescriptor::Type::RGG2D) return x1.rparam < x2.rparam;
-            if (type == KagenGraphCollectionDescriptor::Type::RGG3D) return x1.rparam < x2.rparam;
-            if (type == KagenGraphCollectionDescriptor::Type::BA)    return x1.iparam < x2.iparam;
-            if (type == KagenGraphCollectionDescriptor::Type::RHG)   return x1.iparam < x2.iparam;
-            return false;
+            double c1 = x1.num_edges != 0 ? x1.num_nodes / x1.num_edges : 1e9;
+            double c2 = x2.num_edges != 0 ? x2.num_nodes / x2.num_edges : 1e9;
+            return c1 > c2;
         };
 
+        int id = 0;
         for (int i = 0; i < graphs_per_type * (int)kKagenTypeListing.size(); ++i) {
             KagenGraphCollectionDescriptor::Type type =  kKagenTypeListing[i / graphs_per_type];
             int it = i % graphs_per_type;
-            KagenGraphCollectionDescriptor descr(type, 123, it);
+            KagenGraphCollectionDescriptor descr(id++, type, 1000 + rand()%5000, 1111, it);
             all_kagen_sets_to_evaluate.push_back(descr);
         }
 
@@ -51,7 +48,7 @@ GraphDatabase::GraphDatabase(InputParser& input) {
     }
 }
 
-MaxCutGraph GraphDatabase::GetGraph(const string& key) const {
+MaxCutGraph GraphDatabase::GetGraphByFile(const string& key) const {
     return MaxCutGraph(key);
 }
 
@@ -60,6 +57,7 @@ MaxCutGraph GraphDatabase::GetGraphById(const long id) const {
         auto elist = all_kagen_sets_to_evaluate.at(id).GenerateEdgeList();
         MaxCutGraph ret(elist);
         ret.SetGraphNaming(all_kagen_sets_to_evaluate.at(id).Serialize());
+        ret.SetMixingId(all_kagen_sets_to_evaluate.at(id).id);
         return ret;
     } else {
         return MaxCutGraph(all_sets_to_evaluate[id]);
@@ -83,3 +81,19 @@ const map<GraphDatabase::KagenGraphCollectionDescriptor::Type, string> GraphData
     { KagenGraphCollectionDescriptor::Type::RHG, "RHG" }
 };
 
+int GraphDatabase::KagenGraphCollectionDescriptor::num_edges_lo = -1;
+int GraphDatabase::KagenGraphCollectionDescriptor::num_edges_hi = -1;
+
+
+int GraphDatabase::KagenGraphCollectionDescriptor::ba_lo_minimum_vertex_deg = 1;
+int GraphDatabase::KagenGraphCollectionDescriptor::ba_hi_minimum_vertex_deg = 16;
+int GraphDatabase::KagenGraphCollectionDescriptor::gnm_lo_num_edges = 0;
+int GraphDatabase::KagenGraphCollectionDescriptor::gnm_hi_num_edges = 8;
+double GraphDatabase::KagenGraphCollectionDescriptor::rgg_2d_lo_rad = 0.001;
+double GraphDatabase::KagenGraphCollectionDescriptor::rgg_2d_hi_rad = 0.04;
+double GraphDatabase::KagenGraphCollectionDescriptor::rgg_3d_lo_rad = 0.001;
+double GraphDatabase::KagenGraphCollectionDescriptor::rgg_3d_hi_rad = 0.11;
+double GraphDatabase::KagenGraphCollectionDescriptor::rhg_lo_e = 2.1;
+double GraphDatabase::KagenGraphCollectionDescriptor::rhg_hi_e = 6.5;
+int GraphDatabase::KagenGraphCollectionDescriptor::rhg_lo_avg_vertex_deg = 2;
+int GraphDatabase::KagenGraphCollectionDescriptor::rhg_hi_avg_vertex_deg = 32;
