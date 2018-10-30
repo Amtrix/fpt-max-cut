@@ -78,26 +78,53 @@ int TryRule6(MaxCutGraph& G, const vector<int>& leaf_block, const int r, int& k)
  * - vertices are not being deleted, but just made disconnected from the rest of the graph.
  * 
 **/
-int TryOneWayReduce(MaxCutGraph& G, int &k) {
+int TryOneWayReduce(MaxCutGraph& G, int &k, vector<pair<double,int>>& times_within_call) {
     // First, find leaf block.
     vector<int> component;
     int r;
 
+    bool res;
+    auto t0 = std::chrono::high_resolution_clock::now();
+    auto t1 = t0;
     std::tie(component, r) = G.GetLeafBlockAndArticulation(false);
+
+    t1 = std::chrono::high_resolution_clock::now();
+    times_within_call.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., -1));
+    t0 = t1;
 
     if (r == -1) return -1;
 
     // ############## TRY RULE 5 ##############
-    if (TryRule5(G, component, r, k) != -1) return 5;
+    res = TryRule5(G, component, r, k) != -1;
+    t1 = std::chrono::high_resolution_clock::now();
+    times_within_call.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., 5));
+    t0 = t1;
+
+    if (res) return 5;
 
     // ############## TRY RULE 3 ##############
-    if (TryRule3(G, component, r, k) != -1) return 3;
+    res = TryRule3(G, component, r, k) != -1;
+    t1 = std::chrono::high_resolution_clock::now();
+    times_within_call.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., 3));
+    t0 = t1;
+
+    if (res) return 3;
 
     // ############## TRY RULE 7 ##############
-    if (TryRule7(G, component, r, k) != -1) return 7;
+    res = TryRule7(G, component, r, k) != -1;
+    t1 = std::chrono::high_resolution_clock::now();
+    times_within_call.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., 7));
+    t0 = t1;
+
+    if (res) return 7;
 
     // ############## TRY RULE 6 ##############
-    if (TryRule6(G, component, r, k) != -1) return 6;
+    res = TryRule6(G, component, r, k) != -1;
+    t1 = std::chrono::high_resolution_clock::now();
+    times_within_call.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., 6));
+    t0 = t1;
+
+    if (res) return 6;
 
     return -1;
 }

@@ -17,8 +17,8 @@ GraphDatabase::GraphDatabase(InputParser& input) {
             int p2 = distance(kKagenTypeListing.begin(), find(kKagenTypeListing.begin(), kKagenTypeListing.end(), x2.graph_type));
             if (p1 != p2) return p1 < p2;
 
-            double c1 = x1.num_edges != 0 ? x1.num_nodes / x1.num_edges : 1e9;
-            double c2 = x2.num_edges != 0 ? x2.num_nodes / x2.num_edges : 1e9;
+            double c1 = x1.num_edges != 0 ? x1.num_nodes / (double)x1.num_edges : 1e9;
+            double c2 = x2.num_edges != 0 ? x2.num_nodes / (double)x2.num_edges : 1e9;
             return c1 > c2;
         };
 
@@ -31,7 +31,11 @@ GraphDatabase::GraphDatabase(InputParser& input) {
         }
 
         sort(all_kagen_sets_to_evaluate.begin(), all_kagen_sets_to_evaluate.end(), is_smaller);
-        all_sets_to_evaluate.resize(graphs_per_type * kKagenTypeListing.size());
+        all_sets_to_evaluate.resize(all_kagen_sets_to_evaluate.size());
+
+        for (auto e : all_kagen_sets_to_evaluate) {
+            cout << (e.num_nodes / (double) e.num_edges) << endl;
+        }
         return;
     }
 

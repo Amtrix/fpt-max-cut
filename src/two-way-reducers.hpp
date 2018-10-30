@@ -253,7 +253,10 @@ int TryRule11(MaxCutGraph& G_0, MaxCutGraph& G_minus_S) {
 }*/
 
 // Passing k missing. Be aware that decreasing k by 1 is actually 1/4 when considering above edwards erdos bound.
-int ExhaustiveTwoWayReduce(MaxCutGraph& G_0, const vector<int>& S) {
+int ExhaustiveTwoWayReduce(MaxCutGraph& G_0, const vector<int>& S, vector<pair<double,int>>& times_within_call) {
+    auto t0 = std::chrono::high_resolution_clock::now();
+    auto t1 = t0;
+
     auto G_minus_S_vertex_set = SetSubstract(G_0.GetAllExistingNodes(), S);
     MaxCutGraph G_minus_S(G_0, G_minus_S_vertex_set);
 
@@ -264,10 +267,26 @@ int ExhaustiveTwoWayReduce(MaxCutGraph& G_0, const vector<int>& S) {
     auto bicomponents = G_minus_S.GetBiconnectedComponents();
     auto is_special = WhichComponentsAreSpecial(G_0, G_minus_S, S);
     auto is_triag_block = WhichComponentIsTriag(G_minus_S, is_special);
+
+    t1 = std::chrono::high_resolution_clock::now();
+    times_within_call.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., -1));
+    t0 = t1;
     
     int res;
-    if ((res = TryRule9(G_0, G_minus_S, is_triag_block)) > -1) return res;
-    if ((res = TryRule8(G_0, G_minus_S, S)) > -1) return res;
+    res = TryRule9(G_0, G_minus_S, is_triag_block);
+
+    t1 = std::chrono::high_resolution_clock::now();
+    times_within_call.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., 9));
+    t0 = t1;
+    if (res > -1) return res;
+
+    res = TryRule8(G_0, G_minus_S, S);
+
+    t1 = std::chrono::high_resolution_clock::now();
+    times_within_call.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., 8));
+    t0 = t1;
+    if (res > -1) return res;
+
     //if ((res = TryRule10(G_0, G_minus_S, S)) > -1) return res;
     //if ((res = TryRule11(G_0, G_minus_S)) > -1) return res;
     //if ((res = TryRule12(G_0, G_minus_S, S)) > -1) return res;

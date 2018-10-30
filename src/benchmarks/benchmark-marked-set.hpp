@@ -19,7 +19,8 @@ public:
 
         int k = 0, rule_taken;
         MaxCutGraph G_processing_oneway = G; // ! make sure no pointers in G !
-        while ((rule_taken = TryOneWayReduce(G_processing_oneway, k)) != -1) {
+        vector<pair<double,int>> times_within_call;
+        while ((rule_taken = TryOneWayReduce(G_processing_oneway, k, times_within_call)) != -1) {
             OutputDebugLog("RULE: " + to_string(rule_taken));
             OutputDebugLog("-----------");
         }

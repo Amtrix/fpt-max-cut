@@ -29,11 +29,17 @@ public:
             MaxCutGraph G = main_graph;
             MaxCutGraph kernelized = G;
 
-            kernelized.MakeUnweighted();
-
             vector<pair<double,int>> local_times;
-            auto t0_total = std::chrono::high_resolution_clock::now();
             auto t0 = std::chrono::high_resolution_clock::now();
+            auto t0_total = std::chrono::high_resolution_clock::now();
+
+            // First transform graph into unweighted. /////////////
+            kernelized.MakeUnweighted();
+            OutputDebugLog("Made unweighted");
+            LogTime(local_times, t0);
+            ////////////////////////////////////////
+
+            // Reductions ////////////////////////////////////////            
             while (true) {
                 FlushTimes(local_times, false);
                 
@@ -47,15 +53,19 @@ public:
                 if (!chg_happened)
                     break; 
             }
+            FlushTimes(local_times, false); // one more flush
 
             // Also kernelization here(!):
             OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
             kernelized.MakeWeighted();
+            OutputDebugLog("Made weighted");
             LogTime(local_times, t0);
+            FlushTimes(local_times, false);
             OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
+            ////////////////////////////////////////
 
-            // Calculating spent time.
-            FlushTimes(local_times);
+
+            // Calculating spent time. From here on onwards, only O(1) operations allowed!!!!!!!!!!!!!!!!!!!!!
             auto t1_total = std::chrono::high_resolution_clock::now();
             double kernelization_time = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
 
@@ -130,12 +140,13 @@ public:
 
     void PostProcess(InputParser& /* input */) override {
         cout << "Total case coverage: " << endl; // ordered according kAllRuleIds
-        cout << setw(20) << "RULE" << setw(20) << "|CNT|" << setw(20) << "|TIME|" << endl;;
+        cout << setw(20) << "RULE" << setw(20) << "|CNT|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CNT|" << endl;
         for (auto rule : kAllRuleIds) {
             int used_cnt = tot_case_coverage_cnt[rule];
             double used_time = times_all[static_cast<int>(rule)];
-            cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << used_time << endl;
+            cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << used_time << setw(20) << (used_time/used_cnt) << endl;
         }
+        cout << "Time spent on other stuff: " << times_all[-1] << endl;
         cout << endl;
         cout << endl;
     }
