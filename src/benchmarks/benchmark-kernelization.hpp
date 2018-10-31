@@ -17,6 +17,7 @@ public:
     }
 
     void Evaluate(InputParser &input, const MaxCutGraph &main_graph) {
+        int mixingid = GetMixingId(main_graph);
         BenchmarkAction::Evaluate(input, main_graph);
 
         int num_iterations = 1;
@@ -101,7 +102,7 @@ public:
         
 
             OutputKernelization(input, main_graph.GetGraphNaming(),
-                                test_id, iteration,
+                                mixingid, iteration,
                                 G.GetRealNumNodes(), G.GetRealNumEdges(),
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                 -k_change,
@@ -109,7 +110,7 @@ public:
                                 local_search_cut_size, local_search_cut_size_k - k_change,
                                 EE, EE_k, kernelization_time);
             
-            accum.push_back({(double)test_id, (double)iteration,
+            accum.push_back({(double)mixingid, (double)iteration,
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                 -k_change,
@@ -119,7 +120,7 @@ public:
         }
     
         vector<double> avg;
-        avg.push_back(test_id);
+        avg.push_back(mixingid);
         avg.push_back(-1);
         for (int i = 2; i < 17; ++i) {
             double sum = 0;
@@ -129,8 +130,6 @@ public:
         }
 
         OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], "-avg");
-
-        test_id++;
     }
 
     void Evaluate(InputParser& input, const string data_filepath) {
@@ -157,6 +156,5 @@ public:
 
 private:
     unordered_map<RuleIds, int> tot_case_coverage_cnt;
-    int test_id = 1;
     
 };

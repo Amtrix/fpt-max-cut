@@ -22,20 +22,16 @@ GraphDatabase::GraphDatabase(InputParser& input) {
             return c1 > c2;
         };
 
-        int id = 0;
         for (int i = 0; i < graphs_per_type * (int)kKagenTypeListing.size(); ++i) {
             KagenGraphCollectionDescriptor::Type type =  kKagenTypeListing[i / graphs_per_type];
             int it = i % graphs_per_type;
-            KagenGraphCollectionDescriptor descr(id++, type, 1000 + rand()%5000, 1111, it);
+            KagenGraphCollectionDescriptor descr(i / graphs_per_type, type, 1000 + rand()%5000, 1111, it);
             all_kagen_sets_to_evaluate.push_back(descr);
         }
 
         sort(all_kagen_sets_to_evaluate.begin(), all_kagen_sets_to_evaluate.end(), is_smaller);
         all_sets_to_evaluate.resize(all_kagen_sets_to_evaluate.size());
 
-        for (auto e : all_kagen_sets_to_evaluate) {
-            cout << (e.num_nodes / (double) e.num_edges) << endl;
-        }
         return;
     }
 
