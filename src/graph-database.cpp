@@ -7,6 +7,10 @@ using namespace std;
 
 
 GraphDatabase::GraphDatabase(InputParser& input) {
+    if (input.cmdOptionExists("-seed")) {
+        main_seed = stoi(input.getCmdOption("-seed"));
+    }
+
     if (input.cmdOptionExists("-sample-kagen")) {
         cout << "Sample kagen mode activated" << endl;
         graphs_per_type = stoi(input.getCmdOption("-sample-kagen"));
@@ -22,10 +26,15 @@ GraphDatabase::GraphDatabase(InputParser& input) {
             return c1 > c2;
         };
 
+        int num_nodes = -1;
+        if (input.cmdOptionExists("-num-nodes")) {
+            num_nodes = stoi(input.getCmdOption("-num-nodes"));
+        }
+
         for (int i = 0; i < graphs_per_type * (int)kKagenTypeListing.size(); ++i) {
             KagenGraphCollectionDescriptor::Type type =  kKagenTypeListing[i / graphs_per_type];
             int it = i % graphs_per_type;
-            KagenGraphCollectionDescriptor descr(i / graphs_per_type, type, 1000 + rand()%5000, 1111, it);
+            KagenGraphCollectionDescriptor descr(i / graphs_per_type, type, num_nodes == -1 ? (1000 + rand()%5000) : num_nodes, main_seed, it);
             all_kagen_sets_to_evaluate.push_back(descr);
         }
 

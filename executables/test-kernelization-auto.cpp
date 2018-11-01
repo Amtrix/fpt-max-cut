@@ -16,7 +16,7 @@ const string paths[] = {
     "../data/auto-tests/tests",
 };
 
-const bool DEBUG = false;
+const bool cDEBUG = false;
 
 string serializestr(vector<int> vec) {
     string ret = "";
@@ -49,21 +49,21 @@ std::function<void()> suite[] = {
                 auto res_s5 = kernelized.GetAllS5Candidates();
                 if (!res_s5.empty()) {
                     kernelized.ApplyS5Candidate(res_s5[0]);
-                    if (DEBUG) cout << "Rule S5 " << endl;
+                    if (cDEBUG) cout << "Rule S5 " << endl;
                     continue;
                 }
 
                 auto res_s4 = kernelized.GetAllS4Candidates();
                 if (!res_s4.empty()) {
                     kernelized.ApplyS4Candidate(res_s4[0]);
-                    if (DEBUG) cout << "Rule S4 " << endl;
+                    if (cDEBUG) cout << "Rule S4 " << endl;
                     continue;
                 }
 
                 auto res_rs2 = kernelized.GetS2Candidates(true);
                 if (!res_rs2.empty()) {
                     kernelized.ApplyS2Candidate(res_rs2[0]);
-                    if (DEBUG) cout << "Rule S2 " << serializestr(res_rs2) << endl;
+                    if (cDEBUG) cout << "Rule S2 " << serializestr(res_rs2) << endl;
                     continue;
                 }
 
@@ -82,7 +82,7 @@ std::function<void()> suite[] = {
                 auto res_r8 = kernelized.GetAllR8Candidates();
                 if (!res_r8.empty()) {
                     kernelized.ApplyR8Candidate(res_r8[0]);
-                    if (DEBUG) cout << "Rule R8 " << serializestr(res_r8[0]) << endl;
+                    if (cDEBUG) cout << "Rule R8 " << serializestr(res_r8[0]) << endl;
                     continue;
                 }
                 
@@ -122,7 +122,7 @@ std::function<void()> suite[] = {
             for (unsigned int i = 0 ; i < rule_usages.size(); ++i)
                 case_coverage_cnt[i] += rule_usages[i];
 
-            if (DEBUG) cout << "DOUBLE k_change: " << k_change << endl;
+            if (cDEBUG) cout << "DOUBLE k_change: " << k_change << endl;
             k_change_hash_tot += k_change;
         }
 

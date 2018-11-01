@@ -30,6 +30,7 @@ const string paths[] = {
     //"../data/thesis-tests/cschulz/tests"
 };
 
+// TOUCHING ANYTHING HERE INVALIDATES CONSISTENCY OF SEED->GRAPH SETS
 class GraphDatabase{
 public:
     enum class GraphGenerationMode {
@@ -44,6 +45,7 @@ public:
 
         static const map<KagenGraphCollectionDescriptor::Type, string> kKagenNaming;
 
+        ///////////////////////////////////////////////////////// EVERYTHING FROM HERE CONTRIBUTES SET OF GENERATED GRAPHS ///////////////
         // All ranges inclusive ([a,b])
         // BA collection generation param range:
         static int ba_lo_minimum_vertex_deg, ba_hi_minimum_vertex_deg;
@@ -59,8 +61,10 @@ public:
 
         static int num_edges_lo, num_edges_hi;
 
-        int num_nodes, num_edges;
+        int num_nodes;
+        ///////////////////////////////////////////////////////// TO HERE ////////////////////////////////////////////////////////////////////////
 
+        int num_edges;
         int id = -1;
         Type graph_type;
         int sel_seed;
@@ -79,6 +83,14 @@ public:
             rgg_3d_lo_rad = 0.001, rgg_3d_hi_rad = 0.11;
             rhg_lo_e = 2.1, rhg_hi_e = 6.5;
             rhg_lo_avg_vertex_deg = 2, rhg_hi_avg_vertex_deg = 32;
+
+            if (input.cmdOptionExists("-num-edges-hi")) {
+                num_edges_hi = stoi(input.getCmdOption("-num-edges-hi"));
+            }
+
+            if (input.cmdOptionExists("-num-edges-lo")) {
+                num_edges_lo = stoi(input.getCmdOption("-num-edges-lo"));
+            }
         }
 
         void GenerateParams() {
@@ -87,14 +99,22 @@ public:
                 rparam = rdist(gen);
                 num_edges = (int)GenerateEdgeList().size();
 
-                if (num_edges < num_edges_hi) break;
+                if (num_edges_lo < num_edges && num_edges < num_edges_hi) break;
 
                 // Adjust bounds to exclude overreach for future speed up.
-                if (graph_type == Type::GNM)   gnm_hi_num_edges = iparam / num_nodes;
-                if (graph_type == Type::RGG2D) rgg_2d_hi_rad = rparam;
-                if (graph_type == Type::RGG3D) rgg_3d_hi_rad = rparam;
-                if (graph_type == Type::BA)    ba_hi_minimum_vertex_deg = iparam;
-                if (graph_type == Type::RHG)   rhg_hi_avg_vertex_deg = iparam;
+                if (num_edges >= num_edges_hi) {
+                    if (graph_type == Type::GNM)   gnm_hi_num_edges = iparam / num_nodes;
+                    if (graph_type == Type::RGG2D) rgg_2d_hi_rad = rparam;
+                    if (graph_type == Type::RGG3D) rgg_3d_hi_rad = rparam;
+                    if (graph_type == Type::BA)    ba_hi_minimum_vertex_deg = iparam;
+                    if (graph_type == Type::RHG)   rhg_hi_avg_vertex_deg = iparam;
+                } else {
+                    if (graph_type == Type::GNM)   gnm_lo_num_edges = iparam / num_nodes;
+                    if (graph_type == Type::RGG2D) rgg_2d_lo_rad = rparam;
+                    if (graph_type == Type::RGG3D) rgg_3d_lo_rad = rparam;
+                    if (graph_type == Type::BA)    ba_lo_minimum_vertex_deg = iparam;
+                    if (graph_type == Type::RHG)   rhg_lo_avg_vertex_deg = iparam;
+                }
             }
         }
         
@@ -202,6 +222,8 @@ private:
     GraphGenerationMode graph_generation_mode = GraphGenerationMode::SelectedThesisTests;
 
     int graphs_per_type = 1;
+
+    int main_seed = 0;
 
     static const vector<KagenGraphCollectionDescriptor::Type> kKagenTypeListing;
 };
