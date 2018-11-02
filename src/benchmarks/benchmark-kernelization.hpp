@@ -161,7 +161,7 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-        RuleIds::Rule9, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS3, /*RuleIds::RuleS4,*/ RuleIds::RuleS5, RuleIds::RuleS6, RuleIds::RuleS2, RuleIds::Rule8, RuleIds::Rule9X
+       /* RuleIds::Rule9, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, */RuleIds::RuleS6, RuleIds::RuleS2, RuleIds::Rule8, RuleIds::Rule9X
     };
 
 private:
