@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
+#include <queue>
 using namespace std;
 
 enum class RuleIds : int {
@@ -85,6 +86,7 @@ public:
      * all modifications should happen with these functions.
      **/
     // Adds an edge between a and b with a weight.
+    void SetNumNodes(int _num_nodes);
     void AddEdge(int a, int b, int weight = 1, bool inc_weight_on_double = true);
     void RemoveNode(int node);
     // Does not add the previously removed edges from the RemoveNode function!
@@ -271,6 +273,7 @@ public:
     string PrintDegrees(const unordered_map<int,bool>& preset_is_external = {}) const;
     void PrintReductionsUsage() const;
     int GetRuleUsage(RuleIds rule) const;
+    int GetRuleChecks(RuleIds rule) const;
     vector<int> GetUsageVector() const;
     // Get cut size according to 0/1 coloring of nodes. grouping is a 0-1 vector. Vertex x is colored by grouping[x]. 
     int GetCutSize(const vector<int> &grouping) const;
@@ -328,8 +331,14 @@ private:
     // Used by MaxCutExtension
     vector<int> computed_maxcut_coloring;
 
+    // Following is used to track timestamps on vertices. REASON: We don't want to applicability checks on same components multiple times.
+    priority_queue<pair<int,int>> vertex_timetable_pq;
+    vector<int> current_timestamp; // will hold the most recent timestamp for each vertex. Used to identify outdated values in pq!
+    int current_kernelization_time = 0;
+
     double inflicted_cut_change_to_kernelized = 0; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
     unordered_map<RuleIds, int> rules_usage_count;
+    unordered_map<RuleIds, int> rules_check_count;
 
     string graph_naming;
     int mixing_id;

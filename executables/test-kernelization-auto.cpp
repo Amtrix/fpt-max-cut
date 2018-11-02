@@ -25,6 +25,10 @@ string serializestr(vector<int> vec) {
     return ret;
 }
 
+const vector<RuleIds> kernelization_order = {
+    RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
+};
+
 std::function<void()> suite[] = {
     []{ // Test rules on two triangles sharing a common vertex.
         srand((unsigned)time(0));
@@ -45,6 +49,19 @@ std::function<void()> suite[] = {
             MaxCutGraph kernelized = G;
 
             kernelized.MakeUnweighted();
+
+            // Reductions ////////////////////////////////////////            
+            while (true) {
+                bool chg_happened = false;
+                for (int i = 0; i < (int)kernelization_order.size() && !chg_happened; ++i) {
+                    if (kernelized.PerformKernelization(kernelization_order.at(i)))
+                        chg_happened = true;
+                }
+
+                if (!chg_happened)
+                    break; 
+            }
+
             while (true) {
                 auto res_s5 = kernelized.GetAllS5Candidates();
                 if (!res_s5.empty()) {

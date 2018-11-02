@@ -97,9 +97,18 @@ public:
 
 
             // Aggregating usages.
-            for (auto rule : kAllRuleIds)
+            cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
+            for (auto rule : kAllRuleIds) {
                 tot_case_coverage_cnt[rule] += kernelized.GetRuleUsage(rule);
-        
+                tot_rule_checks_cnt[rule] += kernelized.GetRuleChecks(rule);
+
+                int used_cnt = tot_case_coverage_cnt[rule];
+                int check_cnt = tot_rule_checks_cnt[rule];
+                double used_time = times_all[static_cast<int>(rule)] - last_times_all[static_cast<int>(rule)];
+                cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << check_cnt << setw(20) << used_time << setw(20) << (used_time/check_cnt) << endl;
+            }
+            last_times_all = times_all;
+
 
             OutputKernelization(input, main_graph.GetGraphNaming(),
                                 mixingid, iteration,
@@ -138,12 +147,13 @@ public:
     }
 
     void PostProcess(InputParser& /* input */) override {
-        cout << "Total case coverage: " << endl; // ordered according kAllRuleIds
-        cout << setw(20) << "RULE" << setw(20) << "|CNT|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CNT|" << endl;
+        cout << "TOTAL analysis follows. " << endl; // ordered according kAllRuleIds
+        cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
         for (auto rule : kAllRuleIds) {
             int used_cnt = tot_case_coverage_cnt[rule];
+            int check_cnt = tot_rule_checks_cnt[rule];
             double used_time = times_all[static_cast<int>(rule)];
-            cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << used_time << setw(20) << (used_time/used_cnt) << endl;
+            cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << check_cnt << setw(20) << used_time << setw(20) << (used_time/check_cnt) << endl;
         }
         cout << "Time spent on other stuff: " << times_all[-1] << endl;
         cout << endl;
@@ -151,10 +161,11 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-        RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
+        RuleIds::Rule9, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS3, /*RuleIds::RuleS4,*/ RuleIds::RuleS5, RuleIds::RuleS6, RuleIds::RuleS2, RuleIds::Rule8, RuleIds::Rule9X
     };
 
 private:
     unordered_map<RuleIds, int> tot_case_coverage_cnt;
-    
+    unordered_map<RuleIds, int> tot_rule_checks_cnt;
+    unordered_map<int,double> last_times_all;
 };

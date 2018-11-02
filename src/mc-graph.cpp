@@ -46,8 +46,7 @@ MaxCutGraph::MaxCutGraph() {
 }
 
 MaxCutGraph::MaxCutGraph(int n, int /* not used m */) {
-    num_nodes = n;
-    g_adj_list.resize(num_nodes);
+    SetNumNodes(n);
 }
 
 MaxCutGraph::MaxCutGraph(const string path) {
@@ -66,10 +65,9 @@ MaxCutGraph::MaxCutGraph(const string path) {
     // we take last two entries as dimacs prefixes each line with type of line
     if (!treat_as_adj_list_file) {
         if (sparams[0] != "#edge-list-0") {
-            num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
+            SetNumNodes(stoi(sparams[0 + (sparams[0]=="p")]));
 
             int num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
-            g_adj_list.resize(num_nodes);
 
             for (int i = 0; i < num_edges; ++i) {
                 sparams = ReadLine(in);
@@ -82,7 +80,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
                 AddEdge(a, b, w, false);
             }
         } else {
-            num_nodes = 0;
+            int num_nodes_calc = 0;
             vector<tuple<int,int,int>> elist;
             while (in.eof() == false) {
                 sparams = ReadLine(in);
@@ -92,11 +90,12 @@ MaxCutGraph::MaxCutGraph(const string path) {
                 int a = stoi(sparams[0]);
                 int b = stoi(sparams[1]);
                 int w = 2 < sparams.size() && sparams[2].size() > 0 ? stoi(sparams[2]) : 1;
-                num_nodes = max(num_nodes, max(a + 1, b + 1));
+                num_nodes_calc = max(num_nodes_calc, max(a + 1, b + 1));
                 elist.push_back(make_tuple(a, b, w));
             }
             
-            g_adj_list.resize(num_nodes);
+            SetNumNodes(num_nodes_calc);
+
             for (auto e : elist)
                 AddEdge(get<0>(e), get<1>(e), get<2>(e), false);
         }
@@ -104,8 +103,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
         const bool is_weighted_instance = sparams.size() >= 3 && stoi(sparams[2]); 
         OutputDebugLog("Adjacency list. Is weighted: " + to_string(is_weighted_instance));
 
-        num_nodes = stoi(sparams[0]);
-        g_adj_list.resize(num_nodes);
+        SetNumNodes(stoi(sparams[0]));
 
         if (is_weighted_instance && stoi(sparams[2]) != 1) {
             OutputDebugLog("UNSUPPORTED FORMAT. Skipping.");
@@ -135,15 +133,16 @@ MaxCutGraph::MaxCutGraph(const string path) {
 }
 
 MaxCutGraph::MaxCutGraph(const vector<tuple<int,int,int>> &elist, int n) {
-    num_nodes = n;
+    int num_nodes_calc = n;
     
     for (auto e : elist) {
         int a = get<0>(e);
         int b = get<1>(e);
-        num_nodes = max(num_nodes, max(a + 1, b + 1));
+        num_nodes_calc = max(num_nodes_calc, max(a + 1, b + 1));
     }
 
-    g_adj_list.resize(num_nodes);
+    SetNumNodes(num_nodes_calc);
+
     for (auto e : elist)
         AddEdge(get<0>(e), get<1>(e), get<2>(e));
 }
@@ -176,6 +175,12 @@ void MaxCutGraph::ResetComputedTopology() {
     articulations_computed = false;
     bicomponents_computed = false;
     bridges_computed = false;
+}
+
+void MaxCutGraph::SetNumNodes(int _num_nodes) {
+    num_nodes = _num_nodes;
+    g_adj_list.resize(num_nodes);
+    current_timestamp.resize(num_nodes, current_kernelization_time);
 }
 
 void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
@@ -239,8 +244,8 @@ int MaxCutGraph::CreateANode() {
         sel_node = num_nodes;
     }
 
-    if (num_nodes <= sel_node) num_nodes = sel_node + 1; // expand num_nodes to accommodate.
-    g_adj_list.resize(num_nodes);
+    if (num_nodes <= sel_node)
+        SetNumNodes(sel_node + 1); // expand num_nodes to accommodate.
     return sel_node;
 }
 
@@ -1297,6 +1302,9 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates(const bo
         vector<int> clique = GetAdjacency(root);
         clique.push_back(root);
 
+        for (auto x : clique)
+            visited[x] = true;
+
         if (IsClique(clique) == false) continue; // root not in Cint
 
         vector<int> X;
@@ -1909,6 +1917,8 @@ bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
 }
 
 bool MaxCutGraph::PerformKernelization(const RuleIds rule_id) {
+    rules_check_count[rule_id]++;
+
     switch(rule_id) {
         case RuleIds::RuleS2: {
             auto candidates = GetS2Candidates();
@@ -1918,12 +1928,11 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id) {
             return !candidates.empty();
         }
         case RuleIds::Rule8: { 
-            auto candidates = GetAllR8Candidates(true);
-            if (!candidates.empty()) {
-                ApplyR8Candidate(candidates[0]);
-                return true;
-            }
-            return false;
+            auto candidates = GetAllR8Candidates();
+            for (auto candidate : candidates)
+                ApplyR8Candidate(candidate);
+
+            return !candidates.empty();
         }
         case RuleIds::Rule9: { 
             auto candidates = GetAllR9Candidates(true);
@@ -1934,12 +1943,11 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id) {
             return false;
         }
         case RuleIds::Rule9X: { 
-            auto candidates = GetAllR9XCandidates(true);
-            if (!candidates.empty()) {
-                ApplyR9XCandidate(candidates[0]);
-                return true;
-            }
-            return false;
+            auto candidates = GetAllR9XCandidates();
+            for (auto candidate : candidates)
+                ApplyR9XCandidate(candidate);
+
+            return !candidates.empty();
         }
         case RuleIds::Rule10: {
             auto candidates = GetAllR10Candidates(true);
@@ -2170,6 +2178,13 @@ void MaxCutGraph::PrintReductionsUsage() const {
 int MaxCutGraph::GetRuleUsage(RuleIds rule) const {
     if (rules_usage_count.find(rule) != rules_usage_count.end())
         return rules_usage_count.at(rule);
+    else
+        return 0;
+}
+
+int MaxCutGraph::GetRuleChecks(RuleIds rule) const {
+    if (rules_check_count.find(rule) != rules_check_count.end())
+        return rules_check_count.at(rule);
     else
         return 0;
 }
