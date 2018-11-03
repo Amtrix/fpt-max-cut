@@ -126,13 +126,19 @@ vector<pair<unsigned long long,unsigned long long>> RemoveAnyMultipleEdgesAndSel
 }
 
 vector<string> GetAllDatasets(const string path) {
+    filesystem::path cpppath = path.c_str();
+
     vector<string> ret;
-    for (auto & p : filesystem::directory_iterator(path))
-        if (filesystem::is_regular_file(p)) {
-            string fname = filesystem::path(p.path().u8string()).filename();
-            if (fname == "README.md") continue;
-            ret.push_back(p.path().u8string());
-        }
+    if (filesystem::is_directory(cpppath)) {
+        for (auto & p : filesystem::directory_iterator(path))
+            if (filesystem::is_regular_file(p)) {
+                string fname = filesystem::path(p.path().u8string()).filename();
+                if (fname == "README.md") continue;
+                ret.push_back(p.path().u8string());
+            }
+    } else {
+        ret.push_back(cpppath.u8string());
+    }
     return ret;
 }
 

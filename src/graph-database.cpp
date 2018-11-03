@@ -47,13 +47,25 @@ GraphDatabase::GraphDatabase(InputParser& input) {
     if (input.cmdOptionExists("-f")) {
         const string data_filepath = input.getCmdOption("-f");
         all_sets_to_evaluate.push_back(data_filepath);
-    } else {
-        // get all datasets from data/
-        for (unsigned int i = 0; i < kDataSetCount; ++i) {
-            auto sets = GetAllDatasets(paths[i]);
+    } else if (input.cmdOptionExists("-disk-suite")) {
+        string suitekey = input.getCmdOption("-disk-suite");
+
+        if (!KeyExists(suitekey, disk_suites)) {
+            cerr << "Suite not found." << endl;
+            exit(0);
+        }
+
+        auto suite = disk_suites.at(suitekey);
+        for (auto path : suite) {
+            cout << "Checking: " << path << endl;
+            auto sets = GetAllDatasets(path);
             for (unsigned int i = 0; i < sets.size(); ++i)
                 all_sets_to_evaluate.push_back(sets[i]);
         }
+
+    } else {
+        cerr << "No test cases specified." << endl;
+        exit(0);
     }
 }
 

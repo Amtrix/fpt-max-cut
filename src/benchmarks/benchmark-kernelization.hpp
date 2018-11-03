@@ -25,6 +25,12 @@ public:
             num_iterations = stoi(input.getCmdOption("-iterations"));
         }
 
+        int locsearch_iterations = 1;
+        if (input.cmdOptionExists("-locsearch-iterations")) {
+            locsearch_iterations = stoi(input.getCmdOption("-locsearch-iterations"));
+            cout << "Note: Local search iterations: " << locsearch_iterations << endl;
+        }
+
         vector<vector<double>> accum;
         for (int iteration = 1; iteration <= num_iterations; ++iteration) {
             MaxCutGraph G = main_graph;
@@ -70,15 +76,30 @@ public:
             auto t1_total = std::chrono::high_resolution_clock::now();
             double kernelization_time = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
 
-
+            // Already needed for upcoming sections.
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
-            double local_search_cut_size = G.ComputeLocalSearchCut().first;
-            double local_search_cut_size_k = kernelized.ComputeLocalSearchCut().first;
+
+            // Compute local search results.
+            vector<double> locsearch_res, locsearch_res_k;
+            for (int it = 1; it <= locsearch_iterations; ++it) {
+                locsearch_res.push_back(G.ComputeLocalSearchCut().first);
+                locsearch_res_k.push_back(kernelized.ComputeLocalSearchCut().first - k_change); // adjust right away.
+            }
+            double local_search_cut_size = GetAverage(locsearch_res);
+            double local_search_cut_size_k = GetAverage(locsearch_res_k);
+            double local_search_sddiff = GetStandardDeviation(SubVectorVal(locsearch_res, locsearch_res_k));
+
+            auto vec = SubVectorVal(locsearch_res, locsearch_res_k);
+            cout << "Local search diffs: ";
+            for (int i = 0; i < (int)vec.size(); ++i)
+                cout << vec[i] << " ";
+            cout << " = " << local_search_sddiff << endl;
+
+            // Some variables.
             auto heur_sol = G.ComputeMaxCutWithMQLib(1);
             auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib(1);
             double EE = G.GetEdwardsErdosBound();
             double EE_k = kernelized.GetEdwardsErdosBound();
-
 
             // Some output
             cout << "VERIFY CUT VAL: " << heur_sol_k.first - k_change << " =?= " << heur_sol.first << endl;
@@ -116,7 +137,7 @@ public:
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                 -k_change,
                                 heur_sol.first, heur_sol_k.first - k_change,
-                                local_search_cut_size, local_search_cut_size_k - k_change,
+                                local_search_cut_size, local_search_cut_size_k, local_search_sddiff,
                                 EE, EE_k, kernelization_time);
             
             accum.push_back({(double)mixingid, (double)iteration,
@@ -124,21 +145,21 @@ public:
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                 -k_change,
                                 (double)heur_sol.first, (double)heur_sol_k.first - k_change,
-                                local_search_cut_size, local_search_cut_size_k - k_change,
+                                local_search_cut_size, local_search_cut_size_k, local_search_sddiff,
                                 EE, EE_k, kernelization_time});
         }
     
         vector<double> avg;
         avg.push_back(mixingid);
         avg.push_back(-1);
-        for (int i = 2; i < 17; ++i) {
+        for (int i = 2; i < 18; ++i) {
             double sum = 0;
             for (int k = 0; k < (int)accum.size(); ++k)
                 sum += accum[k][i];
             avg.push_back(sum / accum.size());
         }
 
-        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], "-avg");
+        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], "-avg");
     }
 
     void Evaluate(InputParser& input, const string data_filepath) {
@@ -161,7 +182,9 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-       /* RuleIds::Rule9, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, */RuleIds::RuleS6, RuleIds::RuleS2, RuleIds::Rule8, RuleIds::Rule9X
+          RuleIds::RuleS2, /*RuleIds::Rule9, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS3,
+          RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
+          RuleIds::Rule8, RuleIds::Rule9X*/
     };
 
 private:

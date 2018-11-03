@@ -31,7 +31,7 @@ col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
 pnt_vec  = c(20,4,18,15,0)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 pnt_vec2 = c(pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]])
-columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+DIFF','#locsearch(G)','#locsearch(Gk)+DIFF','#EE(G)','#EE(Gk)', '#ktime', '#file')
+columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+DIFF','#MQLIBDIFF','#locsearch(G)','#locsearch(Gk)+DIFF','#locsearchDIFF','#locsearchDIFF.SD','#EE(G)','#EE(Gk)', '#ktime', '#file')
  
 
 
@@ -87,18 +87,18 @@ print(v_count)
     # Draws the 4 lines of measurements
     for (dx in types_to_test) {
        sub <- dplyr::filter(data_table, X.sec == dx)
-       points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
+       points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[2]])
     }
 
     for (dx in types_to_test) {
        sub <- dplyr::filter(data_table_cmp, X.sec == dx)
-       points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[2]])
+       points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
     }
     # Shows the legend
     legend(xrange[2] - 0.5, yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec1)
 }
 
-data_table$diff_e = data_table_cmp$ratio_e - data_table$ratio_e
+data_table$diff_e = data_table$ratio_e - data_table_cmp$ratio_e
 
 {
     # Here we choose the two comlumns, that we use for the plot

@@ -52,6 +52,7 @@ int main(int argc, char **argv){
     }
     else throw std::logic_error("Action flag not defined.");
 
+
     if (benchmark_action) {
         for (auto graph : graph_db) {
             cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;

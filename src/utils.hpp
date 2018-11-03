@@ -3,6 +3,9 @@
 #include <experimental/filesystem>
 #include <unordered_map>
 #include <iostream>
+#include <cmath>
+#include <cassert>
+#include <map>
 
 using namespace std;
 using namespace std::experimental;
@@ -45,10 +48,40 @@ vector<string> GetAllDatasets(const string path);
 
 vector<string> ReadLine(std::istream& in);
 
-inline bool KeyExists(int key, const unordered_map<int, bool> &m) {
+template <class KeyType, class ValType>
+inline bool KeyExists(KeyType key, const unordered_map<KeyType, ValType> &m) {
+    return m.find(key) != m.end();
+}
+template <class KeyType, class ValType>
+inline bool KeyExists(KeyType key, const map<KeyType, ValType> &m) {
     return m.find(key) != m.end();
 }
 
+template <class Type>
+double GetAverage(const vector<Type>& val) {
+    double res = 0;
+    for (auto e : val) res += e;
+    return res / (val.size());
+}
+
+template <class Type>
+vector<Type> SubVectorVal(const vector<Type>& valA, const vector<Type>& valB) {
+    assert(valA.size() == valB.size());
+    vector<Type> ret;
+    for (int i = 0; i < (int)valA.size(); ++i)
+        ret.push_back(valA[i] - valB[i]);
+    return ret;
+}
+
+template <class Type>
+double GetStandardDeviation(const vector<Type>& val) {
+    double mu = GetAverage(val);
+    double ret = 0;
+    for (auto e : val)
+        ret += ((e - mu) * (e - mu)) / val.size();;
+
+    return sqrt(ret);
+}
 
 // BEWARE: KeyExistsAndEquals(<key,bool>, key, false) returns false when key does not exist. Same for KeyExistsAndEquals(<key,int>, key, 0). You cannot rely on default type!
 // See MapEqualCheck for alternative.

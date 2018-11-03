@@ -16,19 +16,12 @@ using namespace kagen;
 class InputParser;
 class MaxCutGraph;
 
-const int kDataSetCount = 1;
-const string paths[] = {
-   //"../data/biqmac/ising",
-   // "../data/biqmac/rudy",
-  //  "../data/custom",
-  //  "../data/KaGen/ba",
-  //  "../data/KaGen/gnp_undirected",
-  //  "../data/KaGen/rhg",
-  //  "../data/KaGen-2/rhg_1024_g2.4"//,
-
-    "../data/thesis-tests/kagen-large-sparse/tests"
-    //"../data/thesis-tests/cschulz/tests"
+const map<string, vector<string>> disk_suites = {
+    {"randomness-large", {
+        "../data/random/web-uk-2002-all.mtx"
+    }}
 };
+
 
 // TOUCHING ANYTHING HERE INVALIDATES CONSISTENCY OF SEED->GRAPH SETS
 class GraphDatabase{

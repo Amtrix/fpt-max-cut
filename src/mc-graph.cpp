@@ -67,7 +67,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
         if (sparams[0] != "#edge-list-0") {
             SetNumNodes(stoi(sparams[0 + (sparams[0]=="p")]));
 
-            int num_edges = stoi(sparams[1 + (sparams[0]=="p")]);
+            int num_edges = stoi(sparams.back());
 
             for (int i = 0; i < num_edges; ++i) {
                 sparams = ReadLine(in);
