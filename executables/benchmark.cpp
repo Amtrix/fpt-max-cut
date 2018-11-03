@@ -56,6 +56,9 @@ int main(int argc, char **argv){
     if (benchmark_action) {
         for (auto graph : graph_db) {
             cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
+            cout << "   |V|:                           " << graph.GetRealNumNodes() << endl;
+            cout << "   |E|:                           " << graph.GetRealNumEdges() << endl;
+            cout << "   graph contains multiple edges: " << graph.info_mult_edge << endl;
             benchmark_action->Evaluate(input, graph);
             tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
             cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;

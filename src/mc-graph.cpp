@@ -10,6 +10,47 @@
 #include <heuristics/qubo/glover1998a.h>
 #include <heuristics/maxcut/burer2002.h>
 
+
+
+const map<RuleIds, string> kRuleDescriptions = {
+    {RuleIds::SpecialRule1,    "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 3 to a single edge."},
+    {RuleIds::SpecialRule2,    "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 2 to a single edge."},
+    {RuleIds::RevSpecialRule1, "Reversed Special Reduction Rule for handling weighted<->unweighted."},
+    {RuleIds::RevSpecialRule2, "Reversed Special Reduction Rule for handling weighted<->unweighted."},
+    {RuleIds::Rule8,           "Reduction Rule for handling cliques with uniform neighbhor set. Rule 8 in linear kernel paper."},
+    {RuleIds::Rule9,           "Reduction Rule for handling special triangles sharing one common vertex. Rule 9 in linear kernel paper."},
+    {RuleIds::Rule9X,          "Reduction Rule for handling cliques in cliques with > /2 size. Rule 9 in max-balanced-subgraph paper."},
+    {RuleIds::Rule10,          "Reduction Rule for handling special bridge induced by a single vertex 'u'. Rule 10 in max-balanced-subgraph paper."},
+    {RuleIds::Rule10AST,       "Reduction Rule for handling induced paths of length 4. Rule 10 in AST paper."},
+    {RuleIds::RuleS2,          "Selfmade Reduction Rule for handling cliques with <= n/2 external vertices."},
+    {RuleIds::RuleS3,          "Selfmade Reduction Rule for handling cliques with an missing edge -> adds it to it."},
+    {RuleIds::RuleS4,          "Selfmade Reduction Rule for handling two quads cases."},
+    {RuleIds::RuleS5,          "Selfmade Reduction Rule for handling induced paths of length 3."},
+    {RuleIds::RuleS6,          "?????????????????"},
+};
+
+const map<RuleIds, string> kRuleNames = {
+    {RuleIds::SpecialRule1,    "SpecialRule1"},
+    {RuleIds::SpecialRule2,    "SpecialRule2"},
+    {RuleIds::RevSpecialRule1, "RevSpecialRule1"},
+    {RuleIds::RevSpecialRule2, "RevSpecialRule2"},
+    {RuleIds::Rule8,           "Rule8"},
+    {RuleIds::Rule9,           "Rule9"},
+    {RuleIds::Rule9X,          "Rule9X"},
+    {RuleIds::Rule10,          "Rule10"},
+    {RuleIds::Rule10AST,       "Rule10AST"},
+    {RuleIds::RuleS2,          "RuleS2"},
+    {RuleIds::RuleS3,          "RuleS3"},
+    {RuleIds::RuleS4,          "RuleS4"},
+    {RuleIds::RuleS5,          "RuleS5"},
+    {RuleIds::RuleS6,          "RuleS6"},
+};
+
+const vector<RuleIds> kAllRuleIds = {
+    RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
+    RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
+};
+
 struct trie_node_r8 {
     unordered_map<int, unique_ptr<trie_node_r8>> children;
     vector<int> elems;
@@ -61,6 +102,8 @@ MaxCutGraph::MaxCutGraph(const string path) {
     bool treat_as_adj_list_file = path.size() > adj_sfx.size() && path.substr(path.size() - adj_sfx.size()) == adj_sfx;
 
     vector<string> sparams = ReadLine(in);
+    while (sparams.size() == 0 || sparams[0][0] == '#' || sparams[0][0] == '%') // skip comments
+        sparams = ReadLine(in);
 
     // we take last two entries as dimacs prefixes each line with type of line
     if (!treat_as_adj_list_file) {
@@ -187,7 +230,8 @@ void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
     auto keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
 
     if(edge_exists_lookup[keyAB]) {
-        OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
+        //OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
+        info_mult_edge++;
 
         if (inc_weight_on_double) {
             edge_weight[keyAB] += weight;
@@ -283,8 +327,8 @@ vector<int> MaxCutGraph::GetAllExistingNodes() const {
     return ret;
 }
 
-vector<int> MaxCutGraph::GetConnectedComponentOf(int node) const {
-    vector<bool> visited(num_nodes, false);
+vector<int> MaxCutGraph::GetConnectedComponentOf(int node, vector<bool>& visited) const {
+    visited.resize(num_nodes, false);
     queue<int> q;
     visited[node] = true;
     q.push(node);
@@ -309,6 +353,11 @@ vector<int> MaxCutGraph::GetConnectedComponentOf(int node) const {
     return component;
 }
 
+vector<int> MaxCutGraph::GetConnectedComponentOf(int node) const {
+    vector<bool> visited;
+    return GetConnectedComponentOf(node, visited);
+}
+
 vector<vector<int>> MaxCutGraph::GetAllConnectedComponents() const {
     vector<bool> visited(num_nodes, false);
     vector<vector<int>> ret;
@@ -316,7 +365,7 @@ vector<vector<int>> MaxCutGraph::GetAllConnectedComponents() const {
     for (int curr_node = 0; curr_node < num_nodes; ++curr_node) {
         if (visited[curr_node] || MapEqualCheck(removed_node, curr_node, true)) continue;
 
-        auto component = GetConnectedComponentOf(curr_node);
+        auto component = GetConnectedComponentOf(curr_node, visited);
         ret.push_back(component);
 
         for (auto node : component)

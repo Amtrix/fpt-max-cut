@@ -52,10 +52,13 @@ public:
                 
                 bool chg_happened = false;
                 for (int i = 0; i < (int)kernelization_order.size() && !chg_happened; ++i) {
+                    OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule");
                     if (kernelized.PerformKernelization(kernelization_order.at(i)))
                         chg_happened = true;
                     LogTime(local_times, t0, static_cast<int>(kernelization_order[i]));
                 }
+
+                OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()));
 
                 if (!chg_happened)
                     break; 
