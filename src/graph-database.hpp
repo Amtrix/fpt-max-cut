@@ -199,6 +199,8 @@ public:
 
     friend class iterator;
 
+    GraphDatabase(const vector<string>& all_sets_to_evaluate_);
+
     GraphDatabase(InputParser& input);
 
     MaxCutGraph GetGraphById(const long id) const;

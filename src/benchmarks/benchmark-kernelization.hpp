@@ -7,13 +7,57 @@
 #include "../input-parser.hpp"
 #include "../utils.hpp"
 #include "../output-filter.hpp"
+#include "../graph-database.hpp"
 
 #include <iostream>
 using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
+    const static int kMQLibRunTime = 30;
     Benchmark_Kernelization() {
+    }
+
+    void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}) {
+        // First transform graph into unweighted. /////////////
+        auto t0 = std::chrono::high_resolution_clock::now();
+        kernelized.MakeUnweighted();
+        OutputDebugLog("Made unweighted");
+
+        vector<pair<double,int>> local_times;
+        LogTime(local_times, t0);
+        ////////////////////////////////////////
+
+        // Reductions ////////////////////////////////////////
+        auto selected_kernelization_order = kernelization_order;
+        if (provide_order) selected_kernelization_order = provided_kernelization_order;
+
+        while (true) {
+            FlushTimes(local_times, false);
+            
+            bool chg_happened = false;
+            for (int i = 0; i < (int)selected_kernelization_order.size() && !chg_happened; ++i) {
+                OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule");
+                if (kernelized.PerformKernelization(selected_kernelization_order.at(i)))
+                    chg_happened = true;
+                LogTime(local_times, t0, static_cast<int>(selected_kernelization_order[i]));
+            }
+
+            OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()));
+
+            if (!chg_happened)
+                break; 
+        }
+        FlushTimes(local_times, false); // one more flush
+
+        // Also kernelization here(!):
+        OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
+        kernelized.MakeWeighted();
+        OutputDebugLog("Made weighted");
+        LogTime(local_times, t0);
+        FlushTimes(local_times, false);
+        OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
+        ////////////////////////////////////////
     }
 
     void Evaluate(InputParser &input, const MaxCutGraph &main_graph) {
@@ -36,48 +80,13 @@ public:
             MaxCutGraph G = main_graph;
             MaxCutGraph kernelized = G;
 
-            vector<pair<double,int>> local_times;
-            auto t0 = std::chrono::high_resolution_clock::now();
+            
             auto t0_total = std::chrono::high_resolution_clock::now();
-
-            // First transform graph into unweighted. /////////////
-            kernelized.MakeUnweighted();
-            OutputDebugLog("Made unweighted");
-            LogTime(local_times, t0);
-            ////////////////////////////////////////
-
-            // Reductions ////////////////////////////////////////            
-            while (true) {
-                FlushTimes(local_times, false);
-                
-                bool chg_happened = false;
-                for (int i = 0; i < (int)kernelization_order.size() && !chg_happened; ++i) {
-                    OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule");
-                    if (kernelized.PerformKernelization(kernelization_order.at(i)))
-                        chg_happened = true;
-                    LogTime(local_times, t0, static_cast<int>(kernelization_order[i]));
-                }
-
-                OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()));
-
-                if (!chg_happened)
-                    break; 
-            }
-            FlushTimes(local_times, false); // one more flush
-
-            // Also kernelization here(!):
-            OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
-            kernelized.MakeWeighted();
-            OutputDebugLog("Made weighted");
-            LogTime(local_times, t0);
-            FlushTimes(local_times, false);
-            OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
-            ////////////////////////////////////////
-
-
+            Kernelize(kernelized);
             // Calculating spent time. From here on onwards, only O(1) operations allowed!!!!!!!!!!!!!!!!!!!!!
             auto t1_total = std::chrono::high_resolution_clock::now();
             double kernelization_time = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
+
 
             // Already needed for upcoming sections.
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
@@ -99,8 +108,8 @@ public:
             cout << " = " << local_search_sddiff << endl;
 
             // Some variables.
-            auto heur_sol = G.ComputeMaxCutWithMQLib(1);
-            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib(1);
+            auto heur_sol = G.ComputeMaxCutWithMQLib(kMQLibRunTime);
+            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib(kMQLibRunTime);
             double EE = G.GetEdwardsErdosBound();
             double EE_k = kernelized.GetEdwardsErdosBound();
 

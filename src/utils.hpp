@@ -18,6 +18,13 @@ using namespace std::experimental;
     #endif
 #endif
 
+#ifdef DEBUG
+    #define custom_assert(val) CustomAssertImpl_(__FILE__,__LINE__,val)
+#else
+    #define custom_assert(val) ((void)0)
+#endif
+void CustomAssertImpl_(const string file, const int line_num, bool res);
+
 const int NO_LINE_BREAK = 1;
 
 #define OutputDebugLogNoNewLine(str) OutputDebugLog_(__FILE__,__LINE__,str,NO_LINE_BREAK)
@@ -47,6 +54,14 @@ vector<pair<unsigned long long,unsigned long long>> RemoveAnyMultipleEdgesAndSel
 vector<string> GetAllDatasets(const string path);
 
 vector<string> ReadLine(std::istream& in);
+
+template <class Type>
+string SerializeVector(vector<Type> vec) {
+    string ret = "";
+    for (int i = 0; i < (int)vec.size(); ++i)
+        ret += to_string(vec[i]) + (i + 1 < (int)vec.size() ? ", " : "");
+    return ret;
+}
 
 template <class KeyType, class ValType>
 inline bool KeyExists(KeyType key, const unordered_map<KeyType, ValType> &m) {

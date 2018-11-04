@@ -1,5 +1,4 @@
 #!/bin/bash
-ls
 cd "${0%/*}"
 cd ../build
 

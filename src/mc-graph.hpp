@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <map>
 #include <queue>
+#include <functional>
 using namespace std;
 
 enum class RuleIds : int {
@@ -173,8 +174,8 @@ public:
     void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
 
     // Returns a vector of cliques with less than ceil(n/2) external vertices.
-    vector<int> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS2Candidate(const int root, const unordered_map<int,bool>& preset_is_external = {});
+    vector<int> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
+    bool ApplyS2Candidate(const int root, const unordered_map<int,bool>& preset_is_external = {});
 
     // Get "almost cliques" (missing one edge) with at least one internal vertex.
     vector<vector<int>> GetS3Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
@@ -256,6 +257,57 @@ private:
     inline long long MakeEdgeKey(int a, int b) const { return a * kMaxNumNodes + b; }
     inline long long MakeEdgeKey(const pair<int,int> &e) const { return MakeEdgeKey(e.first, e.second); }
 
+    void UpdateVertexTimestamp(int node) {
+        assert(current_timestamp[node] != -1);
+
+        current_timestamp[node] = current_kernelization_time;
+        vertex_timetable_pq.push(make_pair(current_kernelization_time, node));
+
+        current_kernelization_time += 1;
+    }
+
+    vector<int> GetVerticesAfterTimestamp(int timestamp, bool include_neighbhors = false) {
+        vector<pair<int,int>> selected;
+        while (!vertex_timetable_pq.empty()) {
+            auto u = vertex_timetable_pq.top();
+
+            if (u.first < timestamp)
+                break;
+
+            vertex_timetable_pq.pop();
+            if (current_timestamp[u.second] != u.first) continue; // has been made invalid.
+            
+            selected.push_back(u);
+        }
+        
+        unordered_map<int,bool> visi;
+        if (!include_neighbhors) {
+            for (auto entry : selected) {
+                assert(!visi[entry.second]);
+                visi[entry.second] = true;
+            }
+        } else {
+            for (auto entry : selected) {
+                visi[entry.second] = true;
+                auto adj = GetAdjacency(entry.second);
+                for (auto w : adj)
+                    visi[w] = true;
+            }
+        }
+
+        vector<int> ret;
+        for (auto it : visi)
+                ret.push_back(it.first);
+        
+        for (auto entry : selected) {
+            if (current_timestamp[entry.second] == entry.first)
+                vertex_timetable_pq.push(entry); // put back as it was not changed nor requested to be removed.
+        }
+
+        sort(ret.begin(), ret.end()); // insignificant, but allows us to check if result remains the same compared to checking all vertices.
+        return ret;
+    }
+
     enum class tarjan_dfs_data_type {
         FIRST_VISIT,
         REVISIT
@@ -275,7 +327,7 @@ private:
     vector<int> lemma4_dfs_tree_depth;
     int lemma4_dfs_tree_ui;
 
-    int num_nodes;
+    int num_nodes = 0;
 
     bool bicomponents_computed = false;
     bool articulations_computed = false;
@@ -304,7 +356,11 @@ private:
     // Following is used to track timestamps on vertices. REASON: We don't want to applicability checks on same components multiple times.
     priority_queue<pair<int,int>> vertex_timetable_pq;
     vector<int> current_timestamp; // will hold the most recent timestamp for each vertex. Used to identify outdated values in pq!
-    int current_kernelization_time = 0;
+    int current_kernelization_time = 1;
+
+    struct {
+        int S2 = 0;
+    } CURRENT_TIMESTAMPS;
 
     double inflicted_cut_change_to_kernelized = 0; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
     unordered_map<RuleIds, int> rules_usage_count;

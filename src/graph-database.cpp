@@ -5,6 +5,10 @@
 #include "input-parser.hpp"
 using namespace std;
 
+GraphDatabase::GraphDatabase(const vector<string>& all_sets_to_evaluate_) {
+    all_sets_to_evaluate = all_sets_to_evaluate_;
+}
+
 
 GraphDatabase::GraphDatabase(InputParser& input) {
     if (input.cmdOptionExists("-seed")) {

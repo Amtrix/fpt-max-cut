@@ -7,6 +7,7 @@
 #include "src/mc-graph.hpp"
 #include "src/checks.hpp"
 #include "src/utils.hpp"
+#include "src/benchmarks/benchmark-kernelization.hpp"
 
 #include <bits/stdc++.h>
 using namespace std;
@@ -16,6 +17,7 @@ const string paths[] = {
     "../data/auto-tests/tests",
 };
 
+const bool kTakePredefinedKernelizationOrder = true;
 const bool cDEBUG = false;
 
 string serializestr(vector<int> vec) {
@@ -40,100 +42,26 @@ std::function<void()> suite[] = {
                 all_sets_to_evaluate.push_back(sets[i]);
         }
 
+        GraphDatabase graph_db(all_sets_to_evaluate);
+
         double k_change_hash_tot = 0;
         vector<int> case_coverage_cnt(kAllRuleIds.size(), 0); // hacky size init.
-        for (string data_filepath : all_sets_to_evaluate) {
-            cout << "================ RUNNING TEST INSTANCE ON " + data_filepath + " ================ " << endl;
+        //for (string data_filepath : all_sets_to_evaluate) {
+        for (auto G : graph_db) {
+            cout << "================ RUNNING TEST INSTANCE ON " + G.GetGraphNaming() + " ================ " << endl;
 
-            MaxCutGraph G(data_filepath);
+            // Kernelization here.
             MaxCutGraph kernelized = G;
+            Benchmark_Kernelization kernelization_suite;
+            if (kTakePredefinedKernelizationOrder) kernelization_suite.Kernelize(kernelized, true, kernelization_order);
+            else kernelization_suite.Kernelize(kernelized);
 
-            kernelized.MakeUnweighted();
 
-            // Reductions ////////////////////////////////////////            
-            while (true) {
-                bool chg_happened = false;
-                for (int i = 0; i < (int)kernelization_order.size() && !chg_happened; ++i) {
-                    if (kernelized.PerformKernelization(kernelization_order.at(i)))
-                        chg_happened = true;
-                }
-
-                if (!chg_happened)
-                    break; 
-            }
-
-            while (true) {
-                auto res_s5 = kernelized.GetAllS5Candidates();
-                if (!res_s5.empty()) {
-                    kernelized.ApplyS5Candidate(res_s5[0]);
-                    if (cDEBUG) cout << "Rule S5 " << endl;
-                    continue;
-                }
-
-                auto res_s4 = kernelized.GetAllS4Candidates();
-                if (!res_s4.empty()) {
-                    kernelized.ApplyS4Candidate(res_s4[0]);
-                    if (cDEBUG) cout << "Rule S4 " << endl;
-                    continue;
-                }
-
-                auto res_rs2 = kernelized.GetS2Candidates(true);
-                if (!res_rs2.empty()) {
-                    kernelized.ApplyS2Candidate(res_rs2[0]);
-                    if (cDEBUG) cout << "Rule S2 " << serializestr(res_rs2) << endl;
-                    continue;
-                }
-
-                auto res_rs3 = kernelized.GetS3Candidates(true);
-                if (!res_rs3.empty()) {
-                    kernelized.ApplyS3Candidate(res_rs3[0]);
-                    continue;
-                }
-
-                auto res_r9x = kernelized.GetAllR9XCandidates();
-                if (!res_r9x.empty()) {
-                    kernelized.ApplyR9XCandidate(res_r9x[0]);
-                    continue;
-                }
-                
-                auto res_r8 = kernelized.GetAllR8Candidates();
-                if (!res_r8.empty()) {
-                    kernelized.ApplyR8Candidate(res_r8[0]);
-                    if (cDEBUG) cout << "Rule R8 " << serializestr(res_r8[0]) << endl;
-                    continue;
-                }
-                
-                auto res_r10 = kernelized.GetAllR10Candidates();
-                if (!res_r10.empty()) {
-                    kernelized.ApplyR10Candidate(res_r10[0]);
-                    continue;
-                }
-                
-                
-                auto res_r9 = kernelized.GetAllR9Candidates();
-                if (!res_r9.empty()) {
-                    kernelized.ApplyR9Candidate(res_r9[0]);
-                    continue;
-                }
-
-                
-                auto res_r10ast = kernelized.GetAllR10ASTCandidates();
-                if (!res_r10ast.empty()) {
-                    kernelized.ApplyR10ASTCandidate(res_r10ast[0]); // THERE SEEMS TO BE SOMETHING OFF HERE, BUT I HAVE NO CLUE WHAT
-                    continue;
-                }
-
-                break;
-            }
-
-            kernelized.MakeWeighted();
-            kernelized.MakeUnweighted();
-            kernelized.MakeWeighted();
-
+            // Stats here.
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
-            auto heur_sol = G.ComputeMaxCutWithMQLib();
-            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib();
-            VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change);
+            auto heur_sol = G.ComputeMaxCutWithMQLib(2);
+            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib(2);
+            VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change + 1);
 
             auto rule_usages = kernelized.GetUsageVector();
             for (unsigned int i = 0 ; i < rule_usages.size(); ++i)

@@ -5,6 +5,8 @@ cmake_minimum_required (VERSION 2.8)
 
 #### BASIC SETTINGS ############################################################
 
+#set(CMAKE_BUILD_TYPE "Debug")
+
 message("Add KaGen")
 add_subdirectory(./test-generators/KaGen/)
 message("Include MQLIB includes")
@@ -17,6 +19,8 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
+message("BUILD TYPE: ${CMAKE_BUILD_TYPE}")
+
 #### TARGETS ###################################################################
 
 list(APPEND ALL_CPP_FILES
@@ -28,12 +32,6 @@ list(APPEND ALL_CPP_FILES
 find_library(MQLIB NAMES "MQLib.a" PATHS ./solvers/MQLib/bin/)
 
 set(TARGET_LIBS Threads::Threads -lstdc++fs ${MQLIB} generators)
-
-message("LIBS:")
-message(${TARGET_LIBS})
-
-#list(APPEND OUTPUT_NAME "benchmark-kernelization-by-clique")
-#list(APPEND FLAGS "BENCH_KERNELIZATION_CLIQUE")
 
 
 macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)

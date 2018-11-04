@@ -6,6 +6,13 @@
 using namespace std;
 using namespace std::experimental;
 
+void CustomAssertImpl_(const string file, const int line_num, bool res) {
+    if (!res) {
+        cout << file << ":" << line_num << ": failed assertion." << endl;
+        exit(0);
+    }
+}
+
 void OutputDebugLog_(const string file, const int line_num, const string str, const int flags) {
     (void)str;
     (void)file;

@@ -12,8 +12,11 @@
 #include "src/benchmarks/benchmark-playground.hpp"
 #include "src/benchmarks/benchmark-linear-kernel-paper.hpp"
 
+#include <thread>
 #include <iostream>
 using namespace std;
+
+const bool kMultipleEdgesAreOk = false;
 
 vector<int> tot_used_rules(10, 0);
 int main(int argc, char **argv){
@@ -25,6 +28,16 @@ int main(int argc, char **argv){
 
     //srand((unsigned)time(0));
     //ios_base::sync_with_stdio(false);
+
+    #ifdef DEBUG
+        cout << "DEBUG is set to true." << endl;
+    #endif
+    
+    #ifdef NDEBUG
+        cout << "NDEBUG is set to true." << endl;
+    #endif
+
+    std::cout << "Available number of threads: " << std::thread::hardware_concurrency() << endl;
     std::cout << std::fixed;
     std::cout << std::setprecision(5);
     InputParser input(argc, argv);
@@ -59,6 +72,7 @@ int main(int argc, char **argv){
             cout << "   |V|:                           " << graph.GetRealNumNodes() << endl;
             cout << "   |E|:                           " << graph.GetRealNumEdges() << endl;
             cout << "   graph contains multiple edges: " << graph.info_mult_edge << endl;
+            custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
             benchmark_action->Evaluate(input, graph);
             tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
             cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;
