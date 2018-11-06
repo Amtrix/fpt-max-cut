@@ -158,7 +158,7 @@ public:
     // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
     // (x,pair2.first,pair2.second).
     vector<pair<int,vector<pair<int,int>>>> GetAllR9Candidates(const bool break_on_first = false) const;
-    void ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates);
+    bool ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates);
 
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     // Warning! X >= C/2, therefore, deletion of some vertices in X is necessary when applying the rule.
@@ -215,11 +215,10 @@ public:
     /**
      *  Transformations of all G / create G' with certain properties.
      **/
-    bool PerformKernelization(const RuleIds rule_id);
+    bool PerformKernelization(const RuleIds rule_id, const unordered_map<int,bool>& preset_is_external = {});
     void MakeUnweighted();
     void MakeWeighted();
     double ExecuteLinearKernelization();
-    void ExecuteExhaustiveKernelization();
     void ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool>& preset_is_external);
     
 
@@ -258,8 +257,9 @@ public:
 
     void ResetTimestamps() {
         CURRENT_TIMESTAMPS.S2 = 0;
-        for (int i = 0; i < num_nodes; ++i)
-            UpdateVertexTimestamp(i);
+        auto current_v = GetAllExistingNodes();
+        for (auto node : current_v)
+            UpdateVertexTimestamp(node);
     }
 
 private:
@@ -268,7 +268,7 @@ private:
     inline long long MakeEdgeKey(const pair<int,int> &e) const { return MakeEdgeKey(e.first, e.second); }
 
     void UpdateVertexTimestamp(int node) {
-        assert(current_timestamp[node] != -1);
+        custom_assert(current_timestamp[node] != -1);
 
         current_timestamp[node] = current_kernelization_time;
         vertex_timetable_pq.push(make_pair(current_kernelization_time, node));
@@ -280,12 +280,13 @@ private:
         vector<pair<int,int>> selected;
         while (!vertex_timetable_pq.empty()) {
             auto u = vertex_timetable_pq.top();
-
-            if (u.first < timestamp)
-                break;
-
             vertex_timetable_pq.pop();
             if (current_timestamp[u.second] != u.first) continue; // has been made invalid.
+
+            if (u.first < timestamp) {
+                vertex_timetable_pq.push(u); // return the one we don't want.
+                break;
+            }
             
             selected.push_back(u);
         }
@@ -307,14 +308,14 @@ private:
 
         vector<int> ret;
         for (auto it : visi)
-                ret.push_back(it.first);
+            ret.push_back(it.first);
         
         for (auto entry : selected) {
             if (current_timestamp[entry.second] == entry.first)
                 vertex_timetable_pq.push(entry); // put back as it was not changed nor requested to be removed.
         }
 
-        sort(ret.begin(), ret.end()); // insignificant, but allows us to check if result remains the same compared to checking all vertices.
+        sort(ret.begin(), ret.end()); // insignificant, but allows us to check if result remains the same compared to checking all vertices -- UNDER CERTAIN CIRCUMSTANCES! (if the ignored ones do not influence the result at all!).
         return ret;
     }
 

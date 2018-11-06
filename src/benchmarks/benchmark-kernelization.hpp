@@ -14,7 +14,7 @@ using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
-    const static int kMQLibRunTime = 2;
+    const static int kMQLibRunTime = 1;
     Benchmark_Kernelization() {
     }
 
@@ -32,13 +32,15 @@ public:
         auto selected_kernelization_order = kernelization_order;
         if (provide_order) selected_kernelization_order = provided_kernelization_order;
 
+        OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " --- start!");
+
         while (true) {
             FlushTimes(local_times, false);
             
             bool chg_happened = false;
             for (int i = 0; i < (int)selected_kernelization_order.size() && !chg_happened; ++i) {
                 OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule");
-                if (kernelized.PerformKernelization(selected_kernelization_order.at(i)))
+                while (kernelized.PerformKernelization(selected_kernelization_order.at(i))) // exhaustively!
                     chg_happened = true;
                 LogTime(local_times, t0, static_cast<int>(selected_kernelization_order[i]));
             }
@@ -205,7 +207,7 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2, /*RuleIds::Rule9, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS3,
+          RuleIds::RuleS2/*, RuleIds::Rule9, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS3,
           RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
           RuleIds::Rule8, RuleIds::Rule9X*/
     };

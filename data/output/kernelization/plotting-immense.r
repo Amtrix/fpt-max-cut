@@ -1,12 +1,32 @@
+#!/usr/bin/env Rscript
+# THIS SCRIPT IS SPECIALLY USEFUL ALONGSIDE ${main-dir}/scripts/generate-output.sh (ALSO REASON IT WAS MADE :))
+
 options("width"=230)
+library("optparse")
 library(dplyr)
+
+option_list = list(
+    make_option(c("-f", "--file"), type="character", default=NULL, 
+              help="dataset file name", metavar="character"),
+	make_option(c("-o", "--out"), type="character", default=NULL, 
+              help="output file name [default= %default]", metavar="character")
+); 
+ 
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
+
+if (is.null(opt$file) || is.null(opt$out)){
+  print_help(opt_parser)
+  stop("At least one argument must be supplied (input file).n", call.=FALSE)
+}
+
 
 # Some variables that are used in various ways, to construct the plots
 res_folder="./"
+file=opt$file
 col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
 pnt_vec = c(9,16,17,15,0)
-columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+DIFF','#locsearch(G)','#locsearch(Gk)+DIFF','#EE(G)','#EE(Gk)', '#ktime', '#file')
- 
+columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+DIFF','#MQLIBDIFF','#locsearch(G)','#locsearch(Gk)+DIFF','#locsearchDIFF','#locsearchDIFF.SD','#EE(G)','#EE(Gk)', '#ktime', '#file')
 
 
 #Need readjustment for each case:
@@ -16,29 +36,21 @@ case_type <- "ba_1024"
 nam_vec = c("GNM","RGG2D","RGG3D","BA","RHG")#, "original", "task a", "task b", "task c")
                                                             
 # Read the results from the csv files
-data_table  <- read.table(paste(res_folder, "out"     , sep=""), comment.char = "#", col.names = columns)
-#base_raw <- read.table(paste(res_folder, "hash_original.txt", sep=""), comment.char = "#", col.names = columns)
-#a_raw    <- read.table(paste(res_folder, "hash_a.txt"       , sep=""), comment.char = "#", col.names = columns)
-#b_raw    <- read.table(paste(res_folder, "hash_b.txt"       , sep=""), comment.char = "#", col.names = columns)
-#c_raw    <- read.table(paste(res_folder, "hash_c.txt"       , sep=""), comment.char = "#", col.names = columns)
+data_table      <- read.table(paste(res_folder, file, sep=""), comment.char = "#", col.names = columns)
 
 data_table$ratio_e = 1 - (data_table[,"X..E.Gk.."]/data_table[,"X..E.G.."])
 data_table$density = data_table[,"X..E.G.."]/data_table[,"X..V.G.."]
-#data_table[,"X..E.G.."] <- log(data_table[,"X..E.G.."] , 2)
 
 data_table <- data_table[with(data_table, order(X.sec,density)), ]
-#print(data_table)
 
 
 # Open a PDF to store the plot into
-pdf("plot.pdf", width=10, height=5)
+pdf(opt$out, width=10, height=5)
 
 print(data_table[,"X..V.G.."])
-#print(data_table);
-print(paste("KEY:", getkey(0,data_table)))
+#print(paste("KEY:", getkey(0,data_table)))
 
 v_count <- data_table[,"X..V.G.."][1]
-print(v_count)
 
 for (entry in list(
     c("ratio_e", paste("Kernelization efficiency for KaGen graph instances", sep="")

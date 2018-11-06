@@ -1338,7 +1338,7 @@ vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates(const bo
     return ret;
 }
 
-void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidate) {
+bool MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidate) {
     const pair<int,int> &triag1 = candidate.second[0];
     const pair<int,int> &triag2 = candidate.second[1];
     AddEdge(triag1.first, triag2.first);
@@ -1347,8 +1347,13 @@ void MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candid
     AddEdge(triag1.second, triag2.first);
     AddEdge(triag1.second, triag2.second);
 
+    UpdateVertexTimestamp(triag1.first);
+    UpdateVertexTimestamp(triag1.second);
+    UpdateVertexTimestamp(triag2.first);
+    UpdateVertexTimestamp(triag2.second);
+
     inflicted_cut_change_to_kernelized += 2; // increases (4 edges / 2 in EE)
-    rules_usage_count[RuleIds::Rule9]++;
+    return true;
 }
 
 vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates(const bool break_on_first) const {
@@ -1548,12 +1553,11 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
         current_v = GetAllExistingNodes();
     }
 
-    sort(current_v.begin(), current_v.end(), cmp); // remove later
+    sort(current_v.begin(), current_v.end(), cmp);
 
     //std::mutex critical;
    // vector<thread> threads;
 
-    int cnt = 0;
     vector<int> ret;
     for (auto root : current_v) { // WE SEARCH FOR INTERNAL VERTICES!
         if (visited[root]) continue;
@@ -1619,12 +1623,6 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
 
         if (break_on_first) return ret;
     }
-
-   // cout << "CNT: " << cnt << endl;
-   // cout << "Candidates: ";
-   // sort(ret.begin(), ret.end());
-    //for (auto c : ret) cout << c << " ";
-   // cout << endl;
 
     //const size_t nthreads = 1;//std::thread::hardware_concurrency();
     //int blocksz = (current_v.size() / nthreads) + (current_v.size() % nthreads != 0);
@@ -2063,14 +2061,14 @@ bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
     return true;
 }
 
-bool MaxCutGraph::PerformKernelization(const RuleIds rule_id) {
+bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_map<int,bool> &preset_is_external) {
     rules_check_count[rule_id]++;
 
     switch(rule_id) {
         case RuleIds::RuleS2: {
-            auto candidates = GetS2Candidates();
+            auto candidates = GetS2Candidates(true, false, preset_is_external);
             for (auto candidate : candidates)
-                rules_usage_count[rule_id] += ApplyS2Candidate(candidate);
+                rules_usage_count[rule_id] += ApplyS2Candidate(candidate, preset_is_external);
 
             return !candidates.empty();
         }
@@ -2083,11 +2081,10 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id) {
         }
         case RuleIds::Rule9: { 
             auto candidates = GetAllR9Candidates(true);
-            if (!candidates.empty()) {
-                ApplyR9Candidate(candidates[0]);
-                return true;
-            }
-            return false;
+            if (!candidates.empty())
+                rules_usage_count[rule_id] += ApplyR9Candidate(candidates[0]);
+                
+            return !candidates.empty();
         }
         case RuleIds::Rule9X: { 
             auto candidates = GetAllR9XCandidates();
@@ -2205,48 +2202,6 @@ double MaxCutGraph::ExecuteLinearKernelization() {
     return GetInflictedCutChangeToKernelized();
 }
 
-void MaxCutGraph::ExecuteExhaustiveKernelization() {
-    while (true) {
-        auto res_rs2 = GetS2Candidates(true);
-        if (!res_rs2.empty()) {
-            ApplyS2Candidate(res_rs2[0]);
-            continue;
-        }
-
-        auto res_r9x = GetAllR9XCandidates();
-        if (!res_r9x.empty()) {
-            ApplyR9XCandidate(res_r9x[0]);
-            continue;
-        }
-        
-        auto res_r8 = GetAllR8Candidates();
-        if (!res_r8.empty()) {
-            ApplyR8Candidate(res_r8[0]);
-            continue;
-        }
-        
-        auto res_r10 = GetAllR10Candidates();
-        if (!res_r10.empty()) {
-            ApplyR10Candidate(res_r10[0]);
-            continue;
-        }
-        
-        auto res_r9 = GetAllR9Candidates();
-        if (!res_r9.empty()) {
-            ApplyR9Candidate(res_r9[0]);
-            continue;
-        }
-
-        auto res_r10ast = GetAllR10ASTCandidates();
-        if (!res_r10ast.empty()) {
-            ApplyR10ASTCandidate(res_r10ast[0]);
-            continue;
-        }
-        
-        break;
-    }
-}
-
 void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool> &preset_is_external) {
     while (true) {
         /*
@@ -2281,7 +2236,6 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
             ApplyS4Candidate(res_s4[0]);
             continue;
         }
-
       
         
         auto res_s5 = GetAllS5Candidates(true, preset_is_external);
