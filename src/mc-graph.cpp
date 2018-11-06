@@ -627,19 +627,20 @@ vector<int> MaxCutGraph::GetSingleSourcePathFromRoot(int dest) const {
 tuple<vector<int>, int> MaxCutGraph::GetLeafBlockAndArticulation(bool print_components) {
     int selected_block_dx = -1;
     auto bicomponents = GetBiconnectedComponents();
-    
+
+#ifdef DEBUG
     if (print_components) {
         OutputDebugLog("Number of biconnected components in graph: " + to_string(bicomponents.size()) + ", all components:");
         for (unsigned int dx = 0; dx < bicomponents.size(); ++dx) {
             const auto& component = bicomponents[dx];
             OutputDebugVector("Component " + to_string(dx), component);
-#ifdef DEBUG
+
             MaxCutGraph cg(*this, component);
             OutputDebugVector("  edges", cg.GetAllExistingEdges());
-#endif
         }
         OutputDebugLog("-- END-COMPONENTS --");
     }
+#endif
 
     for (unsigned int i = 0; i < bicomponents.size(); ++i) {
         const auto& component = bicomponents[i];
@@ -1530,44 +1531,59 @@ void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
 // Interesting facts on this rule:
 // -- in case of RGG graphs: manages to process ALL cliques with at least one internal vertex -- therefore, cliques tend to be small.
 // 
-vector<int> MaxCutGraph::GetS2Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
+vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
     auto cmp = [&](int a, int b) {
         return Degree(a) < Degree(b);
     };
 
-    vector<bool> visited(num_nodes, false);
-    //auto current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.S2, true); //GetAllExistingNodes();
+    //vector<bool> visited(num_nodes, false);
+    unordered_map<int, int> visited;
 
-    //if (!break_on_first)
-    //    CURRENT_TIMESTAMPS.S2 = current_kernelization_time;
-    auto current_v = GetAllExistingNodes();
-//    sort(current_v.begin(), current_v.end());
-    sort(current_v.begin(), current_v.end(), cmp);
+    vector<int> current_v;
+    if (consider_dirty_only) {
+        current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.S2, false); //GetAllExistingNodes();
+        if (!break_on_first)
+            CURRENT_TIMESTAMPS.S2 = current_kernelization_time;
+    } else {
+        current_v = GetAllExistingNodes();
+    }
+
+    sort(current_v.begin(), current_v.end(), cmp); // remove later
 
     //std::mutex critical;
    // vector<thread> threads;
 
     int cnt = 0;
     vector<int> ret;
-    for (auto root : current_v) {
-        if (MapEqualCheck(removed_node, root, true)) continue;
-        cnt++;
+    for (auto root : current_v) { // WE SEARCH FOR INTERNAL VERTICES!
         if (visited[root]) continue;
         if (KeyExists(root, preset_is_external)) continue;
         
-        
-
         const auto adj_root = GetAdjacency(root);
         vector<int> curr_clique = SetUnion(adj_root, {root});
 
-        bool intersect = false;
-        for (auto node : curr_clique) {
-            if (visited[node]) intersect = true;
-            visited[node] = true;
+        // With the following section we want to make sure that two cliques in the result do not intersect.   (1)
+        // Since the application of one might invalidate the applicability of the other.
+        // This is checked by visited[node] == 2 (which identifies vertices in a clique)
+        bool intersect = false; 
+        for (auto node : curr_clique)
+            if (visited[node] == 2) intersect = true;
+        
+        if (!IsClique(curr_clique)) { // NOT an internal vertex.
+            // this may only possibly change if an edge in curr_clique is added or a vertex is removed.
+            // the edge case justifies calling GetVerticesAfterTimestamp with neighbhors retrieval.
+            continue;
         }
 
-        if (intersect || !IsClique(curr_clique))
-            continue;
+        // Following marking only makes sense because we have a clique.
+        // Reason: External nodes are external in any clique and internal vertices of curr_clique are only internal in curr_clique
+        // (in other words: they are not relevant to any other cliques)
+        // All of this does NOT hold when root \cup N_{G}(root) is not a clique.
+        // It also does NOT hold if curr_clique is being changed in any way.
+        for (auto node : curr_clique) {
+            if (visited[node] == 0) // We take care not to remove information on those marked visited[node] == 2!
+                visited[node] = 1;
+        }
 
         vector<int> externals;
         for (auto node : curr_clique) {
@@ -1576,18 +1592,39 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool break_on_first, const unorde
                 externals.push_back(node);
         }
 
-        if (externals.size() <= ((curr_clique.size() >> 1) + (curr_clique.size() % 2))){
-            //std::lock_guard<std::mutex> lock(critical);
-            ret.push_back(root);
-            if (break_on_first) return ret;
+        // If this fails, we may assume that we require more vertices as internal. Therefore! We can expect a change on one of those vertices
+        // in the future and may also assume that this change will pop up through a feasibly update on the timetable.
+        if (!(externals.size() <= ((curr_clique.size() >> 1) + (curr_clique.size() % 2)))) {
+            continue;
         }
+
+        // As outlined in (1), we skip this case as it is not advisable to mix multiple candidates in the result that can invalidate each other.
+        // We update the skipped vertex's timestamp as we want to consider it in the future again.
+        if (intersect) {
+            // Unless edges of all vertices are affected in curr_clique, no vertex is able to become a candidate.
+            // Therefore! Application of S2 will destroy the inducibility of cliques for all vertices in curr_clique.
+            // This is because at least one vertex is connected to all other vertices, but that one does not induce a clique.
+            // THEREFORE, we do not do this:
+            // for (auto node : curr_clique)
+            //    UpdateVertexTimestamp(node);
+            UpdateVertexTimestamp(root); // Case where this is needed: two candidates share external vertex.
+            continue;
+        }
+
+        
+        //std::lock_guard<std::mutex> lock(critical);
+        ret.push_back(root);
+        for (auto node : curr_clique)
+            visited[node] = 2;
+
+        if (break_on_first) return ret;
     }
 
-    cout << "CNT: " << cnt << endl;
-    cout << "Candidates: ";
-    sort(ret.begin(), ret.end());
-    for (auto c : ret) cout << c << " ";
-    cout << endl;
+   // cout << "CNT: " << cnt << endl;
+   // cout << "Candidates: ";
+   // sort(ret.begin(), ret.end());
+    //for (auto c : ret) cout << c << " ";
+   // cout << endl;
 
     //const size_t nthreads = 1;//std::thread::hardware_concurrency();
     //int blocksz = (current_v.size() / nthreads) + (current_v.size() % nthreads != 0);

@@ -54,7 +54,7 @@ public:
 
         static int num_edges_lo, num_edges_hi;
 
-        int num_nodes;
+        static int num_nodes;
         ///////////////////////////////////////////////////////// TO HERE ////////////////////////////////////////////////////////////////////////
 
         int num_edges;
@@ -69,14 +69,14 @@ public:
 
         static void InitializeParamBounds(InputParser& input) {
             ((void) input);
+            num_nodes = 8192;
             num_edges_lo = 0, num_edges_hi = 8192 * 8;
             ba_lo_minimum_vertex_deg = 1, ba_hi_minimum_vertex_deg = 16;
             gnm_lo_num_edges = 0, gnm_hi_num_edges = 8;
-            rgg_2d_lo_rad = 0.001, rgg_2d_hi_rad = 0.04;
-            rgg_3d_lo_rad = 0.001, rgg_3d_hi_rad = 0.11;
             rhg_lo_e = 2.1, rhg_hi_e = 6.5;
             rhg_lo_avg_vertex_deg = 2, rhg_hi_avg_vertex_deg = 32;
 
+            
             if (input.cmdOptionExists("-num-edges-hi")) {
                 num_edges_hi = stoi(input.getCmdOption("-num-edges-hi"));
             }
@@ -84,57 +84,72 @@ public:
             if (input.cmdOptionExists("-num-edges-lo")) {
                 num_edges_lo = stoi(input.getCmdOption("-num-edges-lo"));
             }
+
+            if (input.cmdOptionExists("-num-nodes")) {
+                num_nodes = stoi(input.getCmdOption("-num-nodes"));
+            }
+
+            rgg_2d_lo_rad = 0.1, rgg_2d_hi_rad = 3;
+            rgg_3d_lo_rad = 0.1, rgg_3d_hi_rad = 4;
         }
 
         void GenerateParams() {
             while(1) {
+                if (graph_type == Type::GNM)
+                    idist = std::uniform_int_distribution<>(gnm_lo_num_edges * num_nodes, gnm_hi_num_edges * num_nodes);
+                if (graph_type == Type::RGG2D) 
+                    rdist = std::uniform_real_distribution<>(rgg_2d_lo_rad, rgg_2d_hi_rad);
+                if (graph_type == Type::RGG3D)
+                    rdist = std::uniform_real_distribution<>(rgg_3d_lo_rad, rgg_3d_hi_rad);
+                if (graph_type == Type::BA)
+                    idist = std::uniform_int_distribution<>(ba_lo_minimum_vertex_deg, ba_hi_minimum_vertex_deg);
+                if (graph_type == Type::RHG) {
+                    idist = std::uniform_int_distribution<>(rhg_lo_avg_vertex_deg, rhg_hi_avg_vertex_deg);
+                    rdist = std::uniform_real_distribution<>(rhg_lo_e, rhg_hi_e);
+                }
+
                 iparam = idist(gen);
                 rparam = rdist(gen);
                 num_edges = (int)GenerateEdgeList().size();
 
-                if (num_edges_lo < num_edges && num_edges < num_edges_hi) break;
+                if (num_edges_lo <= num_edges && num_edges <= num_edges_hi) break;
 
                 // Adjust bounds to exclude overreach for future speed up.
                 if (num_edges >= num_edges_hi) {
                     if (graph_type == Type::GNM)   gnm_hi_num_edges = iparam / num_nodes;
-                    if (graph_type == Type::RGG2D) rgg_2d_hi_rad = rparam;
-                    if (graph_type == Type::RGG3D) rgg_3d_hi_rad = rparam;
                     if (graph_type == Type::BA)    ba_hi_minimum_vertex_deg = iparam;
                     if (graph_type == Type::RHG)   rhg_hi_avg_vertex_deg = iparam;
                 } else {
                     if (graph_type == Type::GNM)   gnm_lo_num_edges = iparam / num_nodes;
-                    if (graph_type == Type::RGG2D) rgg_2d_lo_rad = rparam;
-                    if (graph_type == Type::RGG3D) rgg_3d_lo_rad = rparam;
                     if (graph_type == Type::BA)    ba_lo_minimum_vertex_deg = iparam;
                     if (graph_type == Type::RHG)   rhg_lo_avg_vertex_deg = iparam;
+                }
+
+                // A bit more strict when changing RGG params.
+                if (num_edges / 2 >= num_edges_hi) {
+                    if (graph_type == Type::RGG2D) rgg_2d_hi_rad = rparam;
+                    if (graph_type == Type::RGG3D) rgg_3d_hi_rad = rparam;
+                } else if (num_edges * 2 < num_edges_lo) {
+                    if (graph_type == Type::RGG2D) rgg_2d_lo_rad = rparam;
+                    if (graph_type == Type::RGG3D) rgg_3d_lo_rad = rparam;
+                }
+
+                if (graph_type == Type::RGG2D || graph_type == Type::RGG3D) {
+                    OutputDebugLog("Factors on radius for RGG: 2d= " + to_string(rgg_2d_lo_rad) + "," + to_string(rgg_2d_hi_rad)  + "   3d=" + to_string(rgg_3d_lo_rad) + "," + to_string(rgg_3d_hi_rad));
                 }
             }
         }
         
         // Generating fixed ranges for params with possibility of specifying nax num edges is stupid, but sufficient for most use cases.
         // (seed,it) used together for final seed.
-        KagenGraphCollectionDescriptor(int _id, Type type, int _num_nodes, int seed, int it) {
+        KagenGraphCollectionDescriptor(int _id, Type type, int seed, int it) {
             id = _id;
-            num_nodes = _num_nodes;
             num_edges = -1;
             graph_type = type;
             sel_seed = (seed + it * 13333337) % 100019;
 
             std::random_device rd;  // Will be used to obtain a seed for the random number engine
             gen = mt19937(sel_seed); // Standard mersenne_twister_engine seeded with rd()
-
-            if (type == Type::GNM)
-                idist = std::uniform_int_distribution<>(gnm_lo_num_edges * num_nodes, gnm_hi_num_edges * num_nodes);
-            if (type == Type::RGG2D) 
-                rdist = std::uniform_real_distribution<>(rgg_2d_lo_rad, rgg_2d_hi_rad);
-            if (type == Type::RGG3D)
-                rdist = std::uniform_real_distribution<>(rgg_3d_lo_rad, rgg_3d_hi_rad);
-            if (type == Type::BA)
-                idist = std::uniform_int_distribution<>(ba_lo_minimum_vertex_deg, ba_hi_minimum_vertex_deg);
-            if (type == Type::RHG) {
-                idist = std::uniform_int_distribution<>(rhg_lo_avg_vertex_deg, rhg_hi_avg_vertex_deg);
-                rdist = std::uniform_real_distribution<>(rhg_lo_e, rhg_hi_e);
-            }
 
             GenerateParams();
         }
@@ -146,12 +161,14 @@ public:
             OutputDebugLog("Generating graph: " + kKagenNaming.at(graph_type) + "(iparam: " + to_string(iparam) + ", rparam: " + to_string(rparam) + ", seed: " + to_string(sel_seed));
             EdgeList edge_list_undirected;
             
+            double rggcoef = sqrt(log(num_nodes) / (double)num_nodes);
+            //cout << rggcoef << " * " << rparam << " = " << rparam * rggcoef << " [ " << rgg_2d_lo_rad << " " << rgg_2d_hi_rad << " ] " <<  endl;
             if (graph_type == KagenGraphCollectionDescriptor::Type::GNM)
                 edge_list_undirected = gen.GenerateUndirectedGNM(num_nodes, iparam, 0, sel_seed);
             if (graph_type == KagenGraphCollectionDescriptor::Type::RGG2D)
-                edge_list_undirected = gen.Generate2DRGG(num_nodes, rparam, 0, sel_seed);
+                edge_list_undirected = gen.Generate2DRGG(num_nodes, rparam * rggcoef, 0, sel_seed);
             if (graph_type == KagenGraphCollectionDescriptor::Type::RGG3D)
-                edge_list_undirected = gen.Generate2DRGG(num_nodes, rparam, 0, sel_seed);
+                edge_list_undirected = gen.Generate3DRGG(num_nodes, rparam * rggcoef, 0, sel_seed);
             if (graph_type == KagenGraphCollectionDescriptor::Type::BA)
                 edge_list_undirected = gen.GenerateBA(num_nodes, iparam, 0, sel_seed);
             if (graph_type == KagenGraphCollectionDescriptor::Type::RHG)

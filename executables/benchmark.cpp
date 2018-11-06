@@ -5,6 +5,7 @@
 #include "src/utils.hpp"
 #include "src/output-filter.hpp"
 #include "src/graph-database.hpp"
+#include "src/colormod.hpp"
 
 #include "src/benchmarks/benchmark-marked-set.hpp"
 #include "src/benchmarks/benchmark-kernelization.hpp"
@@ -16,7 +17,7 @@
 #include <iostream>
 using namespace std;
 
-const bool kMultipleEdgesAreOk = false;
+const bool kMultipleEdgesAreOk = true;
 
 vector<int> tot_used_rules(10, 0);
 int main(int argc, char **argv){
@@ -29,12 +30,16 @@ int main(int argc, char **argv){
     //srand((unsigned)time(0));
     //ios_base::sync_with_stdio(false);
 
+    Color::Modifier green(Color::FG_GREEN);
+    Color::Modifier red  (Color::FG_RED);
+    Color::Modifier defcol(Color::FG_DEFAULT);
+
     #ifdef DEBUG
-        cout << "DEBUG is set to true." << endl;
+        cout << red << "DEBUG is set to true." << defcol << endl;
     #endif
     
     #ifdef NDEBUG
-        cout << "NDEBUG is set to true." << endl;
+        cout << red << "NDEBUG is set to true." << defcol << endl;
     #endif
 
     std::cout << "Available number of threads: " << std::thread::hardware_concurrency() << endl;
@@ -69,10 +74,14 @@ int main(int argc, char **argv){
     if (benchmark_action) {
         for (auto graph : graph_db) {
             cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
-            cout << "   |V|:                           " << graph.GetRealNumNodes() << endl;
-            cout << "   |E|:                           " << graph.GetRealNumEdges() << endl;
-            cout << "   graph contains multiple edges: " << graph.info_mult_edge << endl;
+            cout << green << "   |V|:                           " << graph.GetRealNumNodes() << endl;
+            cout << green << "   |E|:                           " << graph.GetRealNumEdges() << endl;
+            cout << green << "   graph contains multiple edges: ";
+            if (graph.info_mult_edge > 0) cout << red;
+            cout << graph.info_mult_edge << defcol << endl;
+
             custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
+            
             benchmark_action->Evaluate(input, graph);
             tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
             cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;

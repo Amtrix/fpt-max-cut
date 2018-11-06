@@ -29,16 +29,12 @@ GraphDatabase::GraphDatabase(InputParser& input) {
             double c2 = x2.num_edges != 0 ? x2.num_nodes / (double)x2.num_edges : 1e9;
             return c1 > c2;
         };
-
-        int num_nodes = -1;
-        if (input.cmdOptionExists("-num-nodes")) {
-            num_nodes = stoi(input.getCmdOption("-num-nodes"));
-        }
+        
 
         for (int i = 0; i < graphs_per_type * (int)kKagenTypeListing.size(); ++i) {
             KagenGraphCollectionDescriptor::Type type =  kKagenTypeListing[i / graphs_per_type];
             int it = i % graphs_per_type;
-            KagenGraphCollectionDescriptor descr(i / graphs_per_type, type, num_nodes == -1 ? (1000 + rand()%5000) : num_nodes, main_seed, it);
+            KagenGraphCollectionDescriptor descr(i / graphs_per_type, type, main_seed, it);
             all_kagen_sets_to_evaluate.push_back(descr);
         }
 
@@ -106,19 +102,21 @@ const map<GraphDatabase::KagenGraphCollectionDescriptor::Type, string> GraphData
     { KagenGraphCollectionDescriptor::Type::RHG, "RHG" }
 };
 
+int GraphDatabase::KagenGraphCollectionDescriptor::num_nodes = -1;
+
 int GraphDatabase::KagenGraphCollectionDescriptor::num_edges_lo = -1;
 int GraphDatabase::KagenGraphCollectionDescriptor::num_edges_hi = -1;
 
 
-int GraphDatabase::KagenGraphCollectionDescriptor::ba_lo_minimum_vertex_deg = 1;
-int GraphDatabase::KagenGraphCollectionDescriptor::ba_hi_minimum_vertex_deg = 16;
-int GraphDatabase::KagenGraphCollectionDescriptor::gnm_lo_num_edges = 0;
-int GraphDatabase::KagenGraphCollectionDescriptor::gnm_hi_num_edges = 8;
-double GraphDatabase::KagenGraphCollectionDescriptor::rgg_2d_lo_rad = 0.001;
-double GraphDatabase::KagenGraphCollectionDescriptor::rgg_2d_hi_rad = 0.04;
-double GraphDatabase::KagenGraphCollectionDescriptor::rgg_3d_lo_rad = 0.001;
-double GraphDatabase::KagenGraphCollectionDescriptor::rgg_3d_hi_rad = 0.11;
-double GraphDatabase::KagenGraphCollectionDescriptor::rhg_lo_e = 2.1;
-double GraphDatabase::KagenGraphCollectionDescriptor::rhg_hi_e = 6.5;
-int GraphDatabase::KagenGraphCollectionDescriptor::rhg_lo_avg_vertex_deg = 2;
-int GraphDatabase::KagenGraphCollectionDescriptor::rhg_hi_avg_vertex_deg = 32;
+int GraphDatabase::KagenGraphCollectionDescriptor::ba_lo_minimum_vertex_deg = -1;
+int GraphDatabase::KagenGraphCollectionDescriptor::ba_hi_minimum_vertex_deg = -1;
+int GraphDatabase::KagenGraphCollectionDescriptor::gnm_lo_num_edges = -1;
+int GraphDatabase::KagenGraphCollectionDescriptor::gnm_hi_num_edges = -1;
+double GraphDatabase::KagenGraphCollectionDescriptor::rgg_2d_lo_rad = -1;
+double GraphDatabase::KagenGraphCollectionDescriptor::rgg_2d_hi_rad = -1;
+double GraphDatabase::KagenGraphCollectionDescriptor::rgg_3d_lo_rad = -1;
+double GraphDatabase::KagenGraphCollectionDescriptor::rgg_3d_hi_rad = -1;
+double GraphDatabase::KagenGraphCollectionDescriptor::rhg_lo_e = -1;
+double GraphDatabase::KagenGraphCollectionDescriptor::rhg_hi_e = -1;
+int GraphDatabase::KagenGraphCollectionDescriptor::rhg_lo_avg_vertex_deg = -1;
+int GraphDatabase::KagenGraphCollectionDescriptor::rhg_hi_avg_vertex_deg = -1;

@@ -174,7 +174,7 @@ public:
     void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
 
     // Returns a vector of cliques with less than ceil(n/2) external vertices.
-    vector<int> GetS2Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
+    vector<int> GetS2Candidates(const bool consider_dirty_only = true, const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
     bool ApplyS2Candidate(const int root, const unordered_map<int,bool>& preset_is_external = {});
 
     // Get "almost cliques" (missing one edge) with at least one internal vertex.
@@ -251,6 +251,16 @@ public:
     int GetMixingId() const { return mixing_id; }
 
     int info_mult_edge = 0;
+
+    struct {
+        int S2 = 0;
+    } CURRENT_TIMESTAMPS;
+
+    void ResetTimestamps() {
+        CURRENT_TIMESTAMPS.S2 = 0;
+        for (int i = 0; i < num_nodes; ++i)
+            UpdateVertexTimestamp(i);
+    }
 
 private:
     constexpr static long long kMaxNumNodes = 1000000000LL;
@@ -358,9 +368,7 @@ private:
     vector<int> current_timestamp; // will hold the most recent timestamp for each vertex. Used to identify outdated values in pq!
     int current_kernelization_time = 1;
 
-    struct {
-        int S2 = 0;
-    } CURRENT_TIMESTAMPS;
+    
 
     double inflicted_cut_change_to_kernelized = 0; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
     unordered_map<RuleIds, int> rules_usage_count;

@@ -19,18 +19,23 @@ using namespace std::experimental;
 #endif
 
 #ifdef DEBUG
+    #define OutputDebugLogNoNewLine(str) OutputDebugLog_(__FILE__,__LINE__,str,NO_LINE_BREAK)
+    #define OutputDebugLog(str) OutputDebugLog_(__FILE__,__LINE__,str,0)
+    #define OutputDebugLogRaw(str) OutputDebugLogX_(str)
+    #define OutputDebugVector(name,vec) OutputDebugVector_(__FILE__,__LINE__,name,vec)
     #define custom_assert(val) CustomAssertImpl_(__FILE__,__LINE__,val)
 #else
     #define custom_assert(val) ((void)0)
+    #define OutputDebugLogNoNewLine(str) ((void)0)
+    #define OutputDebugLog(str) ((void)0)
+    #define OutputDebugLogRaw(str) ((void)0)
+    #define OutputDebugVector(name,vec) ((void)0)
 #endif
+
+
 void CustomAssertImpl_(const string file, const int line_num, bool res);
 
 const int NO_LINE_BREAK = 1;
-
-#define OutputDebugLogNoNewLine(str) OutputDebugLog_(__FILE__,__LINE__,str,NO_LINE_BREAK)
-#define OutputDebugLog(str) OutputDebugLog_(__FILE__,__LINE__,str,0)
-#define OutputDebugLogRaw(str) OutputDebugLogX_(str)
-#define OutputDebugVector(name,vec) OutputDebugVector_(__FILE__,__LINE__,name,vec)
 
 void OutputDebugLog_(const string file, const int line_num, const string str, const int flags = 0);
 void OutputDebugLogX_(const string str);

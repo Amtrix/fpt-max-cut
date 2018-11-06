@@ -1,4 +1,5 @@
 #include "./utils.hpp"
+#include "./colormod.hpp"
 #include <sstream>
 #include <string>
 #include <map>
@@ -14,12 +15,6 @@ void CustomAssertImpl_(const string file, const int line_num, bool res) {
 }
 
 void OutputDebugLog_(const string file, const int line_num, const string str, const int flags) {
-    (void)str;
-    (void)file;
-    (void)line_num;
-    (void)flags;
-
-#ifdef DEBUG
     string rfile = "";
     if (file != "") {
         for (unsigned int i = 0; i < file.size(); ++i)
@@ -27,42 +22,24 @@ void OutputDebugLog_(const string file, const int line_num, const string str, co
             else rfile += file[i];
     }
     cout << "LOG: " << (rfile.size() > 0 ? rfile + ":" + to_string(line_num) + ":   " : "") << str << (flags & 1 ? "" : "\n");
-#endif
 }
 
 void OutputDebugLogX_(const string str) {
-    (void)str;
-#ifdef DEBUG
     cout << str;
-#endif
 }
 
 void OutputDebugVector_(const string file, const int line_num, const string name, const vector<int> vec) {
-    (void)file;
-    (void)line_num;
-    (void)name;
-    (void)vec;
-
-#ifdef DEBUG
     OutputDebugLog_(file, line_num, name + ": ", NO_LINE_BREAK);
     for (unsigned int i = 0; i < vec.size(); ++i)
         OutputDebugLogRaw(to_string(vec[i]) + " ");
     OutputDebugLogRaw("\n");
-#endif
 }
 
 void OutputDebugVector_(const string file, const int line_num, const string name, const vector<pair<int,int>> vec) {
-    (void)file;
-    (void)line_num;
-    (void)name;
-    (void)vec;
-
-#ifdef DEBUG
     OutputDebugLog_(file, line_num, name + ": ", NO_LINE_BREAK);
     for (unsigned int i = 0; i < vec.size(); ++i)
         OutputDebugLogRaw("(" + to_string(vec[i].first) + "," + to_string(vec[i].second) + ") ");
     OutputDebugLogRaw("\n");
-#endif
 }
 
 

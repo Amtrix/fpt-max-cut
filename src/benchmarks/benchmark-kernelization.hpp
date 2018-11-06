@@ -14,7 +14,7 @@ using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
-    const static int kMQLibRunTime = 30;
+    const static int kMQLibRunTime = 2;
     Benchmark_Kernelization() {
     }
 
@@ -48,11 +48,22 @@ public:
             if (!chg_happened)
                 break; 
         }
+
+#ifdef DEBUG
+        // With the following we make sure that our timestamping did not interferre with applicability.
+        OutputDebugLog("Verifying that no more kernelization is possible when timestamps reset.");
+        for (int i = 0; i < (int)selected_kernelization_order.size(); ++i) {
+            kernelized.ResetTimestamps();
+            custom_assert(kernelized.PerformKernelization(selected_kernelization_order.at(i)) == false);
+        }
+        OutputDebugLog("... done.");
+#endif
+
         FlushTimes(local_times, false); // one more flush
 
         // Also kernelization here(!):
         OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
-        kernelized.MakeWeighted();
+       // kernelized.MakeWeighted();
         OutputDebugLog("Made weighted");
         LogTime(local_times, t0);
         FlushTimes(local_times, false);
