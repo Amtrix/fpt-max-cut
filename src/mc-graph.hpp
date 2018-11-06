@@ -81,6 +81,7 @@ public:
     vector<vector<int>> GetAllConnectedComponents() const;
     bool DoesDisconnect(const vector<int>& selection_rem) const;
     vector<pair<int,int>> GetAllExistingEdges() const;
+    vector<tuple<int,int,int>> GetAllExistingEdgesWithWeights() const;
     bool IsClique(const vector<int>& vertex_set) const;
     double GetEdwardsErdosBound() const;
     int CountExternalVertices(const vector<int> &vertex_set) const; // G[vertex_set] considered.
@@ -261,6 +262,12 @@ public:
         for (auto node : current_v)
             UpdateVertexTimestamp(node);
     }
+
+
+
+#ifdef LOCALSOLVER_EXISTS
+    pair<int, vector<int>> ComputeMaxCutWithLocalsolver(const int max_exec_time = 1) const;
+#endif
 
 private:
     constexpr static long long kMaxNumNodes = 1000000000LL;

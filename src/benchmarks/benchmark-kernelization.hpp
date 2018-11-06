@@ -14,7 +14,7 @@ using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
-    const static int kMQLibRunTime = 1;
+    const static int kSolverRuntime = 1;
     Benchmark_Kernelization() {
     }
 
@@ -118,27 +118,35 @@ public:
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
 
             // Compute solver results.
-            double local_search_cut_size, local_search_cut_size_k, local_search_sddiff;
-            double mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff;
+            double local_search_cut_size = -1, local_search_cut_size_k = -1, local_search_sddiff = 0;
+            double mqlib_cut_size = -1, mqlib_cut_size_k = -1, mqlib_sddiff = 0;
             double localsolver_cut_size = -1, localsolver_cut_size_k = -1, localsolver_sddiff = 0;
 
+            int local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_size_best = -1;
+
             vector<int> tmp_def_param_trash;
-            std::tie(local_search_cut_size, local_search_cut_size_k, local_search_sddiff)
+            std::tie(local_search_cut_size, local_search_cut_size_k, local_search_sddiff, local_search_cut_size_best)
                 = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &G, tmp_def_param_trash)),
                                              TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &kernelized, tmp_def_param_trash), -k_change),
                                              locsearch_iterations);
 
 
-            std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff)
-                = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, kMQLibRunTime)),
-                                             TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, kMQLibRunTime), -k_change),
+            std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff, mqlib_cut_size_best)
+                = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, kSolverRuntime)),
+                                             TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, kSolverRuntime), -k_change),
                                              mqlib_iterations);
 
+#ifdef LOCALSOLVER_EXISTS
+            std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_sddiff, localsolver_cut_size_best)
+                = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, kSolverRuntime)),
+                                             TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, kSolverRuntime), -k_change),
+                                             localsolver_iterations);
+#endif
+
             // Some variables.
-            auto heur_sol = G.ComputeMaxCutWithMQLib(kMQLibRunTime);
-            auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib(kMQLibRunTime);
             double EE = G.GetEdwardsErdosBound();
             double EE_k = kernelized.GetEdwardsErdosBound();
+            int MAXCUT_best_size = max(local_search_cut_size_best, max(mqlib_cut_size_best,localsolver_cut_size_best));
 
             // Some output
             cout << "VERIFY CUT VAL:  localsearch(" << local_search_cut_size << ", " << local_search_cut_size_k << ")   mqlib(" << mqlib_cut_size << ", " << mqlib_cut_size_k << ")" << endl;
@@ -173,16 +181,18 @@ public:
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                 -k_change,
                                 mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff,
+                                localsolver_cut_size, localsolver_cut_size_k, localsolver_sddiff,
                                 local_search_cut_size, local_search_cut_size_k, local_search_sddiff,
-                                EE, EE_k, kernelization_time);
+                                EE, EE_k, MAXCUT_best_size, kernelization_time);
             
             accum.push_back({(double)mixingid, (double)iteration,
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                 -k_change,
                                 (double)mqlib_cut_size, (double)mqlib_cut_size_k, (double)mqlib_sddiff,
+                                localsolver_cut_size, localsolver_cut_size_k, localsolver_sddiff,
                                 local_search_cut_size, local_search_cut_size_k, local_search_sddiff,
-                                EE, EE_k, kernelization_time});
+                                EE, EE_k, (double)MAXCUT_best_size, kernelization_time});
         }
 
         custom_assert(accum.size() > 0);
@@ -198,7 +208,7 @@ public:
             avg.push_back(sum / accum.size());
         }
 
-        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15], "-avg");
+        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15], avg[16], avg[17], avg[18], avg[19], "-avg");
     }
 
     void Evaluate(InputParser& input, const string data_filepath) {

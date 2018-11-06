@@ -145,7 +145,6 @@ int main(int argc, char** argv) {
     const char* strTimeLimit = argc > 3 ? argv[3] : "3";
 
     try {
-        /*
         if (instanceFile != NULL) {
             MaxCutGraph G(instanceFile);
             cout << "Edwards Erdos bound: " << G.GetEdwardsErdosBound() << endl;
@@ -157,10 +156,10 @@ int main(int argc, char** argv) {
         } else {
             cerr << "No input file" << endl;
         }
-        */
 
         // UNCOMMENT THIS WHEN WANTING TO COMPUTE CUT FOR ALL DATASETS 
         
+        /*
         ofstream out("../../data/output/localsolver-lower-bound-cut-size/output_2.0-3sec");
         for (unsigned int i = 0; i < kDataSetCount; ++i) {
             auto sets = GetAllDatasets(paths[i]);
@@ -205,7 +204,7 @@ int main(int argc, char** argv) {
                 out.flush();
             }
         }
-        
+        */
 
         return 0;
     } catch (const exception& e){

@@ -42,6 +42,11 @@ int main(int argc, char **argv){
         cout << red << "NDEBUG is set to true." << defcol << endl;
     #endif
 
+    bool local_solver_exists = false;
+    #ifdef LOCALSOLVER_EXISTS
+        local_solver_exists = true;
+    #endif
+
     std::cout << "Available number of threads: " << std::thread::hardware_concurrency() << endl;
     std::cout << std::fixed;
     std::cout << std::setprecision(5);
@@ -79,9 +84,14 @@ int main(int argc, char **argv){
             cout << green << "   graph contains multiple edges: ";
             if (graph.info_mult_edge > 0) cout << red;
             cout << graph.info_mult_edge << defcol << endl;
+            
+            cout << green << "   Localsolver lib is provided: ";
+            if (local_solver_exists) cout << "yes." << defcol << endl;
+            else cout << "no." << defcol << endl;
+
 
             custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
-            
+
             benchmark_action->Evaluate(input, graph);
             tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
             cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;

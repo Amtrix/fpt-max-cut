@@ -8,6 +8,7 @@
 #include <thread>
 #include <mutex>
 
+#include "maxcut-localsolver.hpp"
 #include "mc-graph.hpp"
 #include <heuristics/qubo/glover1998a.h>
 #include <heuristics/maxcut/burer2002.h>
@@ -419,6 +420,16 @@ vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() const {
             ret.push_back(make_pair(i, w));
         }
     }
+    return ret;
+}
+
+vector<tuple<int,int,int>> MaxCutGraph::GetAllExistingEdgesWithWeights() const {
+    vector<tuple<int,int,int>> ret;
+    const auto& elist = GetAllExistingEdges();
+
+    for (auto e : elist)
+        ret.push_back(make_tuple(e.first, e.second, GetEdgeWeight(e)));
+    
     return ret;
 }
 
@@ -2480,3 +2491,20 @@ vector<vector<int>> MaxCutGraph::GetCliquesWithAtLeastOneInternal() const {
 
     return ret;
 }
+
+
+
+#ifdef LOCALSOLVER_EXISTS
+    pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithLocalsolver(const int max_exec_time) const {
+        MaxcutLocalsolver solver;
+        auto elist = GetAllExistingEdgesWithWeights();
+        for (auto& e : elist) {
+            get<0>(e)++;
+            get<1>(e)++;
+        }
+        solver.readInstance(num_nodes, elist);
+        solver.solve(max_exec_time);
+
+        return make_pair(solver.getCutSize(), solver.getCut());
+    }
+#endif

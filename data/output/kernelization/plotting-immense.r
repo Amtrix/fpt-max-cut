@@ -26,7 +26,7 @@ res_folder="./"
 file=opt$file
 col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
 pnt_vec = c(9,16,17,15,0)
-columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+DIFF','#MQLIBDIFF','#locsearch(G)','#locsearch(Gk)+DIFF','#locsearchDIFF','#locsearchDIFF.SD','#EE(G)','#EE(Gk)', '#ktime', '#file')
+columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(G)+CUT','#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#locsearch(G)','#locsearch(Gk)+CUT','#locsearch.DIFF','#locsearch.DIFF.SD','#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
 
 
 #Need readjustment for each case:
@@ -47,10 +47,10 @@ data_table <- data_table[with(data_table, order(X.sec,density)), ]
 # Open a PDF to store the plot into
 pdf(opt$out, width=10, height=5)
 
-print(data_table[,"X..V.G.."])
+print(data_table)
 #print(paste("KEY:", getkey(0,data_table)))
 
-v_count <- data_table[,"X..V.G.."][1]
+#v_count <- data_table[,"X..V.G.."][1]
 
 for (entry in list(
     c("ratio_e", paste("Kernelization efficiency for KaGen graph instances", sep="")
@@ -61,9 +61,11 @@ for (entry in list(
     x="density"
 
     # Define some ranges for our plotting area
-    xrange <- range(x_start,data_table[,x])
+    xrange <- range(data_table[,x])
     yrange <- range(0, data_table[,y])
-    yrange[2] <- yrange[2] * 1.1
+    yrange[2] <- 1.1
+    xrange[1] <- xrange[1] - 0.5
+    xrange[2] <- xrange[2] + 1
     print(yrange)
     # Initialize the plotting area
     plot(xrange, yrange, yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
@@ -79,7 +81,7 @@ for (entry in list(
        points(sub[,x] , sub[,y] , col=col_vec[[dx]], pch=pnt_vec[[dx]])
     }
     # Shows the legend
-    legend(x_start_legend, yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec)
+    legend(xrange[2] - 0.5, yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec)
 }
 
 

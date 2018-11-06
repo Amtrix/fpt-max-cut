@@ -11,6 +11,7 @@ message("Add KaGen")
 add_subdirectory(./test-generators/KaGen/)
 message("Include MQLIB includes")
 include_directories(. ./solvers/MQLib/include)
+include_directories(. /opt/localsolver_7_5/include)
 
 set (CMAKE_CXX_COMPILER /usr/bin/g++-7)
 set (CMAKE_CXX_FLAGS "-std=c++1z -msse4.2 -Wall -Wextra -O3 -g -fopenmp")
@@ -31,14 +32,14 @@ list(APPEND ALL_CPP_FILES
 
 find_library(MQLIB NAMES "MQLib.a" PATHS ./solvers/MQLib/bin/)
 
-set(TARGET_LIBS Threads::Threads -lstdc++fs ${MQLIB} generators)
+set(TARGET_LIBS Threads::Threads -lstdc++fs -llocalsolver ${MQLIB} generators)
 
 
 macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
     add_executable(${TARGETNAME} ${ENTRYCPP})
     target_sources(${TARGETNAME} PRIVATE ${ALL_CPP_FILES})
     target_link_libraries(${TARGETNAME} PRIVATE ${TARGET_LIBS})
-    target_compile_definitions(${TARGETNAME} PRIVATE ${DEBUGMODE})
+    target_compile_definitions(${TARGETNAME} PRIVATE ${DEBUGMODE} LOCALSOLVER_EXISTS=1)
 endmacro(add_binary_exec)
 
 add_binary_exec(benchmark                            NDEBUG  executables/benchmark.cpp)

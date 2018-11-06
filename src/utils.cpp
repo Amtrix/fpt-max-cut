@@ -109,23 +109,26 @@ vector<pair<unsigned long long,unsigned long long>> RemoveAnyMultipleEdgesAndSel
     return ret;
 }
 
-std::function<double(void)> TakeFirstFromPairFunction(std::function<pair<int,vector<int>>(void)> func, double addval) {
+std::function<int(void)> TakeFirstFromPairFunction(std::function<pair<int,vector<int>>(void)> func, int addval) {
     return [func,addval]() {
         return func().first  + addval;
     };
 }
 
-tuple<double, double, double> ComputeAverageAndDeviation(std::function<double(void)> Agen, std::function<double(void)> Bgen, int iter) {
+tuple<double, double, double, int> ComputeAverageAndDeviation(std::function<int(void)> Agen, std::function<int(void)> Bgen, int iter) {
     vector<double> Ares, Bres;
+    double mxval = 0;
     while (iter--) {
         Ares.push_back(Agen());
         Bres.push_back(Bgen());
+        mxval = max(mxval, Ares.back());
+        mxval = max(mxval, Bres.back());
     }
 
     double Aavg = GetAverage(Ares);
     double Bavg = GetAverage(Bres);
     double SDres = GetStandardDeviation(SubVectorVal(Ares, Bres));
-    return make_tuple(Aavg, Bavg, SDres);
+    return make_tuple(Aavg, Bavg, SDres, mxval);
 }
 
 vector<string> GetAllDatasets(const string path) {
