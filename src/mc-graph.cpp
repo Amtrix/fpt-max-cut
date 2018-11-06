@@ -1268,7 +1268,7 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const bool break_on_first, c
     return ret;
 }
 
-void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
+bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     custom_assert(clique.size() >= 2);
 
     int frem = rand() % clique.size();
@@ -1276,10 +1276,17 @@ void MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     int rem_node1 = clique[frem], rem_node2 = clique[srem];
 
     inflicted_cut_change_to_kernelized -= GetAdjacency(rem_node1).size();
+
+    for (auto node : {rem_node1, rem_node2}) {
+        const auto& adj = GetAdjacency(node);
+        for (auto w : adj)
+            UpdateVertexTimestamp(w);
+    }
+
     RemoveNode(rem_node1);
     RemoveNode(rem_node2);
-
-    rules_usage_count[RuleIds::Rule8]++;
+    
+    return true;
 }
 
 vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates(const bool break_on_first) const {
@@ -1521,7 +1528,7 @@ vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates(const boo
 
     return ret;
 }
-void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate) {
+bool MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate) {
     int ex_L = get<0>(candidate), a = get<1>(candidate), b = get<2>(candidate),
            c = get<3>(candidate), ex_R = get<4>(candidate);
 
@@ -1530,7 +1537,11 @@ void MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
     AddEdge(ex_L, b);
     AddEdge(b, ex_R);
     inflicted_cut_change_to_kernelized -= 2;
-    rules_usage_count[RuleIds::Rule10AST]++;
+
+    UpdateVertexTimestamp(ex_L);
+    UpdateVertexTimestamp(ex_R);
+
+    return true;
 }
 
 // Interesting facts on this rule:
@@ -2075,7 +2086,7 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
         case RuleIds::Rule8: { 
             auto candidates = GetAllR8Candidates();
             for (auto candidate : candidates)
-                ApplyR8Candidate(candidate);
+                rules_usage_count[rule_id] += ApplyR8Candidate(candidate);
 
             return !candidates.empty();
         }
@@ -2103,11 +2114,10 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
         }
         case RuleIds::Rule10AST: {
             auto candidates = GetAllR10ASTCandidates(true);
-            if (!candidates.empty()) {
-                ApplyR10ASTCandidate(candidates[0]);
-                return true;
-            }
-            return false;
+            if (!candidates.empty())
+                rules_usage_count[rule_id] += ApplyR10ASTCandidate(candidates[0]);
+            
+            return !candidates.empty();
         }
         case RuleIds::RuleS3: {
             auto candidates = GetS3Candidates(true);

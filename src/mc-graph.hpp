@@ -153,7 +153,7 @@ public:
      **/
     // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
     vector<vector<int>> GetAllR8Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyR8Candidate(const vector<int> &clique);
+    bool ApplyR8Candidate(const vector<int> &clique);
 
     // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
     // (x,pair2.first,pair2.second).
@@ -171,7 +171,7 @@ public:
 
     // Returns a vector of 5-tuples a' b c d d'
     vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
+    bool ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
 
     // Returns a vector of cliques with less than ceil(n/2) external vertices.
     vector<int> GetS2Candidates(const bool consider_dirty_only = true, const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});

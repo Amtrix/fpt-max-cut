@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cassert>
 #include <map>
+#include <functional>
 
 using namespace std;
 using namespace std::experimental;
@@ -54,6 +55,9 @@ vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_sma
 
 //warning! if the input is directed, it will remove one direction.
 vector<pair<unsigned long long,unsigned long long>> RemoveAnyMultipleEdgesAndSelfLoops(const vector<pair<unsigned long long,unsigned long long>>& elems);
+
+std::function<double(void)> TakeFirstFromPairFunction(std::function<pair<int,vector<int>>(void)> func, double addval = 0);
+tuple<double, double, double> ComputeAverageAndDeviation(std::function<double(void)> Agen, std::function<double(void)> Bgen, int iter = 1);
 
 // ignores README.md !
 vector<string> GetAllDatasets(const string path);

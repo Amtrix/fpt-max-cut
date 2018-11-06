@@ -40,8 +40,10 @@ public:
             bool chg_happened = false;
             for (int i = 0; i < (int)selected_kernelization_order.size() && !chg_happened; ++i) {
                 OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule");
-                while (kernelized.PerformKernelization(selected_kernelization_order.at(i))) // exhaustively!
+                while (kernelized.PerformKernelization(selected_kernelization_order.at(i))) { // exhaustively!
                     chg_happened = true;
+                    OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule... again");
+                }
                 LogTime(local_times, t0, static_cast<int>(selected_kernelization_order[i]));
             }
 
@@ -55,6 +57,7 @@ public:
         // With the following we make sure that our timestamping did not interferre with applicability.
         OutputDebugLog("Verifying that no more kernelization is possible when timestamps reset.");
         for (int i = 0; i < (int)selected_kernelization_order.size(); ++i) {
+            OutputDebugLog("        Trying the " + to_string(i) + "th kernelization rule");
             kernelized.ResetTimestamps();
             custom_assert(kernelized.PerformKernelization(selected_kernelization_order.at(i)) == false);
         }
@@ -65,7 +68,7 @@ public:
 
         // Also kernelization here(!):
         OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
-       // kernelized.MakeWeighted();
+        kernelized.MakeWeighted();
         OutputDebugLog("Made weighted");
         LogTime(local_times, t0);
         FlushTimes(local_times, false);
@@ -87,6 +90,16 @@ public:
             locsearch_iterations = stoi(input.getCmdOption("-locsearch-iterations"));
             cout << "Note: Local search iterations: " << locsearch_iterations << endl;
         }
+        int mqlib_iterations = 1;
+        if (input.cmdOptionExists("-mqlib-iterations")) {
+            mqlib_iterations = stoi(input.getCmdOption("-mqlib-iterations"));
+            cout << "Note: MQLIB solver iterations: " << mqlib_iterations << endl;
+        }
+        int localsolver_iterations = 1;
+        if (input.cmdOptionExists("-localsolver-iterations")) {
+            localsolver_iterations = stoi(input.getCmdOption("-localsolver-iterations"));
+            cout << "Note: localsolver solver iterations: " << localsolver_iterations << endl;
+        }
 
         vector<vector<double>> accum;
         for (int iteration = 1; iteration <= num_iterations; ++iteration) {
@@ -104,21 +117,22 @@ public:
             // Already needed for upcoming sections.
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
 
-            // Compute local search results.
-            vector<double> locsearch_res, locsearch_res_k;
-            for (int it = 1; it <= locsearch_iterations; ++it) {
-                locsearch_res.push_back(G.ComputeLocalSearchCut().first);
-                locsearch_res_k.push_back(kernelized.ComputeLocalSearchCut().first - k_change); // adjust right away.
-            }
-            double local_search_cut_size = GetAverage(locsearch_res);
-            double local_search_cut_size_k = GetAverage(locsearch_res_k);
-            double local_search_sddiff = GetStandardDeviation(SubVectorVal(locsearch_res, locsearch_res_k));
+            // Compute solver results.
+            double local_search_cut_size, local_search_cut_size_k, local_search_sddiff;
+            double mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff;
+            double localsolver_cut_size = -1, localsolver_cut_size_k = -1, localsolver_sddiff = 0;
 
-            auto vec = SubVectorVal(locsearch_res, locsearch_res_k);
-            cout << "Local search diffs: ";
-            for (int i = 0; i < (int)vec.size(); ++i)
-                cout << vec[i] << " ";
-            cout << " = " << local_search_sddiff << endl;
+            vector<int> tmp_def_param_trash;
+            std::tie(local_search_cut_size, local_search_cut_size_k, local_search_sddiff)
+                = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &G, tmp_def_param_trash)),
+                                             TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &kernelized, tmp_def_param_trash), -k_change),
+                                             locsearch_iterations);
+
+
+            std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff)
+                = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, kMQLibRunTime)),
+                                             TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, kMQLibRunTime), -k_change),
+                                             mqlib_iterations);
 
             // Some variables.
             auto heur_sol = G.ComputeMaxCutWithMQLib(kMQLibRunTime);
@@ -127,9 +141,9 @@ public:
             double EE_k = kernelized.GetEdwardsErdosBound();
 
             // Some output
-            cout << "VERIFY CUT VAL: " << heur_sol_k.first - k_change << " =?= " << heur_sol.first << endl;
-            cout << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
-            cout << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
+            cout << "VERIFY CUT VAL:  localsearch(" << local_search_cut_size << ", " << local_search_cut_size_k << ")   mqlib(" << mqlib_cut_size << ", " << mqlib_cut_size_k << ")" << endl;
+            cout << "              G: " << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
+            cout << "     kernelized: " << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
 
             auto case_coverage_cnt = kernelized.GetUsageVector();
             cout << "Spent time on kernelization[ms]: " << kernelization_time << endl;
@@ -137,9 +151,6 @@ public:
             for (unsigned int r = 0; r < case_coverage_cnt.size(); ++r)
                 cout << case_coverage_cnt[r] << " ";
             cout << endl;
-
-            cout << "G  = " << local_search_cut_size << " <= " << heur_sol.first << " (something weird if not)." << endl;
-            cout << "Gk = " << local_search_cut_size_k << " <= " << heur_sol_k.first << " (something weird if not)." << endl;
 
 
             // Aggregating usages.
@@ -161,7 +172,7 @@ public:
                                 G.GetRealNumNodes(), G.GetRealNumEdges(),
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                 -k_change,
-                                heur_sol.first, heur_sol_k.first - k_change,
+                                mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff,
                                 local_search_cut_size, local_search_cut_size_k, local_search_sddiff,
                                 EE, EE_k, kernelization_time);
             
@@ -169,22 +180,25 @@ public:
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                 -k_change,
-                                (double)heur_sol.first, (double)heur_sol_k.first - k_change,
+                                (double)mqlib_cut_size, (double)mqlib_cut_size_k, (double)mqlib_sddiff,
                                 local_search_cut_size, local_search_cut_size_k, local_search_sddiff,
                                 EE, EE_k, kernelization_time});
         }
+
+        custom_assert(accum.size() > 0);
     
         vector<double> avg;
         avg.push_back(mixingid);
         avg.push_back(-1);
-        for (int i = 2; i < 18; ++i) {
+        const int vars_num = accum.at(0).size();
+        for (int i = 2; i < vars_num; ++i) {
             double sum = 0;
             for (int k = 0; k < (int)accum.size(); ++k)
-                sum += accum[k][i];
+                sum += accum.at(k).at(i);
             avg.push_back(sum / accum.size());
         }
 
-        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], "-avg");
+        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15], "-avg");
     }
 
     void Evaluate(InputParser& input, const string data_filepath) {
@@ -207,10 +221,12 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2/*, RuleIds::Rule9, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS3,
+          RuleIds::RuleS2, RuleIds::Rule8/*,  RuleIds::Rule10AST , RuleIds::Rule10,, RuleIds::RuleS3,
           RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
-          RuleIds::Rule8, RuleIds::Rule9X*/
+          , RuleIds::Rule9X               EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9*/
     };
+    // RuleS2 covers Rule9 wholly.
+    // Rule8 can imply a graph where RuleS2 may be further applicable after exhaustion.
 
 private:
     unordered_map<RuleIds, int> tot_case_coverage_cnt;
