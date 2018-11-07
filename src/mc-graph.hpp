@@ -260,7 +260,7 @@ public:
         CURRENT_TIMESTAMPS.S2 = 0;
         auto current_v = GetAllExistingNodes();
         for (auto node : current_v)
-            UpdateVertexTimestamp(node);
+           UpdateVertexTimestamp(node);
     }
 
 
@@ -274,8 +274,9 @@ private:
     inline long long MakeEdgeKey(int a, int b) const { return a * kMaxNumNodes + b; }
     inline long long MakeEdgeKey(const pair<int,int> &e) const { return MakeEdgeKey(e.first, e.second); }
 
-    void UpdateVertexTimestamp(int node) {
-        custom_assert(current_timestamp[node] != -1);
+    void UpdateVertexTimestamp(int node, bool force = false) {
+        if (!force)
+            custom_assert(current_timestamp[node] != -1);
 
         current_timestamp[node] = current_kernelization_time;
         vertex_timetable_pq.push(make_pair(current_kernelization_time, node));

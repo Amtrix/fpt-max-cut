@@ -39,7 +39,7 @@ macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
     add_executable(${TARGETNAME} ${ENTRYCPP})
     target_sources(${TARGETNAME} PRIVATE ${ALL_CPP_FILES})
     target_link_libraries(${TARGETNAME} PRIVATE ${TARGET_LIBS})
-    target_compile_definitions(${TARGETNAME} PRIVATE ${DEBUGMODE} LOCALSOLVER_EXISTS=1)
+    target_compile_definitions(${TARGETNAME} PRIVATE ${DEBUGMODE})# LOCALSOLVER_EXISTS=1)
 endmacro(add_binary_exec)
 
 add_binary_exec(benchmark                            NDEBUG  executables/benchmark.cpp)

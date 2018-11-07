@@ -1,3 +1,5 @@
+#define SKIP_FAST_KERNELIZATION_CHECK 1
+
 #include "src/mc-graph.hpp"
 #include "src/one-way-reducers.hpp"
 #include "src/two-way-reducers.hpp"
@@ -47,6 +49,11 @@ int main(int argc, char **argv){
         local_solver_exists = true;
     #endif
 
+    bool skip_fast_kernelization_check = false;
+    #ifdef SKIP_FAST_KERNELIZATION_CHECK
+        skip_fast_kernelization_check = true;
+    #endif
+
     std::cout << "Available number of threads: " << std::thread::hardware_concurrency() << endl;
     std::cout << std::fixed;
     std::cout << std::setprecision(5);
@@ -87,7 +94,11 @@ int main(int argc, char **argv){
             
             cout << green << "   Localsolver lib is provided: ";
             if (local_solver_exists) cout << "yes." << defcol << endl;
-            else cout << "no." << defcol << endl;
+            else cout << red << "no." << defcol << endl;
+
+            cout << green << "   Skip fast kernelization assertion check: ";
+            if (!skip_fast_kernelization_check) cout << "no." << defcol << endl;
+            else cout << red << "WARNING WARNING WARNING ------- this decision skips verification on performance ------- WARNING WARNING WARNING." << defcol << endl;
 
 
             custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);

@@ -53,16 +53,27 @@ public:
                 break; 
         }
 
-#ifdef DEBUG
-        // With the following we make sure that our timestamping did not interferre with applicability.
+        // OPTIMALLY! FOLLOWING SHOULD BE REMOVED IN FUTURE. CONDITION FOR REMOVAL:   (1) SHOULD *NEVER* HAPPEN
         OutputDebugLog("Verifying that no more kernelization is possible when timestamps reset.");
-        for (int i = 0; i < (int)selected_kernelization_order.size(); ++i) {
-            OutputDebugLog("        Trying the " + to_string(i) + "th kernelization rule");
-            kernelized.ResetTimestamps();
-            custom_assert(kernelized.PerformKernelization(selected_kernelization_order.at(i)) == false);
-        }
-        OutputDebugLog("... done.");
+        while (true) {
+            FlushTimes(local_times, false);
+            
+            bool chg_happened = false;
+            kernelized.ResetTimestamps(); // REASON FOR SLOWDOWN.
+            for (int i = 0; i < (int)selected_kernelization_order.size() && !chg_happened; ++i) {
+                OutputDebugLog("        Trying the " + to_string(i) + "th kernelization rule with resetted timestamps!");
+                while (kernelized.PerformKernelization(selected_kernelization_order.at(i))) { // exhaustively!
+                    chg_happened = true;
+#ifndef SKIP_FAST_KERNELIZATION_CHECK
+                    custom_assert(false);   /// (1)
 #endif
+                }
+                LogTime(local_times, t0, static_cast<int>(selected_kernelization_order[i]));
+            }
+
+            if (!chg_happened)
+                break; 
+        }
 
         FlushTimes(local_times, false); // one more flush
 
@@ -118,26 +129,26 @@ public:
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
 
             // Compute solver results.
-            double local_search_cut_size = -1, local_search_cut_size_k = -1, local_search_sddiff = 0;
-            double mqlib_cut_size = -1, mqlib_cut_size_k = -1, mqlib_sddiff = 0;
-            double localsolver_cut_size = -1, localsolver_cut_size_k = -1, localsolver_sddiff = 0;
+            double local_search_cut_size = -1, local_search_cut_size_k = -1, local_search_rate = 0, local_search_rate_sddiff = 0;
+            double mqlib_cut_size = -1, mqlib_cut_size_k = -1, mqlib_rate = 0, mqlib_rate_sddiff = 0;
+            double localsolver_cut_size = -1, localsolver_cut_size_k = -1, localsolver_rate = 0, localsolver_rate_sddiff = 0;
 
             int local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_size_best = -1;
 
             vector<int> tmp_def_param_trash;
-            std::tie(local_search_cut_size, local_search_cut_size_k, local_search_sddiff, local_search_cut_size_best)
+            std::tie(local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff, local_search_cut_size_best)
                 = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &G, tmp_def_param_trash)),
                                              TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &kernelized, tmp_def_param_trash), -k_change),
                                              locsearch_iterations);
 
 
-            std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff, mqlib_cut_size_best)
+            std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
                 = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, kSolverRuntime)),
                                              TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, kSolverRuntime), -k_change),
                                              mqlib_iterations);
 
 #ifdef LOCALSOLVER_EXISTS
-            std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_sddiff, localsolver_cut_size_best)
+            std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
                 = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, kSolverRuntime)),
                                              TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, kSolverRuntime), -k_change),
                                              localsolver_iterations);
@@ -180,18 +191,18 @@ public:
                                 G.GetRealNumNodes(), G.GetRealNumEdges(),
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                 -k_change,
-                                mqlib_cut_size, mqlib_cut_size_k, mqlib_sddiff,
-                                localsolver_cut_size, localsolver_cut_size_k, localsolver_sddiff,
-                                local_search_cut_size, local_search_cut_size_k, local_search_sddiff,
+                                mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff,
+                                localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff,
+                                local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff,
                                 EE, EE_k, MAXCUT_best_size, kernelization_time);
             
             accum.push_back({(double)mixingid, (double)iteration,
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                 -k_change,
-                                (double)mqlib_cut_size, (double)mqlib_cut_size_k, (double)mqlib_sddiff,
-                                localsolver_cut_size, localsolver_cut_size_k, localsolver_sddiff,
-                                local_search_cut_size, local_search_cut_size_k, local_search_sddiff,
+                                (double)mqlib_cut_size, (double)mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff,
+                                localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff,
+                                local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff,
                                 EE, EE_k, (double)MAXCUT_best_size, kernelization_time});
         }
 
@@ -208,7 +219,7 @@ public:
             avg.push_back(sum / accum.size());
         }
 
-        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15], avg[16], avg[17], avg[18], avg[19], "-avg");
+        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15], avg[16], avg[17], avg[18], avg[19], avg[20], avg[21], avg[22], "-avg");
     }
 
     void Evaluate(InputParser& input, const string data_filepath) {
@@ -231,9 +242,9 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2, RuleIds::Rule8/*,  RuleIds::Rule10AST , RuleIds::Rule10,, RuleIds::RuleS3,
+          RuleIds::RuleS2, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::Rule10, RuleIds::RuleS3,
           RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
-          , RuleIds::Rule9X               EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9*/
+          RuleIds::Rule9X  /*             EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9*/
     };
     // RuleS2 covers Rule9 wholly.
     // Rule8 can imply a graph where RuleS2 may be further applicable after exhaustion.

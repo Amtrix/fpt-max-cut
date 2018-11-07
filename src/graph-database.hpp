@@ -58,7 +58,6 @@ public:
         ///////////////////////////////////////////////////////// TO HERE ////////////////////////////////////////////////////////////////////////
 
         int num_edges;
-        int id = -1;
         Type graph_type;
         int sel_seed;
         double rparam;
@@ -142,8 +141,7 @@ public:
         
         // Generating fixed ranges for params with possibility of specifying nax num edges is stupid, but sufficient for most use cases.
         // (seed,it) used together for final seed.
-        KagenGraphCollectionDescriptor(int _id, Type type, int seed, int it) {
-            id = _id;
+        KagenGraphCollectionDescriptor(Type type, int seed, int it) {
             num_edges = -1;
             graph_type = type;
             sel_seed = (seed + it * 13333337) % 100019;
@@ -193,6 +191,14 @@ public:
             out << "i" << iparam << "_r" << std::fixed << rparam;
 
             return kKagenNaming.at(graph_type) + "-" + out.str() + "." + to_string(sel_seed);
+        }
+
+        string SerializeGenParams() const {
+            std::ostringstream out;
+            out.precision(20);
+            out << "i" << iparam << "_r" << std::fixed << rparam;
+
+            return kKagenNaming.at(graph_type) + "-" + out.str() + "." + to_string(num_nodes) + "." + to_string(num_edges_lo) + "-" + to_string(num_edges_hi) + "." + to_string(sel_seed);
         }
     };
     

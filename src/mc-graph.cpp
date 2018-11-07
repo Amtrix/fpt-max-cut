@@ -283,6 +283,7 @@ void MaxCutGraph::ReAddNode(int node) {
     ResetComputedTopology();
 
     removed_node.erase(removed_node.find(node));
+    UpdateVertexTimestamp(node, true);
 }
 
 int MaxCutGraph::CreateANode() {
@@ -303,6 +304,9 @@ int MaxCutGraph::CreateANode() {
 
     if (num_nodes <= sel_node)
         SetNumNodes(sel_node + 1); // expand num_nodes to accommodate.
+    
+    UpdateVertexTimestamp(sel_node, true);
+
     return sel_node;
 }
 

@@ -34,7 +34,7 @@ GraphDatabase::GraphDatabase(InputParser& input) {
         for (int i = 0; i < graphs_per_type * (int)kKagenTypeListing.size(); ++i) {
             KagenGraphCollectionDescriptor::Type type =  kKagenTypeListing[i / graphs_per_type];
             int it = i % graphs_per_type;
-            KagenGraphCollectionDescriptor descr(i / graphs_per_type, type, main_seed, it);
+            KagenGraphCollectionDescriptor descr(type, main_seed, it);
             all_kagen_sets_to_evaluate.push_back(descr);
         }
 
@@ -78,7 +78,10 @@ MaxCutGraph GraphDatabase::GetGraphById(const long id) const {
         auto elist = all_kagen_sets_to_evaluate.at(id).GenerateEdgeList();
         MaxCutGraph ret(elist);
         ret.SetGraphNaming(all_kagen_sets_to_evaluate.at(id).Serialize());
-        ret.SetMixingId(all_kagen_sets_to_evaluate.at(id).id);
+        ret.SetMixingId(static_cast<int>(all_kagen_sets_to_evaluate.at(id).graph_type));
+
+        OutputDebugLog("Returned a graph with following generation params: " + all_kagen_sets_to_evaluate.at(id).SerializeGenParams());
+
         return ret;
     } else {
         return MaxCutGraph(all_sets_to_evaluate[id]);

@@ -76,12 +76,13 @@ print(v_count)
     xrange[2] <- xrange[2] + 1
     print(yrange)
     # Initialize the plotting area
-    plot(xrange, yrange, yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
+    plot(xrange, yrange, yaxt='n', col="black", type="n", main="stuff", ann=FALSE)
+    axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
     title(xlab="Graph density: |E| / |V|"     , line=2.3)
-    title(ylab="Kernelization efficiency:  e(G) = 1 - |E(G')| / |E(G)|", line=2.3)
-    title(main="Comparative kernelization efficiency for KaGen graph instances")
+    title(ylab="", line=2.3)
+    title(main=bquote("Comparative kernelization efficiency of two Algorithms; metric: e(G) = 1 - " ~ frac(group("|",E(G[ker]),"|"),group("|",E(G),"|"))))
 
     # Draws the 4 lines of measurements
     for (dx in types_to_test) {
@@ -112,12 +113,13 @@ data_table$diff_e = data_table$ratio_e - data_table_cmp$ratio_e
     xrange[2] <- xrange[2] + 1
     print(yrange)
     # Initialize the plotting area
-    plot(xrange, yrange, yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
+    plot(xrange, yrange, yaxt='n', col="black", type="n", main="stuff", ann=FALSE)
+    axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
     title(xlab="Graph density: |E| / |V|"     , line=2.3)
-    title(ylab=expression("Difference in efficiency:  e(G"[new]*") - e(G"[old]*")"), line=2.3)
-    title(main="Change in efficiency")
+    title(ylab="", line=2.3)
+    title(main=expression("Difference in efficiency:  e(G"[new]*") - e(G"[old]*")"))
 
     # Draws the 4 lines of measurements
     for (dx in types_to_test) {
