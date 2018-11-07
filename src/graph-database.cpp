@@ -90,10 +90,10 @@ MaxCutGraph GraphDatabase::GetGraphById(const long id) const {
 
 
 const vector<GraphDatabase::KagenGraphCollectionDescriptor::Type> GraphDatabase::kKagenTypeListing {
+    KagenGraphCollectionDescriptor::Type::BA,
     KagenGraphCollectionDescriptor::Type::GNM,
     KagenGraphCollectionDescriptor::Type::RGG2D,
     KagenGraphCollectionDescriptor::Type::RGG3D,
-    KagenGraphCollectionDescriptor::Type::BA,
     KagenGraphCollectionDescriptor::Type::RHG
 };
 

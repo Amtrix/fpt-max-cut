@@ -116,4 +116,6 @@ int main(int argc, char **argv){
     for (int r = 1; r <= 7; ++r)
         cout << "Rule " << r << " was used " << tot_used_rules[r] << " times." << endl;
     cout << " ===================================================================== " << endl << endl;
+
+    MPI_Finalize();
 }

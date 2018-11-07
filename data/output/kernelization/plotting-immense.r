@@ -33,7 +33,7 @@ columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','
 x_start <- 15
 x_start_legend <- 9
 case_type <- "ba_1024"
-nam_vec = c("GNM","RGG2D","RGG3D","BA","RHG")#, "original", "task a", "task b", "task c")
+nam_vec = c("BA","GNM","RGG2D","RGG3D","RHG")#, "original", "task a", "task b", "task c")
                                                             
 # Read the results from the csv files
 data_table      <- read.table(paste(res_folder, file, sep=""), comment.char = "#", col.names = columns)

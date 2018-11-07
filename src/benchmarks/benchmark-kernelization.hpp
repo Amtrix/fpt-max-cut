@@ -40,10 +40,12 @@ public:
             bool chg_happened = false;
             for (int i = 0; i < (int)selected_kernelization_order.size() && !chg_happened; ++i) {
                 OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule");
+                int cnt = 0;
                 while (kernelized.PerformKernelization(selected_kernelization_order.at(i))) { // exhaustively!
                     chg_happened = true;
-                    OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule... again");
+                    cnt++;
                 }
+                OutputDebugLog("         ... tried further " + to_string(cnt) + " times again.");
                 LogTime(local_times, t0, static_cast<int>(selected_kernelization_order[i]));
             }
 
@@ -62,12 +64,15 @@ public:
             kernelized.ResetTimestamps(); // REASON FOR SLOWDOWN.
             for (int i = 0; i < (int)selected_kernelization_order.size() && !chg_happened; ++i) {
                 OutputDebugLog("        Trying the " + to_string(i) + "th kernelization rule with resetted timestamps!");
+                int cnt = 0;
                 while (kernelized.PerformKernelization(selected_kernelization_order.at(i))) { // exhaustively!
                     chg_happened = true;
+                    cnt++;
 #ifndef SKIP_FAST_KERNELIZATION_CHECK
                     custom_assert(false);   /// (1)
 #endif
                 }
+                OutputDebugLog("         ... tried further " + to_string(cnt) + " times again.");
                 LogTime(local_times, t0, static_cast<int>(selected_kernelization_order[i]));
             }
 
@@ -242,9 +247,8 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::Rule10, RuleIds::RuleS3,
-          RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
-          RuleIds::Rule9X  /*             EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9*/
+          RuleIds::RuleS2, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::Rule10, RuleIds::RuleS3, RuleIds::RuleS5, RuleIds::Rule9X
+            /*             EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9     RuleIds::RuleS4     RuleIds::RuleS6*/
     };
     // RuleS2 covers Rule9 wholly.
     // Rule8 can imply a graph where RuleS2 may be further applicable after exhaustion.
