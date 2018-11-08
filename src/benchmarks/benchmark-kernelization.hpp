@@ -15,8 +15,14 @@ using namespace std;
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
     const static int kSolverRuntime = 1;
+    const static bool kMakeWeightedAtEnd = false;
+
+
+
     Benchmark_Kernelization() {
     }
+
+
 
     void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}) {
         // First transform graph into unweighted. /////////////
@@ -83,14 +89,22 @@ public:
         FlushTimes(local_times, false); // one more flush
 
         // Also kernelization here(!):
-        OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
-        kernelized.MakeWeighted();
-        OutputDebugLog("Made weighted");
+        if (kMakeWeightedAtEnd) {
+            OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
+            kernelized.MakeWeighted();
+            OutputDebugLog("Made weighted");
+        } else {
+            OutputDebugLog("To weighted conversation is skipped.");
+        }
         LogTime(local_times, t0);
         FlushTimes(local_times, false);
         OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
         ////////////////////////////////////////
     }
+
+
+
+
 
     void Evaluate(InputParser &input, const MaxCutGraph &main_graph) {
         int mixingid = GetMixingId(main_graph);
@@ -117,6 +131,12 @@ public:
             cout << "Note: localsolver solver iterations: " << localsolver_iterations << endl;
         }
 
+        int total_allocated_time_ms = 1000;
+        if (input.cmdOptionExists("-total-allocated-time")) {
+            total_allocated_time_ms = stoi(input.getCmdOption("-total-allocated-time"));
+            cout << "Note: total allocated time: " << total_allocated_time_ms << endl;
+        }
+
         vector<vector<double>> accum;
         for (int iteration = 1; iteration <= num_iterations; ++iteration) {
             MaxCutGraph G = main_graph;
@@ -137,7 +157,6 @@ public:
             double local_search_cut_size = -1, local_search_cut_size_k = -1, local_search_rate = 0, local_search_rate_sddiff = 0;
             double mqlib_cut_size = -1, mqlib_cut_size_k = -1, mqlib_rate = 0, mqlib_rate_sddiff = 0;
             double localsolver_cut_size = -1, localsolver_cut_size_k = -1, localsolver_rate = 0, localsolver_rate_sddiff = 0;
-
             int local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_size_best = -1;
 
             vector<int> tmp_def_param_trash;
@@ -247,8 +266,8 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::Rule10, RuleIds::RuleS3, RuleIds::RuleS5, RuleIds::Rule9X
-            /*             EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9     RuleIds::RuleS4     RuleIds::RuleS6*/
+          RuleIds::RuleS2, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::Rule10, RuleIds::RuleS3, RuleIds::RuleS5, RuleIds::Rule9X,             RuleIds::Rule9,     RuleIds::RuleS4,     RuleIds::RuleS6/*
+                         EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9     RuleIds::RuleS4     RuleIds::RuleS6*/
     };
     // RuleS2 covers Rule9 wholly.
     // Rule8 can imply a graph where RuleS2 may be further applicable after exhaustion.
