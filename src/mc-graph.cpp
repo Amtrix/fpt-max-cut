@@ -1564,7 +1564,7 @@ bool MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
 // 
 vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
     auto cmp = [&](int a, int b) {
-        return Degree(a) < Degree(b);
+        return Degree(a) > Degree(b);
     };
 
     //vector<bool> visited(num_nodes, false);
@@ -1572,7 +1572,7 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
 
     vector<int> current_v;
     if (consider_dirty_only) {
-        current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.S2, false); //GetAllExistingNodes();
+        current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.S2, false); 
         if (!break_on_first)
             CURRENT_TIMESTAMPS.S2 = current_kernelization_time;
     } else {
@@ -1580,6 +1580,18 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
     }
 
     sort(current_v.begin(), current_v.end(), cmp);
+
+    for (auto root : current_v) { // with this, we exclude all external vertices in cliques.
+        const auto& adj = GetAdjacency(root);
+        int min_deg = adj.size();
+        for (auto w : adj) {
+            min_deg = min(min_deg, Degree(w));
+        }
+        
+        if (min_deg != (int)adj.size()) {
+            visited[root] = true;
+        }
+    }
 
     //std::mutex critical;
    // vector<thread> threads;
@@ -1878,6 +1890,10 @@ void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
 }
 
 
+/**
+ * root_A, root_B are two internal vertices of a clique? remove the edge between them.
+ * 
+ * */
 vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<pair<int,int>> ret;
 
@@ -1889,6 +1905,7 @@ vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first,
 
         for (auto root_B : adj_root_A) { // root_A and root_B are connected.
             if (KeyExists(root_B, preset_is_external)) continue;
+
             auto adj_root_B = GetAdjacency(root_B);
             sort(adj_root_B.begin(), adj_root_B.end());
             auto NG = SetSubstract(adj_root_A, {root_B});
@@ -1905,11 +1922,11 @@ vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first,
     return ret;
 }
 
-void MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external) {
+bool MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external) {
     (void) preset_is_external;
 
     RemoveEdgesBetween(candidate.first, candidate.second);
-    rules_usage_count[RuleIds::RuleS6]++;
+    return true;
 }
 
 bool MaxCutGraph::CandidateSatisfiesSpecialRule1(const tuple<int,int,int,int> &candidate) const {
@@ -2159,7 +2176,12 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
             return false;
         }
         case RuleIds::RuleS6: {
-            // maybe i realized this doesnt make sense? verify and delete if so with implication in commit comment.
+            // maybe i realized this doesnt make sense? verify and delete if so with implication in commit comment.???????????????
+            auto candidates = GetAllS6Candidates(true, preset_is_external);
+            if (!candidates.empty())
+                rules_usage_count[rule_id] += ApplyS6Candidate(candidates[0]);
+
+            return !candidates.empty();
         }
         
         

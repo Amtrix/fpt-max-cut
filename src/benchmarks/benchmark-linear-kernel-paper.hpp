@@ -62,9 +62,11 @@ public:
                 OutputDebugLog("-----------");
                 tot_used_rules[rule_taken]++;
                 curr_tot_used_rules[rule_taken]++;
-                FlushTimes(times_within_call, false);
+
+                for (auto time_entry : times_within_call)
+                    LogTimeEx(time_entry.first, time_entry.second);
+                times_within_call.clear();
             }
-            FlushTimes(times_within_call, false);
 
             auto t1 = std::chrono::high_resolution_clock::now();
             double oneway_time = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
@@ -104,9 +106,11 @@ public:
                 OutputDebugLog("-----------");
                 tot_used_rules[rule_taken]++;
                 curr_tot_used_rules[rule_taken]++;
-                FlushTimes(times_within_call, false);
+
+                for (auto time_entry : times_within_call)
+                    LogTimeEx(time_entry.first, time_entry.second);
+                times_within_call.clear();
             }
-            FlushTimes(times_within_call, false);
             auto tk1 = std::chrono::high_resolution_clock::now();
             double twoway_time = std::chrono::duration_cast<std::chrono::microseconds> (tk1 - tk0).count()/1000.;
             ///////////////////////////

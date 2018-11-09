@@ -8,25 +8,19 @@ public:
         tot_used_rules.resize(20);
     }
 
-    inline void LogTime(vector<pair<double,int>> &times, auto &t0, int id = -1) {
+    inline void LogTimeEx(auto &tdiff, int id = -1) {
+        times_all[id] += tdiff;
+    }
+
+    inline void LogTime(std::chrono::high_resolution_clock::time_point &t0, int id = -1) {
         auto t1 = std::chrono::high_resolution_clock::now();
-        times.push_back(make_pair(std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000., id));
+        double tdiff = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
+        times_all[id] += tdiff;
         t0 = t1;
     }
 
-    inline void FlushTimes(vector<pair<double,int>>& times, /*vector<double>& atimes,*/ const bool print = true) {
-        if (print) {
-            cout << "Times from previous run: ";
-            double cumm = 0;
-            for (unsigned int i = 0; i < times.size(); ++i) {
-                cout << times[i].first << " ";
-                cumm += times[i].first;
-            }
-            cout << " = " << cumm << endl;
-        }
-        for (auto elem : times)
-            times_all[elem.second] += elem.first;
-        times.clear();
+    inline std::chrono::high_resolution_clock::time_point GetCurrentTime() {
+        return std::chrono::high_resolution_clock::now();;
     }
 
     // same for same prefix in prefix.x

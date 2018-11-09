@@ -189,7 +189,7 @@ public:
     void ApplyS5Candidate(const tuple<int,int,int,int>& candidate);
 
     vector<pair<int,int>> GetAllS6Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external = {});
+    bool ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external = {});
 
 
     /**

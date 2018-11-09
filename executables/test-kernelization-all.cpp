@@ -174,6 +174,16 @@ std::function<void()> suite[] = {
         // 5,6 are internal, but clique even!
         res_s3 = G.GetS3Candidates(true, is_external);
         VERIFY(res_s3.size(), 0);
+    },
+    []{
+        MaxCutGraph G(6, 3 * 5);
+
+        for (int i = 0; i <= 5; ++i)
+            for (int j = i + 1; j <= 5; ++j)
+                G.AddEdge(i, j);
+        
+        auto kernelized = G;
+        VERIFY(kernelized.PerformKernelization(RuleIds::RuleS6, {{2,true},{3,true},{4,true},{5,true}}), true);
     }
 };
 

@@ -22,73 +22,63 @@ public:
     Benchmark_Kernelization() {
     }
 
+    bool KernelizeExec(MaxCutGraph &kernelized, const vector<RuleIds>& provided_kernelization_order, const bool reset_timestamps_each_time = false) {
+        auto t0 = GetCurrentTime();
+        OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " --- start!");
 
+        bool tot_chg_happened = false;
+        while (true) {
+
+            if (reset_timestamps_each_time) {
+                kernelized.ResetTimestamps(); // HEAVY SLOWDOWN!
+            }
+            
+            bool chg_happened = false;
+            for (int i = 0; i < (int)provided_kernelization_order.size() && !chg_happened; ++i) {
+                OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule. Timestamps: " + to_string(!reset_timestamps_each_time));
+                int cnt = 0;
+                while (kernelized.PerformKernelization(provided_kernelization_order.at(i))) { // exhaustively!
+                    chg_happened = true;
+                    cnt++;
+                }
+                OutputDebugLog("         ... tried further " + to_string(cnt) + " times again.");
+                LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
+            }
+
+            OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()));
+
+            if (!chg_happened) break; 
+            else tot_chg_happened = true;
+        }
+
+        return tot_chg_happened;
+    }
 
     void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}) {
         // First transform graph into unweighted. /////////////
-        auto t0 = std::chrono::high_resolution_clock::now();
+        auto t0 = GetCurrentTime();//std::chrono::high_resolution_clock::now();
         kernelized.MakeUnweighted();
         OutputDebugLog("Made unweighted");
-
-        vector<pair<double,int>> local_times;
-        LogTime(local_times, t0);
+        LogTime(t0);
         ////////////////////////////////////////
 
         // Reductions ////////////////////////////////////////
         auto selected_kernelization_order = kernelization_order;
         if (provide_order) selected_kernelization_order = provided_kernelization_order;
 
-        OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " --- start!");
+        
+        KernelizeExec(kernelized, selected_kernelization_order, false);
 
-        while (true) {
-            FlushTimes(local_times, false);
-            
-            bool chg_happened = false;
-            for (int i = 0; i < (int)selected_kernelization_order.size() && !chg_happened; ++i) {
-                OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule");
-                int cnt = 0;
-                while (kernelized.PerformKernelization(selected_kernelization_order.at(i))) { // exhaustively!
-                    chg_happened = true;
-                    cnt++;
-                }
-                OutputDebugLog("         ... tried further " + to_string(cnt) + " times again.");
-                LogTime(local_times, t0, static_cast<int>(selected_kernelization_order[i]));
-            }
-
-            OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()));
-
-            if (!chg_happened)
-                break; 
-        }
-
-        // OPTIMALLY! FOLLOWING SHOULD BE REMOVED IN FUTURE. CONDITION FOR REMOVAL:   (1) SHOULD *NEVER* HAPPEN
-        OutputDebugLog("Verifying that no more kernelization is possible when timestamps reset.");
-        while (true) {
-            FlushTimes(local_times, false);
-            
-            bool chg_happened = false;
-            kernelized.ResetTimestamps(); // REASON FOR SLOWDOWN.
-            for (int i = 0; i < (int)selected_kernelization_order.size() && !chg_happened; ++i) {
-                OutputDebugLog("        Trying the " + to_string(i) + "th kernelization rule with resetted timestamps!");
-                int cnt = 0;
-                while (kernelized.PerformKernelization(selected_kernelization_order.at(i))) { // exhaustively!
-                    chg_happened = true;
-                    cnt++;
 #ifndef SKIP_FAST_KERNELIZATION_CHECK
-                    custom_assert(false);   /// (1)
+        custom_assert(KernelizeExec(kernelized, selected_kernelization_order, true) == false);
+#else
+        KernelizeExec(kernelized, selected_kernelization_order, true);
 #endif
-                }
-                OutputDebugLog("         ... tried further " + to_string(cnt) + " times again.");
-                LogTime(local_times, t0, static_cast<int>(selected_kernelization_order[i]));
-            }
 
-            if (!chg_happened)
-                break; 
-        }
-
-        FlushTimes(local_times, false); // one more flush
+        KernelizeExec(kernelized, finishing_rules_order, true);
 
         // Also kernelization here(!):
+        t0 = GetCurrentTime();
         if (kMakeWeightedAtEnd) {
             OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
             kernelized.MakeWeighted();
@@ -96,8 +86,7 @@ public:
         } else {
             OutputDebugLog("To weighted conversation is skipped.");
         }
-        LogTime(local_times, t0);
-        FlushTimes(local_times, false);
+        LogTime(t0);
         OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
         ////////////////////////////////////////
     }
@@ -266,11 +255,22 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::Rule10, RuleIds::RuleS3, RuleIds::RuleS5, RuleIds::Rule9X,             RuleIds::Rule9,     RuleIds::RuleS4,     RuleIds::RuleS6/*
-                         EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9     RuleIds::RuleS4     RuleIds::RuleS6*/
+          RuleIds::RuleS2/*, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::Rule10, RuleIds::RuleS3, RuleIds::RuleS5, RuleIds::Rule9X   /*
+                         EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9       RuleIds::RuleS6
+                         
+                         VERY LITTLE USAGE: RuleIds::RuleS4
+                         
+                         */
     };
+
+    const vector<RuleIds> finishing_rules_order = {
+     //   RuleIds::RuleS6
+    };
+
+    // IMPORTANT INFORMATION:
     // RuleS2 covers Rule9 wholly.
     // Rule8 can imply a graph where RuleS2 may be further applicable after exhaustion.
+    // RuleS6 and RuleS3 are two opposites. They should not be mixed => infinite loop!!
 
 private:
     unordered_map<RuleIds, int> tot_case_coverage_cnt;
