@@ -12,7 +12,7 @@ const bool kHandleAnyProperty = false;
 const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
 const bool kBreakWhenSmaller = false;
-const bool kKernelizeAndVisit = true;
+const bool kKernelizeAndVisit = false;
 const bool kRemoveIsomorphisms = true;
 
 const int kSampleMode = -1; // -1 for normal mode, -2 for specific sampling, -3 for bfs with <=2-removal(take first entry from specific_sampling_set as start)

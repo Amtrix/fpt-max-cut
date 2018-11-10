@@ -13,7 +13,7 @@ using namespace std;
 
 std::function<void()> suite[] = {
     []{ // Test rules on two triangles sharing a common vertex.
-        MaxCutGraph G(10, 6);
+        MaxCutGraph G(10);
 
         G.AddEdge(1,2);
         G.AddEdge(2,3);
@@ -24,16 +24,16 @@ std::function<void()> suite[] = {
         G.AddEdge(2,5);
         G.AddEdge(5,3);
         
-        auto res_r10 = G.GetAllR10Candidates();
+        auto res_r10 = G.GetR10Candidates();
         VERIFY(res_r10.size(), 4);
 
-        auto res_r9x = G.GetAllR9XCandidates();
+        auto res_r9x = G.GetR9XCandidates();
         VERIFY(res_r9x.size(), 0);
 
-        auto res_r9 = G.GetAllR9Candidates();
+        auto res_r9 = G.GetR9Candidates();
         VERIFY(res_r9.size(), 1);
 
-        auto res_r8 = G.GetAllR8Candidates();
+        auto res_r8 = G.GetR8Candidates();
         VERIFY(res_r8.size(), 2);
         {
             MaxCutGraph Gtmp = G;
@@ -47,7 +47,7 @@ std::function<void()> suite[] = {
         }
     },
     []{ // Test rules on two K4 sharing a common vertex.
-        MaxCutGraph G(10, 12);
+        MaxCutGraph G(10);
 
         G.AddEdge(1,2);
         G.AddEdge(2,3);
@@ -63,16 +63,16 @@ std::function<void()> suite[] = {
         G.AddEdge(4,6);
         G.AddEdge(5,7);
         
-        auto res_r10 = G.GetAllR10Candidates();
+        auto res_r10 = G.GetR10Candidates();
         VERIFY(res_r10.size(), 0);
 
-        auto res_r9x = G.GetAllR9XCandidates();
+        auto res_r9x = G.GetR9XCandidates();
         VERIFY(res_r9x.size(), 2);
 
-        auto res_r9 = G.GetAllR9Candidates();
+        auto res_r9 = G.GetR9Candidates();
         VERIFY(res_r9.size(), 0);
 
-        auto res_r8 = G.GetAllR8Candidates();
+        auto res_r8 = G.GetR8Candidates();
         VERIFY(res_r8.size(), 2);
         {
             MaxCutGraph Gtmp = G;
@@ -86,7 +86,7 @@ std::function<void()> suite[] = {
         }
     },
     []{ // Test chain of 5.   P1-2-3-4-5Q
-        MaxCutGraph G(10, 12);
+        MaxCutGraph G(10);
 
         G.AddEdge(1,2);
         G.AddEdge(2,3);
@@ -99,11 +99,11 @@ std::function<void()> suite[] = {
         G.AddEdge(5,6);
         G.AddEdge(5,8);
         
-        auto res_r10ast = G.GetAllR10ASTCandidates();
+        auto res_r10ast = G.GetR10ASTCandidates();
         VERIFY(res_r10ast.size(), 1);
     },
     []{ // Test almost K5 (missing an edge) => does not imply K4 almost, K3 almost. Degrading one external vertice to outside of component causes all internal vertices to become external!
-        MaxCutGraph G(6, 9);
+        MaxCutGraph G(6);
 
         G.AddEdge(1,2);
         G.AddEdge(1,3);
@@ -137,7 +137,7 @@ std::function<void()> suite[] = {
         VERIFY(res_s3.size(), 0);
     },
     []{ // Test almost K6 (first three internal, then 2 internal) => implies K4 almost, K3 almost.
-        MaxCutGraph G(7, 9);
+        MaxCutGraph G(7);
 
         G.AddEdge(1,2);
         G.AddEdge(1,3);
@@ -176,14 +176,53 @@ std::function<void()> suite[] = {
         VERIFY(res_s3.size(), 0);
     },
     []{
-        MaxCutGraph G(6, 3 * 5);
+        MaxCutGraph G(6);
 
         for (int i = 0; i <= 5; ++i)
             for (int j = i + 1; j <= 5; ++j)
                 G.AddEdge(i, j);
         
         auto kernelized = G;
-        VERIFY(kernelized.PerformKernelization(RuleIds::RuleS6, {{2,true},{3,true},{4,true},{5,true}}), true);
+        VERIFY(kernelized.PerformKernelization(RuleIds::RuleS6, {{2,true},{3,true},{4,true}}), true);
+
+        MaxCutGraph G2(4);
+
+        for (int i = 0; i < 4; ++i)
+            for (int j = i + 1; j < 4; ++j)
+                G2.AddEdge(i, j);
+        
+        auto kernelized2 = G2;
+        VERIFY(kernelized2.PerformKernelization(RuleIds::RuleS6, {{0,true},{1,true}}), false);
+    },
+    []{ // Verify rule 8. K4 to 2 vertices and a single node to the same 2.
+        MaxCutGraph G(20);
+
+        for (int i = 0; i < 4; ++i)
+            for (int j = i + 1; j < 4; ++j)
+                G.AddEdge(i, j);
+
+        G.AddEdge(4, 5);
+        G.AddEdge(4, 6);
+
+        for (int i = 0; i < 4; ++i) {
+            G.AddEdge(i, 5);
+            G.AddEdge(i, 6);
+        }
+
+        auto candidates = G.GetR8Candidates(false);
+        VERIFY(candidates.size(), 1);
+
+        G.AddEdge(4,3);
+        candidates = G.GetR8Candidates(false);
+        VERIFY(candidates.size(), 0);
+
+        for (int i = 0; i < 3; ++i)
+            G.AddEdge(i, 10);
+        G.AddEdge(10, 3);
+        G.AddEdge(10, 5);
+        G.AddEdge(10, 6);
+        candidates = G.GetR8Candidates(false);
+        VERIFY(candidates.size(), 1);
     }
 };
 

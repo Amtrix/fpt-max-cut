@@ -14,7 +14,7 @@ using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
-    const static int kSolverRuntime = 1;
+    const static int kSolverRuntime = 0;
     const static bool kMakeWeightedAtEnd = false;
 
 
@@ -23,9 +23,15 @@ public:
     }
 
     bool KernelizeExec(MaxCutGraph &kernelized, const vector<RuleIds>& provided_kernelization_order, const bool reset_timestamps_each_time = false) {
-        auto t0 = GetCurrentTime();
-        OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " --- start!");
+        OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!");
+#ifdef DEBUG
+            cout << "Given list of kernelizations to execute" << endl;
+            for (auto rule : provided_kernelization_order)
+                cout << static_cast<int>(rule) << " ";
+            cout << endl;
+#endif
 
+        auto t0 = GetCurrentTime();
         bool tot_chg_happened = false;
         while (true) {
 
@@ -69,6 +75,10 @@ public:
         
         KernelizeExec(kernelized, selected_kernelization_order, false);
 
+        auto t_end_fast = std::chrono::high_resolution_clock::now();
+        double time_fast_kernelization = std::chrono::duration_cast<std::chrono::microseconds> (t_end_fast - t0).count()/1000.;
+        OutputDebugLog("INITIAL -- FAST KERNELIZATION DONE! Time: " + to_string(time_fast_kernelization));
+
 #ifndef SKIP_FAST_KERNELIZATION_CHECK
         custom_assert(KernelizeExec(kernelized, selected_kernelization_order, true) == false);
 #else
@@ -82,12 +92,11 @@ public:
         if (kMakeWeightedAtEnd) {
             OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
             kernelized.MakeWeighted();
-            OutputDebugLog("Made weighted");
+            OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
         } else {
             OutputDebugLog("To weighted conversation is skipped.");
         }
         LogTime(t0);
-        OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
         ////////////////////////////////////////
     }
 
@@ -155,17 +164,19 @@ public:
                                              locsearch_iterations);
 
 
-            std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
-                = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, kSolverRuntime)),
-                                             TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, kSolverRuntime), -k_change),
-                                             mqlib_iterations);
+            if (kSolverRuntime > 0) {
+                std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
+                    = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, kSolverRuntime)),
+                                                TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, kSolverRuntime), -k_change),
+                                                mqlib_iterations);
 
 #ifdef LOCALSOLVER_EXISTS
-            std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
-                = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, kSolverRuntime)),
-                                             TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, kSolverRuntime), -k_change),
-                                             localsolver_iterations);
+                std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
+                    = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, kSolverRuntime)),
+                                                TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, kSolverRuntime), -k_change),
+                                                localsolver_iterations);
 #endif
+            }
 
             // Some variables.
             double EE = G.GetEdwardsErdosBound();
@@ -255,22 +266,25 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2/*, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::Rule10, RuleIds::RuleS3, RuleIds::RuleS5, RuleIds::Rule9X   /*
-                         EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9       RuleIds::RuleS6
-                         
-                         VERY LITTLE USAGE: RuleIds::RuleS4
+          RuleIds::RuleS2, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::RuleS3, RuleIds::RuleS5, RuleIds::Rule9X   /*
+
+                    ON REMOVED RULES(!!!!):
+                         EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9 
+                         EXCLUDED (see below reasons):    RuleIds::Rule10
+                         VERY LITTLE USAGE: RuleIds::RuleS4   (argue in thesis though why you left it out (if you do it))
                          
                          */
     };
 
     const vector<RuleIds> finishing_rules_order = {
-     //   RuleIds::RuleS6
+        RuleIds::RuleS6
     };
 
     // IMPORTANT INFORMATION:
     // RuleS2 covers Rule9 wholly.
     // Rule8 can imply a graph where RuleS2 may be further applicable after exhaustion.
     // RuleS6 and RuleS3 are two opposites. They should not be mixed => infinite loop!!
+    // Rule10: The non-bridge case is trivially covered by S2. What about the bridge case? It seems to be bullshit to even consider that as a special case. Why do they differentiate bridge/non-bridge case in the paper? Doesn't seme to make sense.
 
 private:
     unordered_map<RuleIds, int> tot_case_coverage_cnt;

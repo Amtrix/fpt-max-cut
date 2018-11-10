@@ -7,9 +7,11 @@
 using namespace std;
 using namespace std::experimental;
 
-void CustomAssertImpl_(const string file, const int line_num, bool res) {
+void CustomAssertImpl_(const string file, const int line_num, bool res, const string msg) {
     if (!res) {
         cout << file << ":" << line_num << ": failed assertion." << endl;
+        if (msg.size() > 0)
+            cout << "Error message: " << msg << endl;
         exit(0);
     }
 }
@@ -83,6 +85,18 @@ vector<int> SetIntersection(const vector<int>& s1, const vector<int>& s2) {
 
 bool IsASubsetOfB(const vector<int>& A, const vector<int>& B) {
     return SetSubstract(B, A).size() == (B.size() - A.size());
+}
+
+bool SameSets(const vector<int>& A, const vector<int>& B) {
+    if (A.size() != B.size()) return false;
+
+    unordered_map<int,char> cnt;
+    for (auto e : A) cnt[e]++;
+    for (auto e : B) {
+        cnt[e]++;
+        if (cnt[e] != 2) return false;
+    }
+    return true;
 }
 
 vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_smaller) {

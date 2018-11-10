@@ -89,7 +89,7 @@ MaxCutGraph::MaxCutGraph() {
 
 }
 
-MaxCutGraph::MaxCutGraph(int n, int /* not used m */) {
+MaxCutGraph::MaxCutGraph(int n) {
     SetNumNodes(n);
 }
 
@@ -194,13 +194,21 @@ MaxCutGraph::MaxCutGraph(const vector<tuple<int,int,int>> &elist, int n) {
 }
 
 MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist, int n) {
-    vector<tuple<int,int,int>> nelist;
+    int num_nodes_calc = n;
+    
+    for (auto e : elist) {
+        int a = get<0>(e);
+        int b = get<1>(e);
+        num_nodes_calc = max(num_nodes_calc, max(a + 1, b + 1));
+    }
+
+    SetNumNodes(num_nodes_calc);
+
     for (auto e : elist)
-        nelist.push_back(make_tuple(e.first, e.second, 1));
-    MaxCutGraph(nelist, n);
+        AddEdge(get<0>(e), get<1>(e), 1);
 }
 
-MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes(), -1) {
+MaxCutGraph::MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset) : MaxCutGraph(source.GetNumNodes()) {
     removed_node.clear();
 
     for (int i = 0; i < num_nodes; ++i) RemoveNode(i);
@@ -235,6 +243,8 @@ void MaxCutGraph::SetNumNodes(int _num_nodes) {
 
 void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
     auto keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
+    UpdateVertexTimestamp(a);
+    UpdateVertexTimestamp(b);
 
     if(edge_exists_lookup[keyAB]) {
         //OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
@@ -311,6 +321,9 @@ int MaxCutGraph::CreateANode() {
 }
 
 void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
+    UpdateVertexTimestamp(nodex);
+    UpdateVertexTimestamp(nodey);
+
     ResetComputedTopology();
 
     auto it = std::find(g_adj_list[nodex].cbegin(), g_adj_list[nodex].cend(), nodey);
@@ -438,6 +451,9 @@ vector<tuple<int,int,int>> MaxCutGraph::GetAllExistingEdgesWithWeights() const {
 }
 
 bool MaxCutGraph::IsClique(const vector<int>& vertex_set) const {
+    for (unsigned int i = 0; i < vertex_set.size(); ++i)
+        if (Degree(vertex_set[i]) + 1 < (int)vertex_set.size()) return false;
+
     for (unsigned int i = 0; i < vertex_set.size(); ++i)
         for (unsigned int j = i + 1; j < vertex_set.size(); ++j) {
             auto edge_key = MakeEdgeKey(vertex_set[i], vertex_set[j]);
@@ -1244,20 +1260,41 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
 }
 
 // Right now: not O(|V| + |E|) because of sorting. Only because of that. To achieve full linear time, use counting sort.
-vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+// This rule in itself is ORDER INDEPENDENT!!!!
+// BUTTTTT
+// It does affect which vertex's index remains, which might effect the ordering somewhere else!
+vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
     vector<vector<int>> ret;
-    vector<int> current_v = GetAllExistingNodes();
-    vector<bool> visited(num_nodes, false);
+    
+    unordered_map<int, int> visited;
+    vector<int> current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.R8, false); // not all adjacent needed, see (1)
+    if (!break_on_first)
+        CURRENT_TIMESTAMPS.R8 = current_kernelization_time;
+
+
+    
+    const int sz_fix = (int)current_v.size();
+    for (int i = 0; i < sz_fix; ++i) {             // (1) ........... kind of an insignificant speed up
+        int root = current_v[i];
+
+        const auto& adj = GetAdjacency(root);
+        for (auto w : adj) {
+            if ((int)adj.size() == Degree(w))
+                current_v.push_back(w); // it does not matter if we have a vertex multiple times -- visited will take care of that.
+        }
+    }
 
     trie_r8 partitions;
     for (auto root : current_v) {
+        if (visited[root]) continue;
+        visited[root] = 1;
         auto key = SetUnion(GetAdjacency(root), vector<int>{root});
         sort(key.begin(), key.end());
         partitions.Insert(key, root);
     }
 
     for (auto root : current_v) {
-        if (visited[root]) continue;
+        if (visited[root] == 2) continue;
 
         auto key = SetUnion(GetAdjacency(root), vector<int>{root}); // O(Ng(root))
         sort(key.begin(), key.end());
@@ -1267,12 +1304,12 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const bool break_on_first, c
 
         bool ok = true;
         for (auto x : X) { // O(Ng(root)), guarantees only that vertices in X are not visited again, not Ng(root)!! Still, an edge is visited at most twice.
-            visited[x] = true;
+            visited[x] = 2;
             if (KeyExists(x, preset_is_external))
                 ok = false;
         }
 
-        if (ok && X.size() > NG.size() && IsClique(X) && X.size() > 1) {
+        if (ok && X.size() > NG.size() && X.size() > 1 && IsClique(X)) {
             ret.push_back(X);
 
             if (break_on_first)
@@ -1286,25 +1323,31 @@ vector<vector<int>> MaxCutGraph::GetAllR8Candidates(const bool break_on_first, c
 bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     custom_assert(clique.size() >= 2);
 
-    int frem = rand() % clique.size();
-    int srem = (frem + 1) % clique.size();
-    int rem_node1 = clique[frem], rem_node2 = clique[srem];
+    vector<int> NG = SetSubstract(GetAdjacency(clique[0]), clique);
+    int szX = clique.size();
 
-    inflicted_cut_change_to_kernelized -= GetAdjacency(rem_node1).size();
+    bool ret = false;
+    int dx = 0;
+    while (szX > (int)NG.size() && szX > 1) {
+        szX -= 2;
 
-    for (auto node : {rem_node1, rem_node2}) {
-        const auto& adj = GetAdjacency(node);
-        for (auto w : adj)
-            UpdateVertexTimestamp(w);
+        int frem = dx;
+        int srem = dx + 1;
+        dx += 2;
+
+        int rem_node1 = clique[frem], rem_node2 = clique[srem];
+        custom_assert(GetAdjacency(rem_node1).size() == GetAdjacency(rem_node2).size());
+
+        inflicted_cut_change_to_kernelized -= GetAdjacency(rem_node1).size();
+        RemoveNode(rem_node1);
+        RemoveNode(rem_node2);
+        ret = true;
     }
-
-    RemoveNode(rem_node1);
-    RemoveNode(rem_node2);
     
-    return true;
+    return ret;
 }
 
-vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetAllR9Candidates(const bool break_on_first) const {
+vector<pair<int,vector<pair<int,int>>>> MaxCutGraph::GetR9Candidates(const bool break_on_first) const {
     vector<pair<int,vector<pair<int,int>>>> ret;
     vector<int> current_v = GetAllExistingNodes();
     vector<bool> makes_nonspecial(num_nodes + 1, false);
@@ -1369,18 +1412,14 @@ bool MaxCutGraph::ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candid
     AddEdge(triag1.second, triag2.first);
     AddEdge(triag1.second, triag2.second);
 
-    UpdateVertexTimestamp(triag1.first);
-    UpdateVertexTimestamp(triag1.second);
-    UpdateVertexTimestamp(triag2.first);
-    UpdateVertexTimestamp(triag2.second);
-
     inflicted_cut_change_to_kernelized += 2; // increases (4 edges / 2 in EE)
     return true;
 }
 
-vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates(const bool break_on_first) const {
+vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetR9XCandidates(const bool break_on_first) const {
     vector<pair<vector<int>, vector<int>>> ret;
 
+    int clique_mark = 2;
     vector<bool> visited(num_nodes, false);
     vector<int> current_v = GetAllExistingNodes();
     for (auto root : current_v) {
@@ -1390,23 +1429,21 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates(const bo
         clique.push_back(root);
 
         for (auto x : clique)
-            visited[x] = true;
+            visited[x] = clique_mark;
+        clique_mark++;
 
         if (IsClique(clique) == false) continue; // root not in Cint
 
         vector<int> X;
         for (auto x : clique) {
-            auto adj = GetAdjacency(x);
-            auto inter = SetIntersection(clique, adj);
-            if (adj.size() == inter.size()) { // all adjacent vertices of x are in clique.
+            const auto adj = GetAdjacency(x);
+
+            if (adj.size() + 1 == clique.size()) { // all adjacent vertices of x are in clique.
                 X.push_back(x);
             }
         }
 
         if (clique.size() % 2 == 0 && clique.size() / 2 <= X.size()) {
-            for (auto x : X)
-                visited[x] = true;
-
             ret.push_back(make_pair(clique, X));
 
             if (break_on_first)
@@ -1416,17 +1453,19 @@ vector<pair<vector<int>, vector<int>>> MaxCutGraph::GetAllR9XCandidates(const bo
 
     return ret;
 }
-void MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate) {
+bool MaxCutGraph::ApplyR9XCandidate(const pair<vector<int>, vector<int>>& candidate) {
     custom_assert(candidate.second.size() >= 1);
 
     int rem_node = candidate.second[rand() % candidate.second.size()];
     inflicted_cut_change_to_kernelized -= (2*GetAdjacency(rem_node).size() + 2 /* +1 for cut change, +1 for removal of node in EE */) / 4.0; // why is this an integer? GetAdjacency(rem_node).size() is odd, since clique is even and doesnt contain itself.
 
     RemoveNode(rem_node);
-    rules_usage_count[RuleIds::Rule9X]++;
+    return true;
 }
 
-vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+//should not happen if S2 processed before. THESIS STUFF!
+// The case with bridge is very questionable in its use. Why even?
+vector<tuple<bool, int, int, int>> MaxCutGraph::GetR10Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<tuple<bool, int, int, int>> ret;
 
     vector<int> current_v = GetAllExistingNodes();
@@ -1475,7 +1514,7 @@ vector<tuple<bool, int, int, int>> MaxCutGraph::GetAllR10Candidates(const bool b
     
     return ret;
 }
-void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate) {
+bool MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate) {
     bool bridge_case = get<0>(candidate);
     int u = get<1>(candidate);
     int nodex = get<2>(candidate);
@@ -1512,19 +1551,23 @@ void MaxCutGraph::ApplyR10Candidate(const tuple<bool, int, int, int>& candidate)
         RemoveEdgesBetween(nodex, nodey);
     }
 
-    rules_usage_count[RuleIds::Rule10]++; // beware of possibly having return in one of if above!
+    return true;
 }
 
 // O(|V| + |E|)
-vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+vector<tuple<int,int,int,int,int>> MaxCutGraph::GetR10ASTCandidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<tuple<int,int,int,int,int>> ret;
+
+    unordered_map<int,bool> visi;
 
     vector<int> current_v = GetAllExistingNodes();
     for (auto b : current_v) {
+        if (visi[b]) continue;
         auto b_adj = GetAdjacency(b);
         if (b_adj.size() != 2 || KeyExists(b, preset_is_external)) continue;
 
         int a = b_adj[0], c = b_adj[1];
+        if (visi[a] || visi[c]) continue;
         auto a_adj = GetAdjacency(a), c_adj = GetAdjacency(c);
         if (a_adj.size() != 2 || c_adj.size() != 2 || KeyExists(a, preset_is_external) || KeyExists(c, preset_is_external)) continue;
 
@@ -1536,6 +1579,7 @@ vector<tuple<int,int,int,int,int>> MaxCutGraph::GetAllR10ASTCandidates(const boo
         if (ex_L == ex_R) continue; // ------------------------------ THIS COULD! BE SUPPORTED, BUT REQUIRED DOUBLE EDGES. USED TO BE A BUG BECAUSE THIS CONDITION MISSED.
 
         ret.push_back(make_tuple(ex_L, a, b, c, ex_R));
+        visi[ex_L] = visi[a] = visi[b] = visi[c] = visi[ex_R] = true;
 
         if (break_on_first)
             return ret;
@@ -1552,9 +1596,6 @@ bool MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
     AddEdge(ex_L, b);
     AddEdge(b, ex_R);
     inflicted_cut_change_to_kernelized -= 2;
-
-    UpdateVertexTimestamp(ex_L);
-    UpdateVertexTimestamp(ex_R);
 
     return true;
 }
@@ -1581,17 +1622,7 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
 
     sort(current_v.begin(), current_v.end(), cmp);
 
-    for (auto root : current_v) { // with this, we exclude all external vertices in cliques.
-        const auto& adj = GetAdjacency(root);
-        int min_deg = adj.size();
-        for (auto w : adj) {
-            min_deg = min(min_deg, Degree(w));
-        }
-        
-        if (min_deg != (int)adj.size()) {
-            visited[root] = true;
-        }
-    }
+    MarkDefinitelyNotInternal(current_v, visited);
 
     //std::mutex critical;
    // vector<thread> threads;
@@ -1696,7 +1727,7 @@ bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>
         if (adj.size() + 1 == clique.size() && !KeyExists(node, preset_is_external)) { // is internal
             rem_nodes.push_back(node);
         } else {
-            UpdateVertexTimestamp(node);
+            //UpdateVertexTimestamp(node);
         }
     }
 
@@ -1729,34 +1760,94 @@ bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>
     return true;
 }
 
-vector<vector<int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
-    vector<vector<int>> ret;
+vector<pair<int,int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+    vector<pair<int,int>> ret;
 
-    auto current_v = GetAllExistingNodes();
-    for (auto root : current_v) { // an internal vertex
-        const auto adj_root = GetAdjacency(root);
+    unordered_map<int, int> visi;
+
+    /*
+    vector<int> current_v;
+    if (consider_dirty_only) {
+        current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.S2, false); 
+        if (!break_on_first)
+            CURRENT_TIMESTAMPS.S2 = current_kernelization_time;
+    } else {
+        current_v = GetAllExistingNodes();
+    }*/
+
+
+    vector<int> current_v = GetAllExistingNodes();
+    sort(current_v.begin(), current_v.end());
+
+    
+    for (auto root : current_v) {
+        if (visi[root]) continue;
+
+        const auto& adj = GetAdjacency(root);
+        int min_deg = adj.size();
+        for (auto w : adj) {
+            min_deg = min(min_deg, Degree(w));
+        }
+
+        int has_min_deg_adj = 0;
+        for (auto w : adj) {
+            if (Degree(w) == min_deg)
+                has_min_deg_adj++;
+        }
+
+        bool adj_is_clique = IsClique(adj);
+        
+        if (min_deg != (int)adj.size() || has_min_deg_adj > 0 || !adj_is_clique) { // we want the one vertex to be of mindeg and to be the only one.
+            visi[root] = true;
+        }
+
+        for (auto w : adj)
+            if (Degree(w) >= (int)adj.size() || (adj_is_clique && Degree(w) > min_deg))
+                visi[w] = true;
+    }
+
+    //current_v = GetAllExistingNodes();
+    for (auto root : current_v) { // an internal vertex that is not fully connected is searched for.
+        //cout << "R: " << root << " of " << current_v.size() << " = " << visi[root] << endl;
+        if (visi[root])
+            continue;
+        
+
+        const auto& adj_root = GetAdjacency(root);
         if (KeyExists(root, preset_is_external) || adj_root.size() == 0) continue;
 
-        
         vector<int> clique = SetUnion(adj_root, {root});
+        custom_assert(IsClique(clique));
+
+        int optim_neigh = 0;
+        for (int i = 1; i < (int)adj_root.size(); ++i)
+            if (Degree(adj_root[i]) < Degree(adj_root[optim_neigh]))
+                optim_neigh = i;
         
-        auto missingnodes = GetAdjacency(adj_root[0]);
-        for (auto node : adj_root)
-            missingnodes = SetIntersection(missingnodes, GetAdjacency(node));
-        
-        missingnodes = SetSubstract(missingnodes, clique);
-        if (missingnodes.empty()) continue;
-        clique = SetUnion(clique, {missingnodes[0]});
+        int other_root = -1;
+        auto other_root_candidates = SetSubstract(GetAdjacency(adj_root[optim_neigh]), clique);
+        for (auto node : other_root_candidates) {
+            if (SameSets(adj_root, GetAdjacency(node))) { // Guarantees that node is connected to all vertices of adj_root too!
+                other_root = node;
+                break;
+            }
+        }
+
+        if (other_root == -1) continue;
+
+        clique = SetUnion(clique, {other_root});
 
         vector<int> externals;
         unordered_map<int,bool> is_external = preset_is_external;
         for (auto node : clique) {
             const auto adj = GetAdjacency(node);
-            const auto sub = SetSubstract(adj, clique);
-            if (sub.empty() == false || KeyExists(node, preset_is_external)) {
+            if (adj.size() > clique.size() || KeyExists(node, preset_is_external)) {
                 externals.push_back(node);
                 is_external[node] = true;
             }
+
+            if (adj.size() < clique.size() - 1) 
+                custom_assert_with_msg(node == root || node == other_root, to_string(node) + " with " + to_string(adj.size()) + "neighbors is not " + to_string(root) + " or " + to_string(other_root));
         }
 
         if (clique.size() % 2 == 0 && (int)externals.size() == ((int)clique.size()) - 2)
@@ -1779,26 +1870,30 @@ vector<vector<int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, cons
         
 
         if (ok) {
-            ret.push_back(clique);
+            //cout << "Candidate: " << root << " " << other_root << endl;
+            ret.push_back(make_pair(root, other_root));
+
             if (break_on_first)
                 break;
+        
+            for (auto w : clique)
+                visi[w] = 2;
         }
     }
 
     return ret;
 }
 
-void MaxCutGraph::ApplyS3Candidate(const vector<int>& clique, const unordered_map<int,bool>& preset_is_external) {
+bool MaxCutGraph::ApplyS3Candidate(const pair<int,int>& candidate, const unordered_map<int,bool>& preset_is_external) {
     (void) preset_is_external;
-
-    for (int i = 0; i < (int)clique.size(); ++i)
-        for (int j = i + 1; j < (int)clique.size(); ++j)
-            if (AreAdjacent(clique[i], clique[j]) == false)
-                AddEdge(clique[i], clique[j]);
-    rules_usage_count[RuleIds::RuleS3]++;
+    
+    custom_assert(AreAdjacent(candidate.first, candidate.second) == false);
+    AddEdge(candidate.first, candidate.second);
+    
+    return true;
 }
 
-vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetAllS4Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetS4Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<tuple<bool,int,int,int,int>> ret;
     auto current_v = GetAllExistingNodes();
     for (int i = 0; i < (int)current_v.size(); ++i) {
@@ -1831,7 +1926,7 @@ vector<tuple<bool,int,int,int,int>> MaxCutGraph::GetAllS4Candidates(const bool b
     }
     return ret;
 }
-void MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate) {
+bool MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate) {
     bool type = get<0>(candidate);
     int nodeA = get<1>(candidate);
     int nodeB = get<2>(candidate);
@@ -1849,11 +1944,11 @@ void MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate) {
         inflicted_cut_change_to_kernelized -= 2;
     }
 
-    rules_usage_count[RuleIds::RuleS4]++;
+    return true;
 }
 
 // O(|V| + |E|)
-vector<tuple<int,int,int,int>> MaxCutGraph::GetAllS5Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+vector<tuple<int,int,int,int>> MaxCutGraph::GetS5Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<tuple<int,int,int,int>> ret;
 
     vector<int> current_v = GetAllExistingNodes();
@@ -1878,7 +1973,7 @@ vector<tuple<int,int,int,int>> MaxCutGraph::GetAllS5Candidates(const bool break_
     }
     return ret;
 }
-void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
+bool MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
     int ex_L = get<0>(candidate), a = get<1>(candidate), b = get<2>(candidate),
         ex_R = get<3>(candidate);
 
@@ -1886,7 +1981,7 @@ void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
     RemoveNode(b);
     AddEdge(ex_L, ex_R);
     inflicted_cut_change_to_kernelized -= 2;
-    rules_usage_count[RuleIds::RuleS5]++;
+    return true;
 }
 
 
@@ -1894,28 +1989,45 @@ void MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
  * root_A, root_B are two internal vertices of a clique? remove the edge between them.
  * 
  * */
-vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+vector<pair<int,int>> MaxCutGraph::GetS6Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
     vector<pair<int,int>> ret;
 
+    unordered_map<int,bool> visi;
     const auto &current_v = GetAllExistingNodes();
+    MarkDefinitelyNotInternal(current_v, visi);
+    
     for (auto root_A : current_v) { // an internal vertex
+        if (visi[root_A]) continue;
+
         auto adj_root_A = GetAdjacency(root_A);
         if (KeyExists(root_A, preset_is_external) || adj_root_A.size() == 0) continue;
+
+        auto clique = SetUnion(adj_root_A, {root_A});
+        if (!IsClique(clique)) continue;
+
+        for (auto w : clique)
+            visi[w] = true;
+
         sort(adj_root_A.begin(), adj_root_A.end());
 
-        for (auto root_B : adj_root_A) { // root_A and root_B are connected.
-            if (KeyExists(root_B, preset_is_external)) continue;
+        vector<int> internals;
+        int external_cnt = 0;
 
-            auto adj_root_B = GetAdjacency(root_B);
-            sort(adj_root_B.begin(), adj_root_B.end());
-            auto NG = SetSubstract(adj_root_A, {root_B});
-            
-            if (NG == SetSubstract(adj_root_B, {root_A}) && IsClique(NG)) {
-                ret.push_back(make_pair(root_A, root_B));
-
-                if (break_on_first)
-                    return ret;
+        for (auto w : clique) {
+            if (Degree(w) == Degree(root_A) && !KeyExists(w, preset_is_external)) {
+                internals.push_back(w);
+            } else {
+                external_cnt++;
             }
+        }
+
+        if (internals.size() == 2 && clique.size() % 2 == 0) continue;
+
+        for (int i = 0; i < (int)internals.size(); i += 2) {
+            ret.push_back(make_pair(internals[i], internals[i+1]));
+        
+            if (break_on_first)
+                return ret;
         }
     }
 
@@ -1924,6 +2036,8 @@ vector<pair<int,int>> MaxCutGraph::GetAllS6Candidates(const bool break_on_first,
 
 bool MaxCutGraph::ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external) {
     (void) preset_is_external;
+    if (AreAdjacent(candidate.first, candidate.second) == false)
+        return false;
 
     RemoveEdgesBetween(candidate.first, candidate.second);
     return true;
@@ -1967,7 +2081,7 @@ bool MaxCutGraph::CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candi
     return min(adj[0], adj[1]) == min(a,c) && max(adj[0], adj[1]) == max(a,c);
 }
 
-vector<tuple<int,int,int,int>> MaxCutGraph::GetAllSpecialRule1Candidates() const {
+vector<tuple<int,int,int,int>> MaxCutGraph::GetSpecialRule1Candidates() const {
     vector<tuple<int,int,int, int>> ret;
     
     const auto &current_v = GetAllExistingNodes();
@@ -1995,7 +2109,7 @@ vector<tuple<int,int,int,int>> MaxCutGraph::GetAllSpecialRule1Candidates() const
     return ret;
 }
 
-vector<tuple<int,int,int>> MaxCutGraph::GetAllSpecialRule2Candidates() const {
+vector<tuple<int,int,int>> MaxCutGraph::GetSpecialRule2Candidates() const {
     vector<tuple<int,int,int>> ret;
     
     const auto &current_v = GetAllExistingNodes();
@@ -2022,7 +2136,6 @@ bool MaxCutGraph::ApplySpecialRule1(const tuple<int,int,int,int> &candidate) {
     AddEdge(a, d, min(w1, min(w2, w3)));
     inflicted_cut_change_to_kernelized -= w1 + w2 + w3 - min(w1, min(w2, w3));
 
-    rules_usage_count[RuleIds::SpecialRule1]++;
     return true;
 }
 
@@ -2036,12 +2149,11 @@ bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate) {
     AddEdge(a, c, -min(w1, w2));
     inflicted_cut_change_to_kernelized -= w1 + w2;
 
-    rules_usage_count[RuleIds::SpecialRule2]++;
     return true;
 }
 
 
-vector<pair<int,int>> MaxCutGraph::GetAllRevSpecialRule1Candidates() const {
+vector<pair<int,int>> MaxCutGraph::GetRevSpecialRule1Candidates() const {
     vector<pair<int,int>> ret;
 
     auto elist = GetAllExistingEdges();
@@ -2053,7 +2165,7 @@ vector<pair<int,int>> MaxCutGraph::GetAllRevSpecialRule1Candidates() const {
     return ret;
 }
 
-vector<pair<int,int>> MaxCutGraph::GetAllRevSpecialRule2Candidates() const {
+vector<pair<int,int>> MaxCutGraph::GetRevSpecialRule2Candidates() const {
     vector<pair<int,int>> ret;
 
     auto elist = GetAllExistingEdges();
@@ -2082,7 +2194,6 @@ bool MaxCutGraph::ApplyRevSpecialRule1(const pair<int,int> &candidate) {
         inflicted_cut_change_to_kernelized += 2;
     }
 
-    rules_usage_count[RuleIds::RevSpecialRule1]++;
     return true;
 }
 
@@ -2100,12 +2211,14 @@ bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
         inflicted_cut_change_to_kernelized += 2;
     }
 
-    rules_usage_count[RuleIds::RevSpecialRule2]++;
     return true;
 }
 
 bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_map<int,bool> &preset_is_external) {
     rules_check_count[rule_id]++;
+
+
+    int rules_usage_count_earlier = rules_usage_count[rule_id];
 
     switch(rule_id) {
         case RuleIds::RuleS2: {
@@ -2113,131 +2226,127 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
             for (auto candidate : candidates)
                 rules_usage_count[rule_id] += ApplyS2Candidate(candidate, preset_is_external);
 
-            return !candidates.empty();
+            break;
         }
-        case RuleIds::Rule8: { 
-            auto candidates = GetAllR8Candidates();
+        case RuleIds::Rule8: {
+            auto candidates = GetR8Candidates();
             for (auto candidate : candidates)
                 rules_usage_count[rule_id] += ApplyR8Candidate(candidate);
 
-            return !candidates.empty();
+            break;
         }
-        case RuleIds::Rule9: { 
-            auto candidates = GetAllR9Candidates(true);
+        case RuleIds::Rule9: {
+            auto candidates = GetR9Candidates(true);
             if (!candidates.empty())
                 rules_usage_count[rule_id] += ApplyR9Candidate(candidates[0]);
                 
-            return !candidates.empty();
+            break;
         }
-        case RuleIds::Rule9X: { 
-            auto candidates = GetAllR9XCandidates();
+        case RuleIds::Rule9X: {
+            auto candidates = GetR9XCandidates();
             for (auto candidate : candidates)
-                ApplyR9XCandidate(candidate);
+                rules_usage_count[rule_id] += ApplyR9XCandidate(candidate);
 
-            return !candidates.empty();
+            break;
         }
         case RuleIds::Rule10: {
-            auto candidates = GetAllR10Candidates(true);
-            if (!candidates.empty()) {
-                ApplyR10Candidate(candidates[0]);
-                return true;
-            }
-            return false;
+            auto candidates = GetR10Candidates(true);
+            if (!candidates.empty())
+                rules_usage_count[rule_id] += ApplyR10Candidate(candidates[0]);
+            
+            break;
         }
         case RuleIds::Rule10AST: {
-            auto candidates = GetAllR10ASTCandidates(true);
-            if (!candidates.empty())
-                rules_usage_count[rule_id] += ApplyR10ASTCandidate(candidates[0]);
+            auto candidates = GetR10ASTCandidates(false);
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyR10ASTCandidate(candidate);
             
-            return !candidates.empty();
+            break;
         }
         case RuleIds::RuleS3: {
-            auto candidates = GetS3Candidates(true);
-            if (!candidates.empty()) {
-                ApplyS3Candidate(candidates[0]);
-                return true;
-            }
-            return false;
+            auto candidates = GetS3Candidates(false);
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyS3Candidate(candidate);
+
+            break;
         }
         case RuleIds::RuleS4: {
-            auto candidates = GetAllS4Candidates(true);
-            if (!candidates.empty()) {
-                ApplyS4Candidate(candidates[0]);
-                return true;
-            }
-            return false;
+            auto candidates = GetS4Candidates(true);
+            if (!candidates.empty())
+                rules_usage_count[rule_id] += ApplyS4Candidate(candidates[0]);
+            
+            break;
         }
         case RuleIds::RuleS5: {
-            auto candidates = GetAllS5Candidates(true);
-            if (!candidates.empty()) {
-                ApplyS5Candidate(candidates[0]);
-                return true;
-            }
-            return false;
+            auto candidates = GetS5Candidates(true);
+            if (!candidates.empty())
+                rules_usage_count[rule_id] += ApplyS5Candidate(candidates[0]);
+
+            break;
         }
         case RuleIds::RuleS6: {
             // maybe i realized this doesnt make sense? verify and delete if so with implication in commit comment.???????????????
-            auto candidates = GetAllS6Candidates(true, preset_is_external);
-            if (!candidates.empty())
-                rules_usage_count[rule_id] += ApplyS6Candidate(candidates[0]);
+            auto candidates = GetS6Candidates(false, preset_is_external);
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyS6Candidate(candidate);
 
-            return !candidates.empty();
+            break;
         }
         
         
 
-        case RuleIds::SpecialRule1:
-        case RuleIds::SpecialRule2:
-        case RuleIds::RevSpecialRule1:
-        case RuleIds::RevSpecialRule2:
+        case RuleIds::SpecialRule1: {
+            const auto &candidates = GetSpecialRule1Candidates();
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplySpecialRule1(candidate);
+
             break;
+        }
+        case RuleIds::SpecialRule2: {
+            const auto &candidates = GetSpecialRule2Candidates();
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplySpecialRule2(candidate);
+
+            break;
+        }
+        case RuleIds::RevSpecialRule1: {
+            const auto &candidates = GetRevSpecialRule1Candidates();
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyRevSpecialRule1(candidate);
+
+            break;
+        }
+        case RuleIds::RevSpecialRule2: {
+            const auto &candidates = GetRevSpecialRule2Candidates();
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyRevSpecialRule1(candidate);
+
+            break;
+        }
     }
 
-    return false;
+    return rules_usage_count[rule_id] != rules_usage_count_earlier;
 }
 
 void MaxCutGraph::MakeUnweighted() {
-    while (true) {
-        const auto &r1_candidates = GetAllRevSpecialRule1Candidates();
-        for (auto candidate : r1_candidates)
-            ApplyRevSpecialRule1(candidate);
-
-        const auto &r2_candidates = GetAllRevSpecialRule2Candidates();
-        for (auto candidate : r2_candidates)
-            ApplyRevSpecialRule2(candidate);
-
-        if (r1_candidates.empty() && r2_candidates.empty())
-            break;
-    }
+    while (PerformKernelization(RuleIds::RevSpecialRule1) || PerformKernelization(RuleIds::RevSpecialRule2));
 }
 
 void MaxCutGraph::MakeWeighted() {
-
-    while (true) {
-        const auto &r1_candidates = GetAllSpecialRule1Candidates();
-        for (auto candidate : r1_candidates)
-            ApplySpecialRule1(candidate);
-
-        const auto &r2_candidates = GetAllSpecialRule2Candidates();
-        for (auto candidate : r2_candidates)
-            ApplySpecialRule2(candidate);
-
-        if (r1_candidates.empty() && r2_candidates.empty())
-            break;
-    }
+    while (PerformKernelization(RuleIds::SpecialRule1) || PerformKernelization(RuleIds::SpecialRule2));
 }
 
 double MaxCutGraph::ExecuteLinearKernelization() {
 
     while (true) {
         // <- possibly relabel graph here first before using R8.
-        auto res_r8 = GetAllR8Candidates(); // not yet fully linear! See implementation.
+        auto res_r8 = GetR8Candidates(); // not yet fully linear! See implementation.
         if (!res_r8.empty()) {
             ApplyR8Candidate(res_r8[0]);
             continue;
         }
         
-        auto res_r9 = GetAllR9Candidates();
+        auto res_r9 = GetR9Candidates();
         if (!res_r9.empty()) {
             ApplyR9Candidate(res_r9[0]);
             continue;
@@ -2251,52 +2360,59 @@ double MaxCutGraph::ExecuteLinearKernelization() {
 
 void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool> &preset_is_external) {
     while (true) {
-        /*
-        auto res_rs2 = GetS2Candidates(true, preset_is_external);
-        if (!res_rs2.empty()) {
-            ApplyS2Candidate(res_rs2[0], k_change, preset_is_external);
-            continue;
-        }*/
+        {
+            auto candidates = GetS3Candidates(false, preset_is_external);
+            for (auto candidate : candidates)
+                ApplyS3Candidate(candidate, preset_is_external);
+        }
 
         
-        auto res_s3 = GetS3Candidates(true, preset_is_external);
-        if (!res_s3.empty()) {
-            ApplyS3Candidate(res_s3[0], preset_is_external);
+        auto res_rs2 = GetS2Candidates(false, false, preset_is_external);
+        if (!res_rs2.empty()) {
+            ApplyS2Candidate(res_rs2[0], preset_is_external);
             continue;
         }
 
-        auto res_r10ast = GetAllR10ASTCandidates(true, preset_is_external);
-        if (!res_r10ast.empty()) {
-            ApplyR10ASTCandidate(res_r10ast[0]);
-            continue;
-        }
-
-        auto res_r8 = GetAllR8Candidates(true, preset_is_external);
+        auto res_r8 = GetR8Candidates(true, preset_is_external);
         if (!res_r8.empty()) {
             ApplyR8Candidate(res_r8[0]);
             continue;
         }
 
+        {
+            auto candidates = GetS6Candidates(false, preset_is_external);
+            for (auto candidate : candidates)
+                ApplyS6Candidate(candidate, preset_is_external);
+        }
+
         
-        auto res_s4 = GetAllS4Candidates(true, preset_is_external);
+        
+/*
+        auto res_r10ast = GetR10ASTCandidates(true, preset_is_external);
+        if (!res_r10ast.empty()) {
+            ApplyR10ASTCandidate(res_r10ast[0]);
+            continue;
+        }
+        
+        
+
+        
+        
+        auto res_s4 = GetS4Candidates(true, preset_is_external);
         if (!res_s4.empty()) {
             ApplyS4Candidate(res_s4[0]);
             continue;
         }
       
         
-        auto res_s5 = GetAllS5Candidates(true, preset_is_external);
+        auto res_s5 = GetS5Candidates(true, preset_is_external);
         if (!res_s5.empty()) {
             ApplyS5Candidate(res_s5[0]);
             continue;
-        }
+        }*/
         
         
-        auto res_s6 = GetAllS6Candidates(true, preset_is_external);
-        if (!res_s6.empty()) {
-            ApplyS6Candidate(res_s6[0], preset_is_external);
-            continue;
-        }
+        
 
         break;
     }

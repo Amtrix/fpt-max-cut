@@ -25,8 +25,11 @@ using namespace std::experimental;
     #define OutputDebugLogRaw(str) OutputDebugLogX_(str)
     #define OutputDebugVector(name,vec) OutputDebugVector_(__FILE__,__LINE__,name,vec)
     #define custom_assert(val) CustomAssertImpl_(__FILE__,__LINE__,val)
+    #define custom_assert(val) CustomAssertImpl_(__FILE__,__LINE__,val)
+    #define custom_assert_with_msg(val,msg) CustomAssertImpl_(__FILE__,__LINE__,val,msg)
 #else
     #define custom_assert(val) ((void)0)
+    #define custom_assert_with_msg(val,msg) ((void)0)
     #define OutputDebugLogNoNewLine(str) ((void)0)
     #define OutputDebugLog(str) ((void)0)
     #define OutputDebugLogRaw(str) ((void)0)
@@ -34,7 +37,7 @@ using namespace std::experimental;
 #endif
 
 
-void CustomAssertImpl_(const string file, const int line_num, bool res);
+void CustomAssertImpl_(const string file, const int line_num, bool res, const string msg = "");
 
 const int NO_LINE_BREAK = 1;
 
@@ -47,6 +50,7 @@ vector<int> SetSubstract(const vector<int>& source, const vector<int>& target);
 vector<int> SetUnion(const vector<int>& s1, const vector<int>& s2);
 vector<int> SetIntersection(const vector<int>& s1, const vector<int>& s2);
 bool IsASubsetOfB(const vector<int>& A, const vector<int>& B);
+bool SameSets(const vector<int>& A, const vector<int>& B);
 
 vector<pair<int, string>> ZipVec(const vector<int> A, const vector<string> B);
 vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_smaller = false);

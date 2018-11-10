@@ -33,7 +33,7 @@ public:
     
     MaxCutGraph();
 
-    MaxCutGraph(int n, int m);
+    MaxCutGraph(int n);
 
     // File based input is 1-index based. Transformed to 0-based while reading in.
     MaxCutGraph(const string path);
@@ -153,25 +153,25 @@ public:
      *  Two way reduction rules.
      **/
     // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
-    vector<vector<int>> GetAllR8Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<vector<int>> GetR8Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
     bool ApplyR8Candidate(const vector<int> &clique);
 
     // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
     // (x,pair2.first,pair2.second).
-    vector<pair<int,vector<pair<int,int>>>> GetAllR9Candidates(const bool break_on_first = false) const;
+    vector<pair<int,vector<pair<int,int>>>> GetR9Candidates(const bool break_on_first = false) const;
     bool ApplyR9Candidate(const pair<int,vector<pair<int,int>>> &candidates);
 
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     // Warning! X >= C/2, therefore, deletion of some vertices in X is necessary when applying the rule.
-    vector<pair<vector<int>, vector<int>>> GetAllR9XCandidates(const bool break_on_first = false) const;
-    void ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate);
+    vector<pair<vector<int>, vector<int>>> GetR9XCandidates(const bool break_on_first = false) const;
+    bool ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate);
 
     // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 
-    vector<tuple<bool, int, int, int>> GetAllR10Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyR10Candidate(const tuple<bool, int, int, int> &candidate);
+    vector<tuple<bool, int, int, int>> GetR10Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    bool ApplyR10Candidate(const tuple<bool, int, int, int> &candidate);
 
     // Returns a vector of 5-tuples a' b c d d'
-    vector<tuple<int,int,int,int,int>> GetAllR10ASTCandidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<tuple<int,int,int,int,int>> GetR10ASTCandidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     bool ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candidate);
 
     // Returns a vector of cliques with less than ceil(n/2) external vertices.
@@ -179,16 +179,16 @@ public:
     bool ApplyS2Candidate(const int root, const unordered_map<int,bool>& preset_is_external = {});
 
     // Get "almost cliques" (missing one edge) with at least one internal vertex.
-    vector<vector<int>> GetS3Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS3Candidate(const vector<int> &clique, const unordered_map<int,bool>& preset_is_external = {});
+    vector<pair<int,int>> GetS3Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    bool ApplyS3Candidate(const pair<int,int>& candidate, const unordered_map<int,bool>& preset_is_external = {});
 
-    vector<tuple<bool,int,int,int,int>> GetAllS4Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate);
+    vector<tuple<bool,int,int,int,int>> GetS4Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    bool ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate);
     
-    vector<tuple<int,int,int,int>> GetAllS5Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
-    void ApplyS5Candidate(const tuple<int,int,int,int>& candidate);
+    vector<tuple<int,int,int,int>> GetS5Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    bool ApplyS5Candidate(const tuple<int,int,int,int>& candidate);
 
-    vector<pair<int,int>> GetAllS6Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<pair<int,int>> GetS6Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     bool ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external = {});
 
 
@@ -198,16 +198,16 @@ public:
     bool CandidateSatisfiesSpecialRule1(const tuple<int,int,int,int> &candidate) const;
     bool CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candidate) const;
     // 3-paths. Used for handling integer weights > 1.
-    vector<tuple<int,int,int,int>> GetAllSpecialRule1Candidates() const;
+    vector<tuple<int,int,int,int>> GetSpecialRule1Candidates() const;
     // 2-paths. Used for handlging integer weights < 0.
-    vector<tuple<int,int,int>> GetAllSpecialRule2Candidates() const;
+    vector<tuple<int,int,int>> GetSpecialRule2Candidates() const;
     // Applications.
     bool ApplySpecialRule1(const tuple<int,int,int,int> &candidate);
     bool ApplySpecialRule2(const tuple<int,int,int> &candidate);
     // Returns all edges with integer weight > 1.
-    vector<pair<int,int>> GetAllRevSpecialRule1Candidates() const;
+    vector<pair<int,int>> GetRevSpecialRule1Candidates() const;
     // Returns all edges with integer weight < 0.
-    vector<pair<int,int>> GetAllRevSpecialRule2Candidates() const;
+    vector<pair<int,int>> GetRevSpecialRule2Candidates() const;
     //Applications.
     bool ApplyRevSpecialRule1(const pair<int,int> &candidate);
     bool ApplyRevSpecialRule2(const pair<int,int> &candidate);
@@ -254,10 +254,13 @@ public:
 
     struct {
         int S2 = 0;
+        int R8 = 0;
     } CURRENT_TIMESTAMPS;
 
     void ResetTimestamps() {
         CURRENT_TIMESTAMPS.S2 = 0;
+        CURRENT_TIMESTAMPS.R8 = 0;
+
         auto current_v = GetAllExistingNodes();
         for (auto node : current_v)
            UpdateVertexTimestamp(node);
@@ -282,6 +285,21 @@ private:
         vertex_timetable_pq.push(make_pair(current_kernelization_time, node));
 
         current_kernelization_time += 1;
+    }
+
+    template <class mark_type>
+    void MarkDefinitelyNotInternal(const vector<int>& vertices, unordered_map<int, mark_type>& visi) const {
+        for (auto root : vertices) { // with this, we exclude all external vertices in cliques.
+            const auto& adj = GetAdjacency(root);
+            int min_deg = adj.size();
+            for (auto w : adj) {
+                min_deg = min(min_deg, Degree(w));
+            }
+            
+            if (min_deg != (int)adj.size()) {
+                visi[root] = true;
+            }
+        }
     }
 
     vector<int> GetVerticesAfterTimestamp(int timestamp, bool include_neighbhors = false) {

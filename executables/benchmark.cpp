@@ -1,4 +1,4 @@
-//#define SKIP_FAST_KERNELIZATION_CHECK 1
+#define SKIP_FAST_KERNELIZATION_CHECK 1
 
 #include "src/mc-graph.hpp"
 #include "src/one-way-reducers.hpp"
