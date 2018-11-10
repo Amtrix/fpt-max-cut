@@ -40,7 +40,7 @@ public:
             }
             
             bool chg_happened = false;
-            for (int i = 0; i < (int)provided_kernelization_order.size() && !chg_happened; ++i) {
+            for (int i = 0; i < (int)provided_kernelization_order.size() && !chg_happened; ++i) { // some basics tests have shown that performance remains same even if the !chg_happened part is removed.
                 OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule. Timestamps: " + to_string(!reset_timestamps_each_time));
                 int cnt = 0;
                 while (kernelized.PerformKernelization(provided_kernelization_order.at(i))) { // exhaustively!
