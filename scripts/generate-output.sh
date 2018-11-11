@@ -2,7 +2,7 @@
 cd "${0%/*}"
 cd ../build
 
-bin_exe=benchmark-debug
+bin_exe=benchmark
 
 make $bin_exe
 

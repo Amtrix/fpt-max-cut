@@ -14,7 +14,7 @@ using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
-    const static int kSolverRuntime = 0;
+    const static int kSolverRuntime = 60;
     const static bool kMakeWeightedAtEnd = false;
 
 
@@ -77,10 +77,11 @@ public:
 
         auto t_end_fast = std::chrono::high_resolution_clock::now();
         double time_fast_kernelization = std::chrono::duration_cast<std::chrono::microseconds> (t_end_fast - t0).count()/1000.;
+        (void) time_fast_kernelization;
         OutputDebugLog("INITIAL -- FAST KERNELIZATION DONE! Time: " + to_string(time_fast_kernelization));
 
 #ifndef SKIP_FAST_KERNELIZATION_CHECK
-        custom_assert(KernelizeExec(kernelized, selected_kernelization_order, true) == false);
+        custom_assert(KernelizeExec(kernelized, selected_kernelization_order, true) == false); // will only trigger if DEBUG defined, due to custom_assert definition.
 #else
         KernelizeExec(kernelized, selected_kernelization_order, true);
 #endif
@@ -163,19 +164,34 @@ public:
                                              TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &kernelized, tmp_def_param_trash), -k_change),
                                              locsearch_iterations);
 
+            
+            int sub_on_kernelized_runtime = 0;
+            sub_on_kernelized_runtime = round(kernelization_time / 1000.0);
 
-            if (kSolverRuntime > 0) {
+            int total_time = kSolverRuntime;
+            if (input.cmdOptionExists("-total-allowed-time")) {
+                total_time = stoi(input.getCmdOption("-total-allowed-time"));
+            }
+
+            if (total_time > sub_on_kernelized_runtime) {
+                OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time) + " of which kernelization has used: " + to_string(sub_on_kernelized_runtime) + " [seconds].");
+
+                Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, "mqlib");
+                Burer2002Callback mqlib_cb_k(total_time, &input, kernelized.GetGraphNaming(), kernelized.GetMixingId(), kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, "mqlib-kernelized");
+
                 std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
-                    = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, kSolverRuntime)),
-                                                TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, kSolverRuntime), -k_change),
-                                                mqlib_iterations);
+                    = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, total_time, &mqlib_cb)),
+                                                 TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, total_time - sub_on_kernelized_runtime, &mqlib_cb_k), -k_change),
+                                                 mqlib_iterations);
 
 #ifdef LOCALSOLVER_EXISTS
                 std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
-                    = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, kSolverRuntime)),
-                                                TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, kSolverRuntime), -k_change),
-                                                localsolver_iterations);
+                    = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time)),
+                                                 TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime), -k_change),
+                                                 localsolver_iterations);
 #endif
+            } else {
+                cout << "Testing the solvers was skipped due to insufficient time. Provided: " << total_time << "; spent on kernelization: " << sub_on_kernelized_runtime << " [seconds]." << endl;
             }
 
             // Some variables.

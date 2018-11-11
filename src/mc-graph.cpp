@@ -238,13 +238,13 @@ void MaxCutGraph::SetNumNodes(int _num_nodes) {
     current_timestamp.resize(num_nodes, 0);
 
     for (int i = prev_num_nodes; i < num_nodes; ++i)
-        UpdateVertexTimestamp(i);
+        UpdateVertexTimestamp(i, false, TimestampType::Both);
 }
 
 void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
     auto keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
-    UpdateVertexTimestamp(a);
-    UpdateVertexTimestamp(b);
+    UpdateVertexTimestamp(a, false, TimestampType::DegreeIncrease);
+    UpdateVertexTimestamp(b, false, TimestampType::DegreeIncrease);
 
     if(edge_exists_lookup[keyAB]) {
         //OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
@@ -293,7 +293,7 @@ void MaxCutGraph::ReAddNode(int node) {
     ResetComputedTopology();
 
     removed_node.erase(removed_node.find(node));
-    UpdateVertexTimestamp(node, true);
+    UpdateVertexTimestamp(node, true, TimestampType::Both);
 }
 
 int MaxCutGraph::CreateANode() {
@@ -315,14 +315,14 @@ int MaxCutGraph::CreateANode() {
     if (num_nodes <= sel_node)
         SetNumNodes(sel_node + 1); // expand num_nodes to accommodate.
     
-    UpdateVertexTimestamp(sel_node, true);
+    UpdateVertexTimestamp(sel_node, true, TimestampType::Both);
 
     return sel_node;
 }
 
 void MaxCutGraph::RemoveEdgesBetween(int nodex, int nodey) {
-    UpdateVertexTimestamp(nodex);
-    UpdateVertexTimestamp(nodey);
+    UpdateVertexTimestamp(nodex, false, TimestampType::DegreeDecrease);
+    UpdateVertexTimestamp(nodey, false, TimestampType::DegreeDecrease);
 
     ResetComputedTopology();
 
@@ -1613,7 +1613,7 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
 
     vector<int> current_v;
     if (consider_dirty_only) {
-        current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.S2, false); 
+        current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.S2, static_cast<int>(TimestampType::DegreeIncrease)); 
         if (!break_on_first)
             CURRENT_TIMESTAMPS.S2 = current_kernelization_time;
     } else {
@@ -1680,7 +1680,7 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
             // THEREFORE, we do not do this:
             // for (auto node : curr_clique)
             //    UpdateVertexTimestamp(node);
-            UpdateVertexTimestamp(root); // Case where this is needed: two candidates share external vertex.
+            UpdateVertexTimestamp(root, false, TimestampType::DegreeDecrease); // Case where this is needed: two candidates share external vertex.
             continue;
         }
 
@@ -1727,7 +1727,6 @@ bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>
         if (adj.size() + 1 == clique.size() && !KeyExists(node, preset_is_external)) { // is internal
             rem_nodes.push_back(node);
         } else {
-            //UpdateVertexTimestamp(node);
         }
     }
 
@@ -2581,7 +2580,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> preg
 }
 
 // https://github.com/MQLib/MQLib
-pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec_time) const {
+pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec_time, Burer2002Callback* callback) const {
     std::vector<Instance::InstanceTuple> edgeList;
     for (int i = 0; i < num_nodes; ++i) {
         if (MapEqualCheck(removed_node, i, true)) continue;
@@ -2596,7 +2595,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec
     }
 
     MaxCutInstance mi(edgeList, num_nodes + 1);
-    Burer2002 heur(mi, max_exec_time, false, NULL);
+    Burer2002 heur(mi, max_exec_time, false, callback);
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
     return make_pair(mcSol.get_weight(), mcSol.get_assignments());

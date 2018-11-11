@@ -1,11 +1,16 @@
 #pragma once
 
+#include "input-parser.hpp"
+#include "./src/output-filter.hpp"
 #include "utils.hpp"
 #include <vector>
 #include <unordered_map>
 #include <map>
 #include <queue>
 #include <functional>
+
+#include <heuristics/qubo/glover1998a.h>
+#include <heuristics/maxcut/burer2002.h>
 using namespace std;
 
 enum class RuleIds : int {
@@ -21,6 +26,46 @@ extern const map<RuleIds, string> kRuleDescriptions;
 extern const map<RuleIds, string> kRuleNames;
 
 extern const vector<RuleIds> kAllRuleIds;
+
+class Burer2002Callback : public MaxCutCallback {
+public:
+    Burer2002Callback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, string sfxout_) :
+                total_allowed_time(total_allowed_time_),
+                input_parser(input_parser_),
+                graph_name(graph_name_),
+                mixingid(mixingid_),
+                num_nodes(num_nodes_),
+                num_edges(num_edges_),
+                added_preprocess_time(added_preprocess_time_),
+                sfxout(sfxout_)
+        {
+
+        }
+
+    bool Report(const MaxCutSimpleSolution& sol, bool /* newBest */, double runtime) {
+        runtime += added_preprocess_time;
+        OutputLiveMaxcut(*input_parser, graph_name, mixingid, num_nodes, num_edges, runtime, sol.get_weight(), sfxout);
+
+        if (runtime > total_allowed_time)
+            return false;
+
+        return true;
+    }
+
+    bool Report(const MaxCutSimpleSolution& sol, bool newBest, double runtime, int /* iter */) {
+        return Report(sol, newBest, runtime);
+    }
+    
+ private:
+    double total_allowed_time;
+    InputParser *input_parser;
+    string graph_name;
+    int mixingid;
+    int num_nodes;
+    int num_edges;
+    double added_preprocess_time;
+    string sfxout;
+};
 
 // Definition articulation node:
 // Its removal parts the graph in at least two non-empty graphs.
@@ -229,7 +274,7 @@ public:
     // Pregroup[i] in {-1,0,1}. -1 = no predefined group, 0/1 group 0 or 1.
     pair<int, vector<int>> ComputeLocalSearchCut(const vector<int> pregroup = {}) const;
     // max_exec_time in seconds.
-    pair<int, vector<int>> ComputeMaxCutWithMQLib(const double max_exec_time = 0.2) const;
+    pair<int, vector<int>> ComputeMaxCutWithMQLib(const double max_exec_time = 0.2, Burer2002Callback* callback = nullptr) const;
 
 
 
@@ -277,12 +322,18 @@ private:
     inline long long MakeEdgeKey(int a, int b) const { return a * kMaxNumNodes + b; }
     inline long long MakeEdgeKey(const pair<int,int> &e) const { return MakeEdgeKey(e.first, e.second); }
 
-    void UpdateVertexTimestamp(int node, bool force = false) {
+    enum class TimestampType{
+        DegreeDecrease = 1,
+        DegreeIncrease = 2,
+        Both = 3
+    };
+
+    void UpdateVertexTimestamp(int node, bool force = false, TimestampType type = TimestampType::DegreeDecrease) {
         if (!force)
             custom_assert(current_timestamp[node] != -1);
 
         current_timestamp[node] = current_kernelization_time;
-        vertex_timetable_pq.push(make_pair(current_kernelization_time, node));
+        vertex_timetable_pq.push(make_pair(current_kernelization_time, make_pair(node,type)));
 
         current_kernelization_time += 1;
     }
@@ -302,12 +353,12 @@ private:
         }
     }
 
-    vector<int> GetVerticesAfterTimestamp(int timestamp, bool include_neighbhors = false) {
-        vector<pair<int,int>> selected;
+    vector<int> GetVerticesAfterTimestamp(int timestamp, int include_neighbhors = 0) {
+        vector<pair<int,pair<int,TimestampType>>> selected;
         while (!vertex_timetable_pq.empty()) {
             auto u = vertex_timetable_pq.top();
             vertex_timetable_pq.pop();
-            if (current_timestamp[u.second] != u.first) continue; // has been made invalid.
+            if (current_timestamp[u.second.first] != u.first) continue; // has been made invalid.
 
             if (u.first < timestamp) {
                 vertex_timetable_pq.push(u); // return the one we don't want.
@@ -318,26 +369,26 @@ private:
         }
         
         unordered_map<int,bool> visi;
-        if (!include_neighbhors) {
-            for (auto entry : selected) {
-                assert(!visi[entry.second]);
-                visi[entry.second] = true;
-            }
-        } else {
-            for (auto entry : selected) {
-                visi[entry.second] = true;
-                auto adj = GetAdjacency(entry.second);
+        for (auto entry : selected) {
+            //assert(!visi[entry.second.first]);
+            visi[entry.second.first] = true;
+
+            const auto& adj = GetAdjacency(entry.second.first);
+            if (((include_neighbhors & static_cast<int>(TimestampType::DegreeDecrease)) > 0 && (static_cast<int>(entry.second.second) & static_cast<int>(TimestampType::DegreeDecrease)))
+                    || ((include_neighbhors & static_cast<int>(TimestampType::DegreeIncrease)) > 0 && (static_cast<int>(entry.second.second) & static_cast<int>(TimestampType::DegreeIncrease)))
+                ) {
                 for (auto w : adj)
                     visi[w] = true;
             }
         }
+
 
         vector<int> ret;
         for (auto it : visi)
             ret.push_back(it.first);
         
         for (auto entry : selected) {
-            if (current_timestamp[entry.second] == entry.first)
+            if (current_timestamp[entry.second.first] == entry.first)
                 vertex_timetable_pq.push(entry); // put back as it was not changed nor requested to be removed.
         }
 
@@ -391,7 +442,7 @@ private:
     vector<int> computed_maxcut_coloring;
 
     // Following is used to track timestamps on vertices. REASON: We don't want to applicability checks on same components multiple times.
-    priority_queue<pair<int,int>> vertex_timetable_pq;
+    priority_queue<pair<int,pair<int,TimestampType>>> vertex_timetable_pq;
     vector<int> current_timestamp; // will hold the most recent timestamp for each vertex. Used to identify outdated values in pq!
     int current_kernelization_time = 1;
 

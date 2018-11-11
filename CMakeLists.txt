@@ -28,6 +28,7 @@ list(APPEND ALL_CPP_FILES
     "src/mc-graph.cpp"
     "src/utils.cpp"
     "src/graph-database.cpp"
+    "src/output-filter.cpp"
 )
 
 find_library(MQLIB NAMES "MQLib.a" PATHS ./solvers/MQLib/bin/)
