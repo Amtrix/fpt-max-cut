@@ -134,14 +134,13 @@ std::function<int(void)> TakeFirstFromPairFunction(std::function<pair<int,vector
 //  Average(B)
 //  Average(1 - B/A)
 //  Deviation of above.
-tuple<double, double, double, double, int> ComputeAverageAndDeviation(std::function<int(void)> Agen, std::function<int(void)> Bgen, int iter) {
-    vector<double> Ares, Bres;
+tuple<double, double, double, double, int> ComputeAverageAndDeviation(vector<double> Ares, vector<double> Bres) {
+   // vector<double> Ares, Bres;
+    assert(Ares.size() == Bres.size());
     double mxval = 0;
-    while (iter--) {
-        Ares.push_back(Agen());
-        Bres.push_back(Bgen());
-        mxval = max(mxval, Ares.back());
-        mxval = max(mxval, Bres.back());
+    for (int i = 0; i < (int)Ares.size(); ++i) {
+        mxval = max(mxval, Ares[i]);
+        mxval = max(mxval, Bres[i]);
     }
 
     double Aavg = GetAverage(Ares);
@@ -155,6 +154,16 @@ tuple<double, double, double, double, int> ComputeAverageAndDeviation(std::funct
     double SDres = GetStandardDeviation(rate);
 
     return make_tuple(Aavg, Bavg, RATEavg, SDres, mxval);
+}
+
+tuple<double, double, double, double, int> ComputeAverageAndDeviation(std::function<int(void)> Agen, std::function<int(void)> Bgen, int iter) {
+    vector<double> A,B;
+    while (iter--) {
+        A.push_back(Agen());
+        B.push_back(Bgen());
+    }
+
+    return ComputeAverageAndDeviation(A, B);
 }
 
 vector<string> GetAllDatasets(const string path) {

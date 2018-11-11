@@ -59,6 +59,7 @@ vector<int> VectorsAdd(const vector<int> A, const vector<int> B, bool cut_at_sma
 vector<pair<unsigned long long,unsigned long long>> RemoveAnyMultipleEdgesAndSelfLoops(const vector<pair<unsigned long long,unsigned long long>>& elems);
 
 std::function<int(void)> TakeFirstFromPairFunction(std::function<pair<int,vector<int>>(void)> func, int addval = 0);
+tuple<double, double, double, double, int> ComputeAverageAndDeviation(vector<double> Ares, vector<double> Bres);
 tuple<double, double, double, double, int> ComputeAverageAndDeviation(std::function<int(void)> Agen, std::function<int(void)> Bgen, int iter = 1);
 
 // ignores README.md !

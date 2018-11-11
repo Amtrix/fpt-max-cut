@@ -10,6 +10,7 @@
 #include "../graph-database.hpp"
 
 #include <iostream>
+#include <thread>
 using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
@@ -176,19 +177,53 @@ public:
             if (total_time > sub_on_kernelized_runtime) {
                 OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time) + " of which kernelization has used: " + to_string(sub_on_kernelized_runtime) + " [seconds].");
 
-                Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, "mqlib");
-                Burer2002Callback mqlib_cb_k(total_time, &input, kernelized.GetGraphNaming(), kernelized.GetMixingId(), kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, "mqlib-kernelized");
+                {
+                    Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, "mqlib");
+                    Burer2002Callback mqlib_cb_k(total_time, &input, kernelized.GetGraphNaming(), kernelized.GetMixingId(), kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, "mqlib-kernelized");
 
-                std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
-                    = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, total_time, &mqlib_cb)),
-                                                 TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, total_time - sub_on_kernelized_runtime, &mqlib_cb_k), -k_change),
-                                                 mqlib_iterations);
+                    auto F_mqlib   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, total_time, &mqlib_cb));
+                    auto F_mqlib_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, total_time - sub_on_kernelized_runtime, &mqlib_cb_k), -k_change);
+
+                    vector<double> res, res_kernelized;
+                    std::thread thread_F ([&]{
+                        for (int i = 0; i < mqlib_iterations; ++i) {
+                            res.push_back(F_mqlib());
+                        }
+                    });
+                    std::thread thread_F_mqlib_k ([&]{
+                        for (int i = 0; i < mqlib_iterations; ++i) {
+                            res_kernelized.push_back(F_mqlib_k());
+                        }
+                    });
+
+                    thread_F.join(); thread_F_mqlib_k.join();
+
+                    std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
+                        = ComputeAverageAndDeviation(res, res_kernelized);
+                }
 
 #ifdef LOCALSOLVER_EXISTS
-                std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
-                    = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time)),
-                                                 TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime), -k_change),
-                                                 localsolver_iterations);
+                {
+                    auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time));
+                    auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime), -k_change);
+
+                    vector<double> res, res_kernelized;
+                    std::thread thread_F ([&]{
+                        for (int i = 0; i < localsolver_iterations; ++i) {
+                            res.push_back(F_localsolver());
+                        }
+                    });
+                    std::thread thread_F_mqlib_k ([&]{
+                        for (int i = 0; i < localsolver_iterations; ++i) {
+                            res_kernelized.push_back(F_localsolver_k());
+                        }
+                    });
+
+                    thread_F.join(); thread_F_mqlib_k.join();
+
+                    std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
+                        = ComputeAverageAndDeviation(res, res_kernelized);
+                }
 #endif
             } else {
                 cout << "Testing the solvers was skipped due to insufficient time. Provided: " << total_time << "; spent on kernelization: " << sub_on_kernelized_runtime << " [seconds]." << endl;
