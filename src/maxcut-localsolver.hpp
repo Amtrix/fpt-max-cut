@@ -1,4 +1,7 @@
 //********* maxcut.cpp *********
+#pragma once
+#ifdef LOCALSOLVER_EXISTS
+
 
 #include <iostream>
 #include <fstream>
@@ -9,6 +12,50 @@
 
 using namespace localsolver;
 using namespace std;
+
+
+class LocalSolverCallback : public LSCallback {
+public:
+    LocalSolverCallback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, int cutadd_, string sfxout_) :
+                total_allowed_time(total_allowed_time_),
+                input_parser(input_parser_),
+                graph_name(graph_name_),
+                mixingid(mixingid_),
+                num_nodes(num_nodes_),
+                num_edges(num_edges_),
+                added_preprocess_time(added_preprocess_time_),
+                cutadd(cutadd_),
+                sfxout(sfxout_)
+        {
+
+        }
+
+    void callback(LocalSolver& ls, LSCallbackType /*type*/) {
+        LSStatistics stats = ls.getStatistics();
+        LSExpression obj = ls.getModel().getObjective(0);
+
+        double runtime = stats.getRunningTime() + added_preprocess_time;
+        OutputLiveMaxcut(*input_parser, graph_name, mixingid, num_nodes, num_edges, runtime, obj.getValue() + cutadd, sfxout);
+
+        //cout << " TICK: " << runtime << " " << obj.getValue() + cutadd << endl;
+
+        if (runtime > total_allowed_time) {
+            ls.stop();
+        }
+    }
+
+private:
+    double total_allowed_time;
+    InputParser *input_parser;
+    string graph_name;
+    int mixingid;
+    int num_nodes;
+    int num_edges;
+    double added_preprocess_time;
+    int cutadd;
+    string sfxout;
+};
+
 
 class MaxcutLocalsolver {
 public:
@@ -52,7 +99,7 @@ public:
         }
     }
 
-    void solve(int limit){
+    void solve(int limit, LocalSolverCallback* callback = nullptr){
         // Declares the optimization model. 
         LSModel model = localsolver.getModel();
 
@@ -76,6 +123,8 @@ public:
 
         model.maximize(cutWeight);
         model.close();
+
+        if (callback != nullptr) localsolver.addCallback(CT_TimeTicked, callback);
 
         // Parameterizes the solver. 
         LSPhase phase = localsolver.createPhase();
@@ -139,3 +188,5 @@ int main(int argc, char** argv) {
         return 1;
     }
 }*/
+
+#endif

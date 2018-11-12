@@ -9,6 +9,7 @@
 #include <queue>
 #include <functional>
 
+#include "maxcut-localsolver.hpp"
 #include <heuristics/qubo/glover1998a.h>
 #include <heuristics/maxcut/burer2002.h>
 using namespace std;
@@ -68,6 +69,11 @@ public:
     int cutadd;
     string sfxout;
 };
+
+
+#ifdef LOCALSOLVER_EXISTS
+
+#endif
 
 // Definition articulation node:
 // Its removal parts the graph in at least two non-empty graphs.
@@ -316,7 +322,7 @@ public:
 
 
 #ifdef LOCALSOLVER_EXISTS
-    pair<int, vector<int>> ComputeMaxCutWithLocalsolver(const int max_exec_time = 1) const;
+    pair<int, vector<int>> ComputeMaxCutWithLocalsolver(const int max_exec_time = 1, LocalSolverCallback* callback = nullptr) const;
 #endif
 
 private:

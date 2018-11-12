@@ -202,8 +202,11 @@ public:
                 
 
 #ifdef LOCALSOLVER_EXISTS
-                auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time));
-                auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime), -k_change);
+                LocalSolverCallback localsolver_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "localsolver");
+                LocalSolverCallback localsolver_cb_k(total_time, &input, kernelized.GetGraphNaming(), kernelized.GetMixingId(), kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, -k_change, "localsolver-kernelized");
+
+                auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time, &localsolver_cb));
+                auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime, &localsolver_cb_k), -k_change);
 
                 vector<double> res_localsolver, res_localsolver_k;
                // std::thread thread_localsolver ([&]{
