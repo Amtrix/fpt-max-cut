@@ -15,7 +15,7 @@ void Prepare(vector<int>& anodes, vector<vector<int>>& bcomponents) {
 std::function<void()> suite[] = {
     []{ // Checks if graph disconnections are noticed properly.
         // 0 1-(2)-3 4-5 6 7 8 9
-        MaxCutGraph G(10, 10);
+        MaxCutGraph G(10);
 
         G.AddEdge(1,2);
         G.AddEdge(2,3);

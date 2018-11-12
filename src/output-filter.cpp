@@ -232,6 +232,9 @@ void OutputLiveMaxcut(const InputParser& input,
                       const double xtime,
                       const int maxcutsz,
                       const string sfx) {
+    if (!input.cmdOptionExists("-live-maxcut-analysis"))
+        return;
+
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output") + "-maxcut_live-" + sfx;
         ofstream out(output_path, fstream::app);

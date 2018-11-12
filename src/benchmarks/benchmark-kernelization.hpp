@@ -52,7 +52,7 @@ public:
                 LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
             }
 
-            OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()));
+            OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized()));
 
             if (!chg_happened) break; 
             else tot_chg_happened = true;
@@ -61,7 +61,7 @@ public:
         return tot_chg_happened;
     }
 
-    void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}) {
+    void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}, const bool force_timestampless_kernelization = false) {
         // First transform graph into unweighted. /////////////
         auto t0 = GetCurrentTime();//std::chrono::high_resolution_clock::now();
         kernelized.MakeUnweighted();
@@ -81,11 +81,15 @@ public:
         (void) time_fast_kernelization;
         OutputDebugLog("INITIAL -- FAST KERNELIZATION DONE! Time: " + to_string(time_fast_kernelization));
 
+        if (force_timestampless_kernelization) {
+            KernelizeExec(kernelized, selected_kernelization_order, true);
+        } else {
 #ifndef SKIP_FAST_KERNELIZATION_CHECK
-        custom_assert(KernelizeExec(kernelized, selected_kernelization_order, true) == false); // will only trigger if DEBUG defined, due to custom_assert definition.
+            custom_assert(KernelizeExec(kernelized, selected_kernelization_order, true) == false); // will only trigger if DEBUG defined, due to custom_assert definition.
 #else
-        KernelizeExec(kernelized, selected_kernelization_order, true);
+            KernelizeExec(kernelized, selected_kernelization_order, true);
 #endif
+        }
 
         KernelizeExec(kernelized, finishing_rules_order, true);
 
@@ -177,54 +181,52 @@ public:
             if (total_time > sub_on_kernelized_runtime) {
                 OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time) + " of which kernelization has used: " + to_string(sub_on_kernelized_runtime) + " [seconds].");
 
-                {
-                    Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, "mqlib");
-                    Burer2002Callback mqlib_cb_k(total_time, &input, kernelized.GetGraphNaming(), kernelized.GetMixingId(), kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, "mqlib-kernelized");
+                Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "mqlib");
+                Burer2002Callback mqlib_cb_k(total_time, &input, kernelized.GetGraphNaming(), kernelized.GetMixingId(), kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, -k_change, "mqlib-kernelized");
 
-                    auto F_mqlib   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, total_time, &mqlib_cb));
-                    auto F_mqlib_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, total_time - sub_on_kernelized_runtime, &mqlib_cb_k), -k_change);
+                auto F_mqlib   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, total_time, &mqlib_cb));
+                auto F_mqlib_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, total_time - sub_on_kernelized_runtime, &mqlib_cb_k), -k_change);
 
-                    vector<double> res, res_kernelized;
-                    std::thread thread_F ([&]{
-                        for (int i = 0; i < mqlib_iterations; ++i) {
-                            res.push_back(F_mqlib());
-                        }
-                    });
-                    std::thread thread_F_mqlib_k ([&]{
-                        for (int i = 0; i < mqlib_iterations; ++i) {
-                            res_kernelized.push_back(F_mqlib_k());
-                        }
-                    });
+                vector<double> res_mqlib, res_mqlib_k;
+                std::thread thread_mqlib ([&]{
+                    for (int i = 0; i < mqlib_iterations; ++i) {
+                        res_mqlib.push_back(F_mqlib());
+                    }
+                });
+                std::thread thread_mqlib_k ([&]{
+                    for (int i = 0; i < mqlib_iterations; ++i) {
+                        res_mqlib_k.push_back(F_mqlib_k());
+                    }
+                });
 
-                    thread_F.join(); thread_F_mqlib_k.join();
-
-                    std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
-                        = ComputeAverageAndDeviation(res, res_kernelized);
-                }
+                
 
 #ifdef LOCALSOLVER_EXISTS
-                {
-                    auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time));
-                    auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime), -k_change);
+                auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time));
+                auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime), -k_change);
 
-                    vector<double> res, res_kernelized;
-                    std::thread thread_F ([&]{
-                        for (int i = 0; i < localsolver_iterations; ++i) {
-                            res.push_back(F_localsolver());
-                        }
-                    });
-                    std::thread thread_F_mqlib_k ([&]{
-                        for (int i = 0; i < localsolver_iterations; ++i) {
-                            res_kernelized.push_back(F_localsolver_k());
-                        }
-                    });
+                vector<double> res_localsolver, res_localsolver_k;
+               // std::thread thread_localsolver ([&]{
+                    for (int i = 0; i < localsolver_iterations; ++i) {
+                        res_localsolver.push_back(F_localsolver());
+                    }
+               // });
+               // std::thread thread_localsolver_k ([&]{
+                    for (int i = 0; i < localsolver_iterations; ++i) {
+                        res_localsolver_k.push_back(F_localsolver_k());
+                    }
+               // });
 
-                    thread_F.join(); thread_F_mqlib_k.join();
+               // thread_localsolver.join(); thread_localsolver_k.join();
 
-                    std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
-                        = ComputeAverageAndDeviation(res, res_kernelized);
-                }
+                std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
+                    = ComputeAverageAndDeviation(res_localsolver, res_localsolver_k);
 #endif
+
+                thread_mqlib.join(); thread_mqlib_k.join();
+
+                std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
+                    = ComputeAverageAndDeviation(res_mqlib, res_mqlib_k);
             } else {
                 cout << "Testing the solvers was skipped due to insufficient time. Provided: " << total_time << "; spent on kernelization: " << sub_on_kernelized_runtime << " [seconds]." << endl;
             }
@@ -253,8 +255,8 @@ public:
                 tot_case_coverage_cnt[rule] += kernelized.GetRuleUsage(rule);
                 tot_rule_checks_cnt[rule] += kernelized.GetRuleChecks(rule);
 
-                int used_cnt = tot_case_coverage_cnt[rule];
-                int check_cnt = tot_rule_checks_cnt[rule];
+                int used_cnt = kernelized.GetRuleUsage(rule);
+                int check_cnt = kernelized.GetRuleChecks(rule);
                 double used_time = times_all[static_cast<int>(rule)] - last_times_all[static_cast<int>(rule)];
                 cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << check_cnt << setw(20) << used_time << setw(20) << (used_time/check_cnt) << endl;
             }

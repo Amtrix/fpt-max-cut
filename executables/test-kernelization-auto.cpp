@@ -3,6 +3,7 @@
  * */
 
 #define TESTING
+#define DEBUG 0
 
 #include "src/mc-graph.hpp"
 #include "src/checks.hpp"
@@ -53,7 +54,7 @@ std::function<void()> suite[] = {
             // Kernelization here.
             MaxCutGraph kernelized = G;
             Benchmark_Kernelization kernelization_suite;
-            if (kTakePredefinedKernelizationOrder) kernelization_suite.Kernelize(kernelized, true, kernelization_order);
+            if (kTakePredefinedKernelizationOrder) kernelization_suite.Kernelize(kernelized, true, kernelization_order, true);
             else kernelization_suite.Kernelize(kernelized);
 
 
@@ -61,7 +62,7 @@ std::function<void()> suite[] = {
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             auto heur_sol = G.ComputeMaxCutWithMQLib(2);
             auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib(2);
-            VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change + 1);
+            VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change);
 
             auto rule_usages = kernelized.GetUsageVector();
             for (unsigned int i = 0 ; i < rule_usages.size(); ++i)

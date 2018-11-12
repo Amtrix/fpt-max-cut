@@ -29,7 +29,7 @@ extern const vector<RuleIds> kAllRuleIds;
 
 class Burer2002Callback : public MaxCutCallback {
 public:
-    Burer2002Callback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, string sfxout_) :
+    Burer2002Callback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, int cutadd_, string sfxout_) :
                 total_allowed_time(total_allowed_time_),
                 input_parser(input_parser_),
                 graph_name(graph_name_),
@@ -37,6 +37,7 @@ public:
                 num_nodes(num_nodes_),
                 num_edges(num_edges_),
                 added_preprocess_time(added_preprocess_time_),
+                cutadd(cutadd_),
                 sfxout(sfxout_)
         {
 
@@ -44,7 +45,7 @@ public:
 
     bool Report(const MaxCutSimpleSolution& sol, bool /* newBest */, double runtime) {
         runtime += added_preprocess_time;
-        OutputLiveMaxcut(*input_parser, graph_name, mixingid, num_nodes, num_edges, runtime, sol.get_weight(), sfxout);
+        OutputLiveMaxcut(*input_parser, graph_name, mixingid, num_nodes, num_edges, runtime, sol.get_weight() + cutadd, sfxout);
 
         if (runtime > total_allowed_time)
             return false;
@@ -64,6 +65,7 @@ public:
     int num_nodes;
     int num_edges;
     double added_preprocess_time;
+    int cutadd;
     string sfxout;
 };
 

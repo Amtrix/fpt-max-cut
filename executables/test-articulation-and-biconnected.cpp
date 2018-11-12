@@ -15,7 +15,7 @@ void Prepare(vector<int>& anodes, vector<vector<int>>& bcomponents) {
 std::function<void()> suite[] = {
     []{ // Basic check
         // 0 1-(2)-3 4-5 6 7 8 9
-        MaxCutGraph G(10, 10);
+        MaxCutGraph G(10);
 
         G.AddEdge(1,2);
         G.AddEdge(2,3);
@@ -43,7 +43,7 @@ std::function<void()> suite[] = {
     },
     []{ // Two Chain
         // 0 1-(2)-(3)-4 5-(6)-(7)-8 9
-        MaxCutGraph G(10, 10);
+        MaxCutGraph G(10);
 
         G.AddEdge(1,2);
         G.AddEdge(2,3);
@@ -77,7 +77,7 @@ std::function<void()> suite[] = {
         VERIFY(bicomponents.size(), 8);
     },
     []{ // The four triplets (docs/test-articulation-and-biconnected_3.jpg)
-        MaxCutGraph G(9, 12);
+        MaxCutGraph G(9);
 
         G.AddEdge(0,1);
         G.AddEdge(1,2);
