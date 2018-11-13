@@ -24,7 +24,7 @@ public:
     }
 
     bool KernelizeExec(MaxCutGraph &kernelized, const vector<RuleIds>& provided_kernelization_order, const bool reset_timestamps_each_time = false) {
-        OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!");
+        OutputDebugLog("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!");
 #ifdef DEBUG
             cout << "Given list of kernelizations to execute" << endl;
             for (auto rule : provided_kernelization_order)
@@ -52,7 +52,7 @@ public:
                 LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
             }
 
-            OutputDebugLog("|E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized()));
+            OutputDebugLog("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized()));
 
             if (!chg_happened) break; 
             else tot_chg_happened = true;
@@ -178,7 +178,7 @@ public:
                 total_time = stoi(input.getCmdOption("-total-allowed-time"));
             }
 
-            if (total_time > sub_on_kernelized_runtime) {
+            if (total_time > sub_on_kernelized_runtime && fabs(k_change) > 1e-9) {
                 OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time) + " of which kernelization has used: " + to_string(sub_on_kernelized_runtime) + " [seconds].");
 
                 Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "mqlib");
@@ -231,7 +231,8 @@ public:
                 std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
                     = ComputeAverageAndDeviation(res_mqlib, res_mqlib_k);
             } else {
-                cout << "Testing the solvers was skipped due to insufficient time. Provided: " << total_time << "; spent on kernelization: " << sub_on_kernelized_runtime << " [seconds]." << endl;
+                cout << "Testing the solvers was skipped due to insufficient time or no kernelization done. Provided: " << total_time << "; spent on kernelization: " << sub_on_kernelized_runtime << " [seconds]." << endl;
+                cout << "Kernelization: " << -k_change << endl;
             }
 
             // Some variables.

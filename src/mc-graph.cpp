@@ -122,6 +122,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
                 int a = stoi(sparams[0 + offset]) - 1;
                 int b = stoi(sparams[1 + offset]) - 1;
                 int w = 2 + offset < (int)sparams.size() && sparams[2 + offset].size() > 0 ? stoi(sparams[2 + offset]) : 1;
+                if (i%1000000 == 0)printf("%d of %d: %d %d %d\n",i,num_edges,a,b,w);
                 AddEdge(a, b, w, false);
             }
         } else {
@@ -256,8 +257,10 @@ void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
         }
         return;
     } else if (a == b) {
-        throw std::logic_error("Warning: self-loop on " + to_string(a) + " detected."); // .... or maybe allow it?
-        exit(0);
+        //throw std::logic_error("Warning: self-loop on " + to_string(a) + " detected."); // .... or maybe allow it?
+        //exit(0);
+        info_self_loop_edge++;
+        return;
     } else if (weight == 0) {
         return;
     }
@@ -1946,11 +1949,13 @@ bool MaxCutGraph::ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate) {
 }
 
 // O(|V| + |E|)
-vector<tuple<int,int,int,int>> MaxCutGraph::GetS5Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) const {
+vector<tuple<int,int,int,int>> MaxCutGraph::GetS5Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external, bool applynow) {
     vector<tuple<int,int,int,int>> ret;
 
     vector<int> current_v = GetAllExistingNodes();
     for (auto a : current_v) {
+        if (MapEqualCheck(removed_node, a, true)) continue;
+
         const auto a_adj = GetAdjacency(a);
         if (a_adj.size() != 2 || KeyExists(a, preset_is_external)) continue;
 
@@ -1965,6 +1970,9 @@ vector<tuple<int,int,int,int>> MaxCutGraph::GetS5Candidates(const bool break_on_
         if (ex_L == ex_R || AreAdjacent(ex_L, ex_R)) continue; // ------------------------------ THIS COULD! BE SUPPORTED, BUT REQUIRED DOUBLE EDGES. USED TO BE A BUG BECAUSE THIS CONDITION MISSED.
 
         ret.push_back(make_tuple(ex_L, a, b, ex_R));
+        if (applynow) {
+            ApplyS5Candidate(ret.back());
+        }
 
         if (break_on_first)
             return ret;
@@ -1975,6 +1983,13 @@ bool MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
     int ex_L = get<0>(candidate), a = get<1>(candidate), b = get<2>(candidate),
         ex_R = get<3>(candidate);
 
+    for (auto node : {ex_L, a, b, ex_R})
+        if (MapEqualCheck(removed_node, node, true)) return false;
+    
+    if (!AreAdjacent(ex_L, a)) return false;
+    if (!AreAdjacent(a, b))    return false;
+    if (!AreAdjacent(b, ex_R)) return false;
+    
     RemoveNode(a);
     RemoveNode(b);
     AddEdge(ex_L, ex_R);
@@ -2234,7 +2249,7 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
             break;
         }
         case RuleIds::Rule9: {
-            auto candidates = GetR9Candidates(true);
+            auto candidates = GetR9Candidates(true); // marked as useless
             if (!candidates.empty())
                 rules_usage_count[rule_id] += ApplyR9Candidate(candidates[0]);
                 
@@ -2248,7 +2263,7 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
             break;
         }
         case RuleIds::Rule10: {
-            auto candidates = GetR10Candidates(true);
+            auto candidates = GetR10Candidates(true); // marked as useless
             if (!candidates.empty())
                 rules_usage_count[rule_id] += ApplyR10Candidate(candidates[0]);
             
@@ -2269,17 +2284,15 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
             break;
         }
         case RuleIds::RuleS4: {
-            auto candidates = GetS4Candidates(true);
+            auto candidates = GetS4Candidates(true); // marked as useless
             if (!candidates.empty())
                 rules_usage_count[rule_id] += ApplyS4Candidate(candidates[0]);
             
             break;
         }
         case RuleIds::RuleS5: {
-            auto candidates = GetS5Candidates(true);
-            if (!candidates.empty())
-                rules_usage_count[rule_id] += ApplyS5Candidate(candidates[0]);
-
+            auto candidates = GetS5Candidates(false, {}, true);
+            rules_usage_count[rule_id] += candidates.size();
             break;
         }
         case RuleIds::RuleS6: {

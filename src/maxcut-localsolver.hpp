@@ -129,6 +129,8 @@ public:
         // Parameterizes the solver. 
         LSPhase phase = localsolver.createPhase();
         phase.setTimeLimit(limit);
+        localsolver.getParam().setNbThreads(1);
+      //  localsolver.getParam().setTimeBetweenTicks(2);
         localsolver.solve();
     }
 

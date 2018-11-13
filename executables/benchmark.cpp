@@ -91,6 +91,10 @@ int main(int argc, char **argv){
             cout << green << "   graph contains multiple edges: ";
             if (graph.info_mult_edge > 0) cout << red;
             cout << graph.info_mult_edge << defcol << endl;
+
+            cout << green << "   graph contains self-loops: ";
+            if (graph.info_self_loop_edge > 0) cout << red;
+            cout << graph.info_self_loop_edge << defcol << endl;
             
             cout << green << "   Localsolver lib is provided: ";
             if (local_solver_exists) cout << "yes." << defcol << endl;

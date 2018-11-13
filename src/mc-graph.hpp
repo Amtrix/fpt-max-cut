@@ -238,7 +238,7 @@ public:
     vector<tuple<bool,int,int,int,int>> GetS4Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     bool ApplyS4Candidate(tuple<bool,int,int,int,int> &candidate);
     
-    vector<tuple<int,int,int,int>> GetS5Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
+    vector<tuple<int,int,int,int>> GetS5Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}, bool applynow = false);
     bool ApplyS5Candidate(const tuple<int,int,int,int>& candidate);
 
     vector<pair<int,int>> GetS6Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
@@ -304,6 +304,7 @@ public:
     int GetMixingId() const { return mixing_id; }
 
     int info_mult_edge = 0;
+    int info_self_loop_edge = 0;
 
     struct {
         int S2 = 0;
