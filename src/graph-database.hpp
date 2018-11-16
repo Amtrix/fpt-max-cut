@@ -19,6 +19,9 @@ class MaxCutGraph;
 const map<string, vector<string>> disk_suites = {
     {"randomness-large", {
         "../data/random/road_central.mtx"
+    }},
+    {"biqmac-rudy", {
+        "../data/thesis-tests/biqmac/rudy/"
     }}
 };
 

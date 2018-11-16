@@ -41,10 +41,7 @@ GraphDatabase::GraphDatabase(InputParser& input) {
         sort(all_kagen_sets_to_evaluate.begin(), all_kagen_sets_to_evaluate.end(), is_smaller);
         all_sets_to_evaluate.resize(all_kagen_sets_to_evaluate.size());
 
-        return;
-    }
-
-    if (input.cmdOptionExists("-f")) {
+    } else if (input.cmdOptionExists("-f")) {
         const string data_filepath = input.getCmdOption("-f");
         all_sets_to_evaluate.push_back(data_filepath);
     } else if (input.cmdOptionExists("-disk-suite")) {
