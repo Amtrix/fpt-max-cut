@@ -1,3 +1,4 @@
+<h1>Max-Cut kernelization benchmark suite</h1>
 
 General flags:
 
