@@ -59,6 +59,7 @@ Only relevant for benchmarking the linear kernel performance:
     
 
 Helpful stuff:
+
     To get 1-indexed in KaGen: +1 within generator.io.h
     To input a graph through adjacency list format, append ".graph" suffix to file. Our parser automatically treats it then as adjacency list input format.
     To execute a set of graphs {graph0,...,graph1} which are the same set of graphs but with different randomization seed, one can name them graph0.0,...,graphn.n to make the suite aware of it.
