@@ -1747,7 +1747,7 @@ bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>
     }
 #endif
 
-    for (auto node : clique) { // rem_nodes works?
+    for (auto node : clique) { // rem_nodes works? NOT for now. Dont confuse this!
         for (auto node2 : clique) {
             if (edge_exists_lookup[MakeEdgeKey(node, node2)]) {
                 RemoveEdgesBetween(node, node2);

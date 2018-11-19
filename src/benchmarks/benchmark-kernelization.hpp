@@ -308,14 +308,22 @@ public:
         Evaluate(input, G);
     }
 
-    void PostProcess(InputParser& /* input */) override {
-        cout << "TOTAL analysis follows. " << endl; // ordered according kAllRuleIds
+    void PostProcess(InputParser& input) override {
+        int num_iterations = 1;
+        if (input.cmdOptionExists("-iterations")) {
+            num_iterations = stoi(input.getCmdOption("-iterations"));
+        }
+
+        cout << "TOTAL analysis follows. (time in milliseconds, all values divided by number of iterations[" << num_iterations << "])" << endl; // ordered according kAllRuleIds
         cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
         for (auto rule : kAllRuleIds) {
             int used_cnt = tot_case_coverage_cnt[rule];
             int check_cnt = tot_rule_checks_cnt[rule];
             double used_time = times_all[static_cast<int>(rule)];
-            cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << check_cnt << setw(20) << used_time << setw(20) << (used_time/check_cnt) << endl;
+
+            cout << setw(20) << kRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
+                 << setw(20) << (check_cnt / (double) num_iterations) << setw(20) << (used_time / (double) num_iterations)
+                 << setw(20) << (used_time/check_cnt) << endl; // this last value does not need to be divided by numm_iterations!!!
         }
         cout << "Time spent on other stuff: " << times_all[-1] << endl;
         cout << endl;

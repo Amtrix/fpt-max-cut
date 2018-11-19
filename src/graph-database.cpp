@@ -75,7 +75,7 @@ MaxCutGraph GraphDatabase::GetGraphById(const long id) const {
         auto elist = all_kagen_sets_to_evaluate.at(id).GenerateEdgeList();
         MaxCutGraph ret(elist);
         ret.SetGraphNaming(all_kagen_sets_to_evaluate.at(id).Serialize());
-        ret.SetMixingId(static_cast<int>(all_kagen_sets_to_evaluate.at(id).graph_type));
+        ret.SetMixingId(id);////static_cast<int>(all_kagen_sets_to_evaluate.at(id).graph_type));
 
         OutputDebugLog("Returned a graph with following generation params: " + all_kagen_sets_to_evaluate.at(id).SerializeGenParams());
 

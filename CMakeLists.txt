@@ -12,6 +12,7 @@ add_subdirectory(./test-generators/KaGen/)
 message("Include MQLIB includes")
 include_directories(. ./solvers/MQLib/include)
 include_directories(. /opt/localsolver_7_5/include)
+include_directories(. /software/localsolver/localsolver_8_0/include)
 
 set (CMAKE_CXX_COMPILER /usr/bin/g++-7)
 set (CMAKE_CXX_FLAGS "-std=c++1z -msse4.2 -Wall -Wextra -O3 -g -fopenmp")
@@ -35,12 +36,22 @@ find_library(MQLIB NAMES "MQLib.a" PATHS ./solvers/MQLib/bin/)
 
 set(TARGET_LIBS Threads::Threads -lstdc++fs -llocalsolver ${MQLIB} generators)
 
+set(LOCALSOLVER_LICENSE_EXISTS FALSE)
+if (EXISTS /opt/localsolver_7_5/license.dat OR EXISTS /software/localsolver/localsolver_8_0/license.dat)
+    set(LOCALSOLVER_LICENSE_EXISTS TRUE)
+endif()
+
+message("Localsolver license exists flag: ${LOCALSOLVER_LICENSE_EXISTS}")
 
 macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
     add_executable(${TARGETNAME} ${ENTRYCPP})
     target_sources(${TARGETNAME} PRIVATE ${ALL_CPP_FILES})
     target_link_libraries(${TARGETNAME} PRIVATE ${TARGET_LIBS})
-    target_compile_definitions(${TARGETNAME} PRIVATE ${DEBUGMODE} LOCALSOLVER_EXISTS=1)
+    target_compile_definitions(${TARGETNAME} PRIVATE ${DEBUGMODE} ${LOCALSOLVER_FLAG})
+
+    if (${LOCALSOLVER_LICENSE_EXISTS})
+        target_compile_definitions(${TARGETNAME} PRIVATE LOCALSOLVER_EXISTS=1)
+    endif()
 endmacro(add_binary_exec)
 
 add_binary_exec(benchmark                            NDEBUG  executables/benchmark.cpp)

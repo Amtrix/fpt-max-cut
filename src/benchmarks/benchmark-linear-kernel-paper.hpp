@@ -133,12 +133,18 @@ public:
     }
 
     void PostProcess(InputParser& input) override {
-        cout << "Total case coverage: " << endl; // ordered according kAllLinearKernelRuleIds
+        int num_iterations = 1;
+        if (input.cmdOptionExists("-iterations")) {
+            num_iterations = stoi(input.getCmdOption("-iterations"));
+        }
+
+        cout << "Total case coverage: (time in milliseconds, all values divided by number of iterations[" << num_iterations << "])" << endl; // ordered according kAllLinearKernelRuleIds
         cout << setw(20) << "RULE" << setw(20) << "|CNT|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CNT|" << endl;
         for (auto rule : kAllLinearKernelRuleIds) {
             int used_cnt = tot_used_rules[rule];
             double used_time = times_all[rule];
-            cout << setw(20) << kLinearKernelRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << used_time << setw(20) << (used_time/used_cnt) << endl;
+            cout << setw(20) << kLinearKernelRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
+                 << setw(20) << (used_time / (double) num_iterations) << setw(20) << (used_time/used_cnt) << endl; // this last value does not need to be divided by numm_iterations!!!
         }
         cout << "Time spent on other stuff: " << times_all[-1] << endl;
         cout << endl;

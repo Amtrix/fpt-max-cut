@@ -223,6 +223,16 @@ std::function<void()> suite[] = {
         G.AddEdge(10, 6);
         candidates = G.GetR8Candidates(false);
         VERIFY(candidates.size(), 1);
+    },
+    []{
+        MaxCutGraph G(4);
+        G.AddEdge(0, 1);
+        G.AddEdge(0, 2);
+        G.AddEdge(1, 2);
+        G.AddEdge(0, 3);
+        G.AddEdge(1, 3);
+        auto candidates = G.GetS2Candidates(false, false);
+        cout << candidates.size() << " " << candidates[0] << endl;
     }
 };
 
