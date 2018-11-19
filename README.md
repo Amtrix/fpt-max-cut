@@ -20,6 +20,10 @@ General flags:
     -iterations [number]
     Number of times to perform the provided benchmark on each graph.
 
+    -int-weight-lo
+    -int-weight-hi
+    If one is given, both are required. Specifies the edge weights. Sampled at random. If sampler find 0, it resamples as that would influence number of edges.
+    If graph has already given edges weights, this is ignored.
 
 Flags when kagen graph sampling is used for graph instance generations:
 
@@ -30,8 +34,9 @@ Flags when kagen graph sampling is used for graph instance generations:
     -num-edges-hi
     Respectively, the lower and upper bound on the number of edges for the generated graphs. Should be between 0 and 16*(num_nodes)
 
-
 Flags for benchmark current kernelization performance:
+    -support-weighted-result
+    If the resulting graph is allowed to be weighted -- allows further reduciton in terms of number of vertices/edges.
 
     -print-kernalized-graph [output-file-path]
     Outputs kernelized graph. NOT IN USE RIGHT NOW!
@@ -39,8 +44,8 @@ Flags for benchmark current kernelization performance:
     -benchmark-output [output-file-path]
     Where to output the benchmark data.
 
-    -total-allocated-time [time]
-    In seconds! Gives the allocated time the kernelization, solver, etc. is allowed to utilize in TOTAL *per* graph.
+    -total-allowed-solver-time [time]
+    In seconds! Gives the allocated time the kernelization, solver, etc. is allowed to utilize in TOTAL *per* graph. Set -1 if you want to turn of solvers.
 
     -locsearch-iterations   [num]
     -mqlib-iterations       [num]

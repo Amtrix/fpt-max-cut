@@ -120,3 +120,7 @@ double GraphDatabase::KagenGraphCollectionDescriptor::rhg_lo_e = -1;
 double GraphDatabase::KagenGraphCollectionDescriptor::rhg_hi_e = -1;
 int GraphDatabase::KagenGraphCollectionDescriptor::rhg_lo_avg_vertex_deg = -1;
 int GraphDatabase::KagenGraphCollectionDescriptor::rhg_hi_avg_vertex_deg = -1;
+
+bool GraphDatabase::KagenGraphCollectionDescriptor::use_weights = false;
+int GraphDatabase::KagenGraphCollectionDescriptor::edge_weight_lo = 1;
+int GraphDatabase::KagenGraphCollectionDescriptor::edge_weight_hi = 1;

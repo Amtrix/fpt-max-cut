@@ -15,10 +15,7 @@ using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
 public:
-    const static int kSolverRuntime = 60;
     const static bool kMakeWeightedAtEnd = false;
-
-
 
     Benchmark_Kernelization() {
     }
@@ -95,7 +92,7 @@ public:
 
         // Also kernelization here(!):
         t0 = GetCurrentTime();
-        if (kMakeWeightedAtEnd) {
+        if (kMakeWeightedAtEnd || inputFlagToWeightedIsSet) {
             OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
             kernelized.MakeWeighted();
             OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
@@ -135,10 +132,10 @@ public:
             cout << "Note: localsolver solver iterations: " << localsolver_iterations << endl;
         }
 
-        int total_allocated_time_ms = 1000;
-        if (input.cmdOptionExists("-total-allocated-time")) {
-            total_allocated_time_ms = stoi(input.getCmdOption("-total-allocated-time"));
-            cout << "Note: total allocated time: " << total_allocated_time_ms << endl;
+        if (input.cmdOptionExists("-support-weighted-result")) {
+            inputFlagToWeightedIsSet = true;
+        } else {
+            inputFlagToWeightedIsSet = false;
         }
 
         vector<vector<double>> accum;
@@ -173,9 +170,11 @@ public:
             int sub_on_kernelized_runtime = 0;
             sub_on_kernelized_runtime = round(kernelization_time / 1000.0);
 
-            int total_time = kSolverRuntime;
-            if (input.cmdOptionExists("-total-allowed-time")) {
-                total_time = stoi(input.getCmdOption("-total-allowed-time"));
+            int total_time = -1;
+            if (input.cmdOptionExists("-total-allowed-solver-time")) {
+                total_time = stoi(input.getCmdOption("-total-allowed-solver-time"));
+            } else {
+                total_time = sub_on_kernelized_runtime * 10;
             }
 
             if (total_time > sub_on_kernelized_runtime && fabs(k_change) > 1e-9) {
@@ -316,16 +315,20 @@ public:
 
         cout << "TOTAL analysis follows. (time in milliseconds, all values divided by number of iterations[" << num_iterations << "])" << endl; // ordered according kAllRuleIds
         cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
+
+        double tot_time = 0;
         for (auto rule : kAllRuleIds) {
             int used_cnt = tot_case_coverage_cnt[rule];
             int check_cnt = tot_rule_checks_cnt[rule];
             double used_time = times_all[static_cast<int>(rule)];
+            tot_time += used_time;
 
             cout << setw(20) << kRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
                  << setw(20) << (check_cnt / (double) num_iterations) << setw(20) << (used_time / (double) num_iterations)
                  << setw(20) << (used_time/check_cnt) << endl; // this last value does not need to be divided by numm_iterations!!!
         }
         cout << "Time spent on other stuff: " << times_all[-1] << endl;
+        cout << "TOTAL time (all iterations included): " << tot_time + times_all[-1] << endl;
         cout << endl;
         cout << endl;
     }
@@ -355,4 +358,5 @@ private:
     unordered_map<RuleIds, int> tot_case_coverage_cnt;
     unordered_map<RuleIds, int> tot_rule_checks_cnt;
     unordered_map<int,double> last_times_all;
+    bool inputFlagToWeightedIsSet = false;
 };

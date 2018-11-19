@@ -140,13 +140,17 @@ public:
 
         cout << "Total case coverage: (time in milliseconds, all values divided by number of iterations[" << num_iterations << "])" << endl; // ordered according kAllLinearKernelRuleIds
         cout << setw(20) << "RULE" << setw(20) << "|CNT|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CNT|" << endl;
+
+        double tot_time = 0;
         for (auto rule : kAllLinearKernelRuleIds) {
             int used_cnt = tot_used_rules[rule];
             double used_time = times_all[rule];
+            tot_time += used_time;
             cout << setw(20) << kLinearKernelRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
                  << setw(20) << (used_time / (double) num_iterations) << setw(20) << (used_time/used_cnt) << endl; // this last value does not need to be divided by numm_iterations!!!
         }
         cout << "Time spent on other stuff: " << times_all[-1] << endl;
+        cout << "TOTAL time (all iterations included): " << tot_time + times_all[-1] << endl;
         cout << endl;
         cout << endl;
 

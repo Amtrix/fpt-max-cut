@@ -198,3 +198,14 @@ const vector<string> ReadLine(std::istream& in) {
     while (ret.empty() == false && ret.back() == "") ret.pop_back();
     return ret;
 }
+
+int GetANonZeroWeight(int edge_weight_lo, int edge_weight_hi) {
+    int res_w = 0;
+    while (res_w != 0) {
+        int span = edge_weight_hi - edge_weight_lo + 1;
+        int off = rand() % span;
+        res_w = edge_weight_lo + off;
+    }
+
+    return res_w;
+}

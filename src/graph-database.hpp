@@ -69,6 +69,9 @@ public:
         uniform_int_distribution<>  idist = std::uniform_int_distribution<>(-1, -1);
         uniform_real_distribution<> rdist = std::uniform_real_distribution<>(-1, -1);
 
+        static bool use_weights;
+        static int edge_weight_lo, edge_weight_hi;
+
         static void InitializeParamBounds(InputParser& input) {
             ((void) input);
             num_nodes = 8192;
@@ -89,6 +92,14 @@ public:
 
             if (input.cmdOptionExists("-num-nodes")) {
                 num_nodes = stoi(input.getCmdOption("-num-nodes"));
+            }
+
+            if (input.cmdOptionExists("-int-weight-lo") && input.cmdOptionExists("-int-weight-hi")) {
+                use_weights = true;
+                edge_weight_lo = stoi(input.getCmdOption("-int-weight-lo"));
+                edge_weight_hi = stoi(input.getCmdOption("-int-weight-hi"));
+            } else {
+                use_weights = false;
             }
 
             rgg_2d_lo_rad = 0.1, rgg_2d_hi_rad = 3;
@@ -151,6 +162,7 @@ public:
 
             std::random_device rd;  // Will be used to obtain a seed for the random number engine
             gen = mt19937(sel_seed); // Standard mersenne_twister_engine seeded with rd()
+            srand((unsigned) seed);
 
             GenerateParams();
         }
@@ -182,7 +194,7 @@ public:
             // COMPRESS GRAPH?
 
             for (auto e : edge_list_undirected) {
-                ret.push_back(make_tuple(e.first, e.second, 1));
+                ret.push_back(make_tuple(e.first, e.second, !use_weights ? 1 : GetANonZeroWeight(edge_weight_lo, edge_weight_hi)));
             }
 
             return ret;

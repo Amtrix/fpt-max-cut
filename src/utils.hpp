@@ -121,3 +121,5 @@ template <class KeyType, class ValType>
 inline bool MapEqualCheck(const unordered_map<KeyType, ValType> &m, const KeyType key, const ValType value) {
     return m.find(key) != m.cend() ? m.at(key) == value : value == ValType();
 }
+
+int GetANonZeroWeight(int edge_weight_lo, int edge_weight_hi);
