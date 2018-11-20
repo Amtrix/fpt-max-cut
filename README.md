@@ -20,19 +20,22 @@ General flags:
     -iterations [number]
     Number of times to perform the provided benchmark on each graph.
 
-    -int-weight-lo
-    -int-weight-hi
+    -int-weight-lo [number]
+    -int-weight-hi [number]
     If one is given, both are required. Specifies the edge weights. Sampled at random. If sampler find 0, it resamples as that would influence number of edges.
     If graph has already given edges weights, this is ignored.
 
 Flags when kagen graph sampling is used for graph instance generations:
 
-    -num-nodes n
+    -num-nodes [number]
     The number of vertices for the graph generation. Default: 8192.
 
-    -num-edges-lo
-    -num-edges-hi
+    -num-edges-lo [number]
+    -num-edges-hi [number]
     Respectively, the lower and upper bound on the number of edges for the generated graphs. Should be between 0 and 16*(num_nodes)
+
+    -rhgfix [number]
+    Turn of random selection between 2 and 6 and use the given fixed one by this parameter.
 
 Flags for benchmark current kernelization performance:
     -support-weighted-result
@@ -45,11 +48,11 @@ Flags for benchmark current kernelization performance:
     Where to output the benchmark data.
 
     -total-allowed-solver-time [time]
-    In seconds! Gives the allocated time the kernelization, solver, etc. is allowed to utilize in TOTAL *per* graph. Set -1 if you want to turn of solvers.
+    In seconds! Gives the allocated time the kernelization, solver, etc; isntead of simply using 10x kernelization time *additionally* on solver time. is allowed to utilize in TOTAL *per* graph. Set -1 if you want to turn of solvers.
 
-    -locsearch-iterations   [num]
-    -mqlib-iterations       [num]
-    -localsolver-iterations [num]
+    -locsearch-iterations   [number]
+    -mqlib-iterations       [number]
+    -localsolver-iterations [number]
     Indicates the number of times localsearch, mqlib, localsolver are to be executed.
 
 

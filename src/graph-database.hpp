@@ -74,13 +74,17 @@ public:
 
         static void InitializeParamBounds(InputParser& input) {
             ((void) input);
-            num_nodes = 8192;
-            num_edges_lo = 0, num_edges_hi = 8192 * 8;
+
             ba_lo_minimum_vertex_deg = 1, ba_hi_minimum_vertex_deg = 16;
             gnm_lo_num_edges = 0, gnm_hi_num_edges = 8;
             rhg_lo_e = 2.1, rhg_hi_e = 6.5;
-            rhg_lo_avg_vertex_deg = 2, rhg_hi_avg_vertex_deg = 32;
+            rhg_lo_avg_vertex_deg = 2, rhg_hi_avg_vertex_deg = 16;
 
+            num_nodes = 8192;
+            if (input.cmdOptionExists("-num-nodes")) {
+                num_nodes = stoi(input.getCmdOption("-num-nodes"));
+            }
+            num_edges_lo = 0, num_edges_hi = num_nodes * 16;
             
             if (input.cmdOptionExists("-num-edges-hi")) {
                 num_edges_hi = stoi(input.getCmdOption("-num-edges-hi"));
@@ -88,11 +92,7 @@ public:
 
             if (input.cmdOptionExists("-num-edges-lo")) {
                 num_edges_lo = stoi(input.getCmdOption("-num-edges-lo"));
-            }
-
-            if (input.cmdOptionExists("-num-nodes")) {
-                num_nodes = stoi(input.getCmdOption("-num-nodes"));
-            }
+            }            
 
             if (input.cmdOptionExists("-int-weight-lo") && input.cmdOptionExists("-int-weight-hi")) {
                 use_weights = true;
@@ -100,6 +100,11 @@ public:
                 edge_weight_hi = stoi(input.getCmdOption("-int-weight-hi"));
             } else {
                 use_weights = false;
+            }
+
+            if (input.cmdOptionExists("-rhgfix")) {
+                double tmp = stod(input.getCmdOption("-rhgfix"));
+                rhg_lo_e = tmp, rhg_hi_e = tmp;
             }
 
             rgg_2d_lo_rad = 0.1, rgg_2d_hi_rad = 3;

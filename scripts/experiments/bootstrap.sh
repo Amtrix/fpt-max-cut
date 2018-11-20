@@ -1,10 +1,24 @@
 #!/bin/bash
 
+set -o xtrace
+
 cd "${0%/*}"
 cd ../../build
-cmake ../
 
-#selected_build=benchmark
-read -p "Select the build (benchmark or benchmark-debug): " selected_build
+if [ ! "$bootstrap_done" = true ] ; then
+    cmake ../
 
-make $selected_build
+    # CONFIG FOR TEST CASES IS HERE
+    bootstrap_done=true
+    num_iterations=1
+    kagen_instances=5
+    ################################
+
+    while [[ $selected_build = "" ]]; do
+        read -p "Select the build (benchmark or benchmark-debug): " selected_build
+    done
+
+    make $selected_build
+else
+    echo "Bootstrap called twice!"
+fi
