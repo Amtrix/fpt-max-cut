@@ -22,6 +22,9 @@ const map<string, vector<string>> disk_suites = {
     }},
     {"biqmac-rudy", {
         "../data/thesis-tests/biqmac/rudy/"
+    }},
+    {"realworld", {
+        "../data/thesis-tests/real-world/"
     }}
 };
 

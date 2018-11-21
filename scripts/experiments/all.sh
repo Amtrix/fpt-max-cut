@@ -15,4 +15,7 @@ source $cwd/kernelization-kagen-n100k-500k-sparse.sh
 echo "#3 Running"
 source $cwd/linear-kernel-kagen-n512-2048-sparse.sh
 
+echo "#4 Solvers"
+echo $cmd/solvers-realworld.sh
+
 echo "Done!"
