@@ -21,7 +21,7 @@ public:
     }
 
     bool KernelizeExec(MaxCutGraph &kernelized, const vector<RuleIds>& provided_kernelization_order, const bool reset_timestamps_each_time = false) {
-        OutputDebugLog("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!");
+        cout << ("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!") << endl;
 #ifdef DEBUG
             cout << "Given list of kernelizations to execute" << endl;
             for (auto rule : provided_kernelization_order)
@@ -39,17 +39,17 @@ public:
             
             bool chg_happened = false;
             for (int i = 0; i < (int)provided_kernelization_order.size() && !chg_happened; ++i) { // some basics tests have shown that performance remains same even if the !chg_happened part is removed.
-                OutputDebugLog("Trying the " + to_string(i) + "th kernelization rule. Timestamps: " + to_string(!reset_timestamps_each_time));
+                cout << ("Trying the " + to_string(i) + "th kernelization rule. Timestamps: " + to_string(!reset_timestamps_each_time)) << endl;
                 int cnt = 0;
                 while (kernelized.PerformKernelization(provided_kernelization_order.at(i))) { // exhaustively!
                     chg_happened = true;
                     cnt++;
                 }
-                OutputDebugLog("         ... tried further " + to_string(cnt) + " times again.");
+                cout << ("         ... tried further " + to_string(cnt) + " times again.") << endl;
                 LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
             }
 
-            OutputDebugLog("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized()));
+            cout << ("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
 
             if (!chg_happened) break; 
             else tot_chg_happened = true;
