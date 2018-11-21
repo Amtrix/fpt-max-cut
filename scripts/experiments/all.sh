@@ -16,6 +16,6 @@ echo "#3 Running"
 source $cwd/linear-kernel-kagen-n512-2048-sparse.sh
 
 echo "#4 Solvers"
-echo $cmd/solvers-realworld.sh
+source $cmd/solvers-realworld.sh
 
 echo "Done!"
