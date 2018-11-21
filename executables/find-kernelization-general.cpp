@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include <functional>
 #include "src/mc-graph.hpp"
+#include "src/input-parser.hpp"
 using namespace std;
 
 typedef vector<pair<int,int>> graph_edges;
@@ -12,8 +13,8 @@ const bool kHandleAnyProperty = false;
 const bool kSkipSingletons = false;
 const bool kStopAtSame = false;
 const bool kBreakWhenSmaller = false;
-const bool kKernelizeAndVisit = false;
-const bool kRemoveIsomorphisms = true;
+bool kKernelizeAndVisit = false;
+bool kRemoveIsomorphisms = false;
 
 const int kSampleMode = -1; // -1 for normal mode, -2 for specific sampling, -3 for bfs with <=2-removal(take first entry from specific_sampling_set as start)
 
@@ -45,6 +46,9 @@ vector<vector<pair<int,int>>> specific_sampling_set = {
 
 vector<int> L_vertex, R_vertex;
 unordered_map<int, bool> preset_is_external;
+
+unordered_map<RuleIds, int> tot_case_coverage_cnt;
+unordered_map<RuleIds, int> tot_rule_checks_cnt;
 
 string GetGraphKey(vector<pair<int,int>> edges) {
     string ret = "";
@@ -180,6 +184,7 @@ void GetAllIsomorphisms(vector<pair<int,int>> elist, std::function<void(vector<p
     vector<int> vorder;
     for (int i = 0; i < n; ++i) vorder.push_back(i);
 
+    unordered_map<string,bool> visi;
     do {
         vector<pair<int,int>> new_elist = elist;
         bool ok = true;
@@ -194,8 +199,11 @@ void GetAllIsomorphisms(vector<pair<int,int>> elist, std::function<void(vector<p
                 swap(new_elist[i].first, new_elist[i].second);
         }
 
-        if (ok) {
-            sort(new_elist.begin(), new_elist.end());
+        sort(new_elist.begin(), new_elist.end());
+        
+        string key = GetGraphKey(new_elist);
+        if (ok && !visi[key]) {
+            visi[key] = true;
             callback(new_elist);
         }
     } while (next_permutation(vorder.begin(), vorder.end()));
@@ -228,12 +236,34 @@ bool IsSuperset(graph_edges &superset, graph_edges &subset) {
     return true;
 }
 
-int main() {
+int main(int argc, char **argv){
     ios_base::sync_with_stdio(false);
-    cin >> n >> nc;
+    InputParser input(argc, argv);
 
+    #ifdef DEBUG
+        cout << "DEBUG is set to true." << endl;
+    #endif
     
+    #ifdef NDEBUG
+        cout << "NDEBUG is set to true." << endl;
+    #endif
 
+    if (input.cmdOptionExists("-n")) {
+        custom_assert(input.cmdOptionExists("-nc"));
+        n = stoi(input.getCmdOption("-n"));
+        nc = stoi(input.getCmdOption("-nc"));
+    } else {
+        cout << "Input number of vertices and how many of them are external:" << endl;
+        cin >> n >> nc;
+    }
+    
+    if (input.cmdOptionExists("-kernelization-efficiency")) {
+        kKernelizeAndVisit = true;
+    }
+
+    if (input.cmdOptionExists("-remove-iso")) {
+        kRemoveIsomorphisms = true;
+    }
     
     for (int i = 0; i < nc; ++i) preset_is_external[i] = true;
     for (int i = 0; i < n; ++i)
@@ -300,16 +330,23 @@ int main() {
 
     //* Subroutine to handle isomorphisms and kernelization -- both as a choice.
     auto kernelizeandmark = [&](vector<pair<int,int>> &elist,
-                                unordered_map<string, bool> &visited_graph_key) {
+                                unordered_map<string, int> &visited_graph_key, const int edgemarkid) {
         auto graph_edges = elist;
         MaxCutGraph G(elist, n);
         G.ExecuteExhaustiveKernelizationExternalsSupport(preset_is_external);
+        for (auto rule : kAllRuleIds) {
+            tot_case_coverage_cnt[rule] += G.GetRuleUsage(rule);
+            tot_rule_checks_cnt[rule] += G.GetRuleChecks(rule);
+        }
 
         auto kedges = G.GetAllExistingEdges();
         if (kRemoveIsomorphisms) kedges = GetLexicographicallyLowestIso(kedges);
 
         const string key = GetGraphKey(kedges);
-        if (visited_graph_key[key]) { return make_pair(true, graph_edges); }
+        if (visited_graph_key[key]) {
+            custom_assert(visited_graph_key[key] == edgemarkid);
+            return make_pair(true, graph_edges);
+        }
 
 
         if (kRemoveIsomorphisms) {
@@ -322,27 +359,30 @@ int main() {
                     mxcutnc = mxcutnc_candidate;
                 }
                 const string isokey = GetGraphKey(edges);
-                visited_graph_key[isokey] = true;
+                custom_assert(visited_graph_key[isokey] == 0);
+                visited_graph_key[isokey] = edgemarkid;
             });
             graph_edges = sel;
         } else {
-            visited_graph_key[key] = true;
+            visited_graph_key[key] = edgemarkid;
         }
 
         return make_pair(false, graph_edges);
     };
 
     vector<pair<int,string>> ordered_classes;
+    unordered_map<string, int> visited_graph_key_bootstrap;
+    int clsid_mark = 1; // WE USE THIS TO VERIFY KERNELIZATION CORRECTNESS.
     for (auto entry : equiv_cls) {
         int sz = entry.second.size();
         if (kKernelizeAndVisit) {
-            unordered_map<string, bool> visited_graph_key;
             for (auto e : entry.second) {
-                auto res = kernelizeandmark(e.second, visited_graph_key);
+                auto res = kernelizeandmark(e.second, visited_graph_key_bootstrap, clsid_mark);
                 sz -= res.first;
             }
         }
         ordered_classes.push_back(make_pair(sz, entry.first));
+        clsid_mark++;
     }
     sort(ordered_classes.rbegin(), ordered_classes.rend());
 
@@ -361,17 +401,17 @@ int main() {
 
         sort(entries.begin(), entries.end(), cmpentries);
 
-        cout << "Class " << key << " = " << entries.size() << " (total!)  or  " << ordered_classes[i].first << " (filtered!)" << endl;
+        cout << "Class " << key << " = " << entries.size() << " (total!)  or  " << ordered_classes[i].first << " (filtered -- kernelized/isomorph removed!)" << endl;
         num_of_classes++;
 
         bool found_exact = false;
-        unordered_map<string, bool> visited_graph_key;
+        unordered_map<string, int> visited_graph_key;
         int kernelized_count = 0;
         vector<vector<pair<int,int>>> lookback_graphs_for_subsets;
         for (auto e : entries) { // iterate over all edge-sets in the class.
             auto graph_edges = e.second;
             if (kKernelizeAndVisit) {
-                auto res = kernelizeandmark(e.second, visited_graph_key);
+                auto res = kernelizeandmark(e.second, visited_graph_key, 1);
                 graph_edges = res.second;
 
                 if (res.first) {
@@ -458,6 +498,20 @@ int main() {
             break;
         }
     }
+
+    const int num_iterations = 1;
+    cout << "TOTAL analysis follows. (time in milliseconds, all values divided by number of iterations[" << num_iterations << "])" << endl; // ordered according kAllRuleIds
+    cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
+    for (auto rule : kAllRuleIds) {
+            int used_cnt = tot_case_coverage_cnt[rule];
+            int check_cnt = tot_rule_checks_cnt[rule];
+            double used_time = -1;
+
+            cout << setw(20) << kRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
+                 << setw(20) << (check_cnt / (double) num_iterations) << setw(20) << (used_time / (double) num_iterations)
+                 << setw(20) << (used_time/check_cnt) << endl;
+        }
+    cout << endl;
 
     cout << "Number of classes: " << num_of_classes << endl;
     cout << "Total kernelization coverage: " << (sum_denum > 1e-9 ? (sum_coverage / sum_denum) : 1) << endl;

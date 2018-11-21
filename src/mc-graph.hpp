@@ -216,7 +216,7 @@ public:
 
     // Returns a vector of (C, X) pairs that all satisfy rule 9 from https://arxiv.org/abs/1212.6848 
     // Warning! X >= C/2, therefore, deletion of some vertices in X is necessary when applying the rule.
-    vector<pair<vector<int>, vector<int>>> GetR9XCandidates(const bool break_on_first = false) const;
+    vector<pair<vector<int>, vector<int>>> GetR9XCandidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {}) const;
     bool ApplyR9XCandidate(const pair<vector<int>, vector<int>> &candidate);
 
     // Returns a vector of (u, (x,y)) satisfying rule 10 from https://arxiv.org/abs/1212.6848 

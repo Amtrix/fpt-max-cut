@@ -64,6 +64,7 @@ add_binary_exec(unweight-an-instance                 NDEBUG  executables/utils/u
 add_binary_exec(double-clique-solver                 NDEBUG  executables/double-clique-solver.cpp)
 add_binary_exec(random-playground                    DEBUG   executables/random-playground.cpp)
 add_binary_exec(find-kernelization-general           NDEBUG  executables/find-kernelization-general.cpp)
+add_binary_exec(find-kernelization-general-debug     DEBUG   executables/find-kernelization-general.cpp)
 add_binary_exec(find-kernelization-weighted          NDEBUG  executables/find-kernelization-weighted.cpp)
 add_binary_exec(lower-bound-num-of-class-computation NDEBUG  executables/lower-bound-num-of-class-computation.cpp)
 add_binary_exec(remove-double-edges                  NDEBUG  executables/remove-double-edges.cpp)
