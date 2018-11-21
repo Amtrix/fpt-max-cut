@@ -39,7 +39,7 @@ public:
             
             bool chg_happened = false;
             for (int i = 0; i < (int)provided_kernelization_order.size() /*&& !chg_happened*/; ++i) { // some basics tests have shown that performance remains same even if the !chg_happened part is removed.
-                cout << ("Trying the " + kRuleNames.at(i) + " kernelization rule. Timestamps: " + to_string(!reset_timestamps_each_time)) << endl;
+                cout << ("Trying the " + kRuleNames.at(provided_kernelization_order.at(i)) + " kernelization rule. Timestamps: " + to_string(!reset_timestamps_each_time)) << endl;
                 int cnt = 0;
                 while (kernelized.PerformKernelization(provided_kernelization_order.at(i))) { // exhaustively!
                     chg_happened = true;
