@@ -22,12 +22,11 @@ public:
 
     bool KernelizeExec(MaxCutGraph &kernelized, const vector<RuleIds>& provided_kernelization_order, const bool reset_timestamps_each_time = false) {
         cout << ("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!") << endl;
-#ifdef DEBUG
-            cout << "Given list of kernelizations to execute" << endl;
-            for (auto rule : provided_kernelization_order)
-                cout << static_cast<int>(rule) << " ";
-            cout << endl;
-#endif
+        cout << "Given list of kernelizations to execute" << endl;
+        for (auto rule : provided_kernelization_order)
+            cout << kRuleNames.at(rule) << " ";
+        cout << endl;
+
 
         auto t0 = GetCurrentTime();
         bool tot_chg_happened = false;
@@ -46,10 +45,9 @@ public:
                     cnt++;
                 }
                 cout << ("         ... tried further " + to_string(cnt) + " times again.") << endl;
+                cout << ("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
                 LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
             }
-
-            cout << ("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
 
             if (!chg_happened) break; 
             else tot_chg_happened = true;
