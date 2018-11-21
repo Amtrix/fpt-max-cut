@@ -296,6 +296,7 @@ public:
     void PrintReductionsUsage() const;
     int GetRuleUsage(RuleIds rule) const;
     int GetRuleChecks(RuleIds rule) const;
+    double GetRuleSpentTime(RuleIds rule) const;
     vector<int> GetUsageVector() const;
     // Get cut size according to 0/1 coloring of nodes. grouping is a 0-1 vector. Vertex x is colored by grouping[x]. 
     int GetCutSize(const vector<int> &grouping) const;
@@ -460,6 +461,7 @@ private:
     double inflicted_cut_change_to_kernelized = 0; // absolute! beta(G') = beta(G) + inflicted_cut_change_to_kernelized
     unordered_map<RuleIds, int> rules_usage_count;
     unordered_map<RuleIds, int> rules_check_count;
+    unordered_map<RuleIds, double> rules_time_usage_total;
 
     string graph_naming;
     int mixing_id;

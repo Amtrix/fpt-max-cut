@@ -20,6 +20,8 @@ public:
     Benchmark_Kernelization() {
     }
 
+
+
     bool KernelizeExec(MaxCutGraph &kernelized, const vector<RuleIds>& provided_kernelization_order, const bool reset_timestamps_each_time = false) {
         cout << ("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!") << endl;
         cout << "Given list of kernelizations to execute" << endl;
@@ -55,6 +57,9 @@ public:
 
         return tot_chg_happened;
     }
+
+
+
 
     void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}, const bool force_timestampless_kernelization = false) {
         // First transform graph into unweighted. /////////////
@@ -172,7 +177,7 @@ public:
             if (input.cmdOptionExists("-total-allowed-solver-time")) {
                 total_time = stoi(input.getCmdOption("-total-allowed-solver-time"));
             } else {
-                total_time = sub_on_kernelized_runtime * 10;
+                total_time = max(sub_on_kernelized_runtime * 10, 10);
             }
 
             if (total_time > sub_on_kernelized_runtime && fabs(k_change) > 1e-9) {

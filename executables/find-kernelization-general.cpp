@@ -47,8 +47,9 @@ vector<vector<pair<int,int>>> specific_sampling_set = {
 vector<int> L_vertex, R_vertex;
 unordered_map<int, bool> preset_is_external;
 
-unordered_map<RuleIds, int> tot_case_coverage_cnt;
-unordered_map<RuleIds, int> tot_rule_checks_cnt;
+unordered_map<RuleIds, int>    tot_case_coverage_cnt;
+unordered_map<RuleIds, int>    tot_rule_checks_cnt;
+unordered_map<RuleIds, double> tot_rule_time;
 
 string GetGraphKey(vector<pair<int,int>> edges) {
     string ret = "";
@@ -308,10 +309,14 @@ int main(int argc, char **argv){
 
     
 
+    std::stringstream strbuffer;
+    strbuffer << " ========================= " << "N: " << n << "   NC: " << nc << " ========================= " << endl;
+    strbuffer << "Number of classes: " << class_count.size() << endl; // beware, using = false increases this too.
+    strbuffer << "Total number of classes -- including visited isos (with visited isomorphisms) [kRemoveIso has to be active]: " << tot_class_count.size() << endl; // beware, using = false increases this too.
+    strbuffer << "Graph set computation complete." << endl;
+
     if (kRoughAnalaysis) {
-        cout << "Number of classes: " << class_count.size() << endl; // beware, using = false increases this too.
-        cout << "Total number of classes -- including visited isos (with visited isomorphisms) [kRemoveIso has to be active]: " << tot_class_count.size() << endl; // beware, using = false increases this too.
-        cout << "Graph set computation complete." << endl;
+        cout << strbuffer.str() << endl;
         return 0;
     }
 
@@ -337,6 +342,7 @@ int main(int argc, char **argv){
         for (auto rule : kAllRuleIds) {
             tot_case_coverage_cnt[rule] += G.GetRuleUsage(rule);
             tot_rule_checks_cnt[rule] += G.GetRuleChecks(rule);
+            tot_rule_time[rule] += G.GetRuleSpentTime(rule);
         }
 
         auto kedges = G.GetAllExistingEdges();
@@ -373,6 +379,7 @@ int main(int argc, char **argv){
     vector<pair<int,string>> ordered_classes;
     unordered_map<string, int> visited_graph_key_bootstrap;
     int clsid_mark = 1; // WE USE THIS TO VERIFY KERNELIZATION CORRECTNESS.
+    strbuffer << "Per class instance counts: ";
     for (auto entry : equiv_cls) {
         int sz = entry.second.size();
         if (kKernelizeAndVisit) {
@@ -381,9 +388,11 @@ int main(int argc, char **argv){
                 sz -= res.first;
             }
         }
+        strbuffer << entry.second.size() << "(" << sz << ")  ";
         ordered_classes.push_back(make_pair(sz, entry.first));
         clsid_mark++;
     }
+    strbuffer << endl;
     sort(ordered_classes.rbegin(), ordered_classes.rend());
 
     auto cmpentries = [&](pair<int,vector<pair<int,int>>> &entry1, pair<int,vector<pair<int,int>>> &entry2) {
@@ -500,25 +509,38 @@ int main(int argc, char **argv){
     }
 
     const int num_iterations = 1;
-    cout << "TOTAL analysis follows. (time in milliseconds, all values divided by number of iterations[" << num_iterations << "])" << endl; // ordered according kAllRuleIds
-    cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
+    strbuffer << "TOTAL analysis follows. (time in milliseconds, all values divided by number of iterations[" << num_iterations << "])" << endl; // ordered according kAllRuleIds
+    strbuffer << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
     for (auto rule : kAllRuleIds) {
             int used_cnt = tot_case_coverage_cnt[rule];
             int check_cnt = tot_rule_checks_cnt[rule];
-            double used_time = -1;
+            double used_time = tot_rule_time[rule];
 
-            cout << setw(20) << kRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
+            strbuffer << setw(20) << kRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
                  << setw(20) << (check_cnt / (double) num_iterations) << setw(20) << (used_time / (double) num_iterations)
                  << setw(20) << (used_time/check_cnt) << endl;
         }
-    cout << endl;
+    strbuffer << endl;
 
-    cout << "Number of classes: " << num_of_classes << endl;
-    cout << "Total kernelization coverage: " << (sum_denum > 1e-9 ? (sum_coverage / sum_denum) : 1) << endl;
+    strbuffer << "Number of classes: " << num_of_classes << endl;
+    strbuffer << "Total kernelization coverage: " << (sum_denum > 1e-9 ? (sum_coverage / sum_denum) : 1) << endl;
 
-    ofstream out("find-kernelization-general-stats", std::ios_base::app);
-    out << "(" << n << " " << nc << ")" << endl;
-    out << "Number of classes: " << num_of_classes << endl;
-    out << "Total kernelization coverage: " << (sum_denum > 1e-9 ? (sum_coverage / sum_denum) : 1) << endl;
-    out << endl;
+    //ofstream out("find-kernelization-general-stats", std::ios_base::app);
+    strbuffer << "(" << n << " " << nc << ")" << endl;
+    strbuffer << "Number of classes: " << num_of_classes << endl;
+    double coverage = (sum_denum > 1e-9 ? (sum_coverage / sum_denum) : 1);
+    strbuffer << "Total kernelization coverage: " << coverage << endl;
+    strbuffer << endl;
+
+    cout << strbuffer.str() << endl;
+
+    if (input.cmdOptionExists("-output-path")) {
+        const string output_path = input.getCmdOption("-output-path") + ".meta";
+        ofstream out(output_path, fstream::app);
+        out << strbuffer.str() << endl;
+
+        const string output_path2 = input.getCmdOption("-output-path");
+        ofstream out2(output_path2, fstream::app);
+        out2 << setw(20) << n << setw(20) << nc << setw(20) << coverage << endl;
+    }
 }
