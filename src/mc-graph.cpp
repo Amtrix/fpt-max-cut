@@ -104,6 +104,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
     bool treat_as_adj_list_file = path.size() > adj_sfx.size() && path.substr(path.size() - adj_sfx.size()) == adj_sfx;
 
     vector<string> sparams = ReadLine(in);
+    
     while (sparams.size() == 0 || sparams[0][0] == '#' || sparams[0][0] == '%') // skip comments
         sparams = ReadLine(in);
 
@@ -1312,7 +1313,7 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
             visited[x] = 2;
         }
 
-        if (ok && X.size() > 1 && IsClique(X)) {
+        if (ok && X.size() > NG.size() && X.size() > 1 && IsClique(X)) {
             ret.push_back(X);
 
             if (break_on_first)
