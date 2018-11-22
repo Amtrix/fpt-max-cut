@@ -10,7 +10,7 @@ if [ ! "$bootstrap_done" = true ] ; then
 
     # CONFIG FOR TEST CASES IS HERE
     bootstrap_done=true
-    num_iterations=10
+    num_iterations=5
     kagen_instances=50
     ################################
 
