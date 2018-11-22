@@ -23,7 +23,7 @@ public:
 
 
     bool KernelizeExec(MaxCutGraph &kernelized, const vector<RuleIds>& provided_kernelization_order, const bool reset_timestamps_each_time = false) {
-        cout << ("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!") << endl;
+        cout << ("|V(kernel)| = " + to_string(kernelized.GetRealNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!") << endl;
         cout << "Given list of kernelizations to execute" << endl;
         for (auto rule : provided_kernelization_order)
             cout << kRuleNames.at(rule) << " ";
@@ -47,9 +47,10 @@ public:
                     cnt++;
                 }
                 cout << ("         ... tried further " + to_string(cnt) + " times again.") << endl;
-                cout << ("|V(kernel)| = " + to_string(kernelized.GetNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
                 LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
             }
+
+            cout << ("|V(kernel)| = " + to_string(kernelized.GetRealNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
 
             if (!chg_happened) break; 
             else tot_chg_happened = true;
@@ -96,9 +97,9 @@ public:
         // Also kernelization here(!):
         t0 = GetCurrentTime();
         if (kMakeWeightedAtEnd || inputFlagToWeightedIsSet) {
-            OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
+            OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetRealNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
             kernelized.MakeWeighted();
-            OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
+            OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetRealNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
         } else {
             OutputDebugLog("To weighted conversation is skipped.");
         }

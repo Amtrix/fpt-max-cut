@@ -101,7 +101,10 @@ MaxCutGraph::MaxCutGraph(const string path) {
     SetGraphNaming(path);
 
     const string adj_sfx = ".graph";
+    const string edge_sfx = ".edges";
     bool treat_as_adj_list_file = path.size() > adj_sfx.size() && path.substr(path.size() - adj_sfx.size()) == adj_sfx;
+    bool treat_as_edges_file = path.size() > edge_sfx.size() && path.substr(path.size() - edge_sfx.size()) == edge_sfx;
+    
 
     vector<string> sparams = ReadLine(in);
     
@@ -110,7 +113,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
 
     // we take last two entries as dimacs prefixes each line with type of line
     if (!treat_as_adj_list_file) {
-        if (sparams[0] != "#edge-list-0") {
+        if (sparams[0] != "#edge-list-0" && !treat_as_edges_file) {
             SetNumNodes(stoi(sparams[0 + (sparams[0]=="p")]));
 
             int num_edges = stoi(sparams.back());
@@ -128,8 +131,11 @@ MaxCutGraph::MaxCutGraph(const string path) {
         } else {
             int num_nodes_calc = 0;
             vector<tuple<int,int,int>> elist;
+            bool skipfirst = true;
             while (in.eof() == false) {
-                sparams = ReadLine(in);
+                if (!skipfirst)
+                    sparams = ReadLine(in);
+                skipfirst = false;
                 if (sparams.size() == 0) continue;
                 if (sparams.size() < 2) throw std::logic_error("Line malformed: " + to_string(-1));
 
