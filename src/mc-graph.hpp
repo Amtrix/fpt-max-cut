@@ -464,5 +464,5 @@ private:
     unordered_map<RuleIds, double> rules_time_usage_total;
 
     string graph_naming;
-    int mixing_id;
+    int mixing_id = -1;
 };

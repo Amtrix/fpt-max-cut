@@ -98,7 +98,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
         throw std::logic_error("File doesn't exist.");
     }
 
-    graph_naming = path;
+    SetGraphNaming(path);
 
     const string adj_sfx = ".graph";
     bool treat_as_adj_list_file = path.size() > adj_sfx.size() && path.substr(path.size() - adj_sfx.size()) == adj_sfx;

@@ -111,8 +111,9 @@ public:
 
 
     void Evaluate(InputParser &input, const MaxCutGraph &main_graph) {
+        GenerateMissingMixingId(main_graph);
         int mixingid = GetMixingId(main_graph);
-        BenchmarkAction::Evaluate(input, main_graph);
+        
 
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {

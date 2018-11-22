@@ -10,8 +10,8 @@ if [ ! "$bootstrap_done" = true ] ; then
 
     # CONFIG FOR TEST CASES IS HERE
     bootstrap_done=true
-    num_iterations=1
-    kagen_instances=5
+    num_iterations=10
+    kagen_instances=50
     ################################
 
     while [[ $selected_build = "" ]]; do
