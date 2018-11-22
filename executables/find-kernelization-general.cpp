@@ -522,9 +522,6 @@ int main(int argc, char **argv){
         }
     strbuffer << endl;
 
-    strbuffer << "Number of classes: " << num_of_classes << endl;
-    strbuffer << "Total kernelization coverage: " << (sum_denum > 1e-9 ? (sum_coverage / sum_denum) : 1) << endl;
-
     //ofstream out("find-kernelization-general-stats", std::ios_base::app);
     strbuffer << "(" << n << " " << nc << ")" << endl;
     strbuffer << "Number of classes: " << num_of_classes << endl;
@@ -541,6 +538,6 @@ int main(int argc, char **argv){
 
         const string output_path2 = input.getCmdOption("-output-path");
         ofstream out2(output_path2, fstream::app);
-        out2 << setw(20) << n << setw(20) << nc << setw(20) << coverage << endl;
+        out2 << setw(20) << n << setw(20) << nc << setw(20) << all_graphs_edges.size() << setw(20) << num_of_classes << setw(20) << coverage << endl;
     }
 }
