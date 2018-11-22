@@ -177,7 +177,7 @@ public:
             if (input.cmdOptionExists("-total-allowed-solver-time")) {
                 total_time = stoi(input.getCmdOption("-total-allowed-solver-time"));
             } else {
-                total_time = max(sub_on_kernelized_runtime * 10, 10);
+                total_time = max(sub_on_kernelized_runtime * 5, 10);
             }
 
             if (total_time > sub_on_kernelized_runtime && fabs(k_change) > 1e-9) {
