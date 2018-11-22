@@ -1,4 +1,6 @@
 #!/bin/bash
+
+#set -o xtrace
 cd "${0%/*}"
 cd ../../build
 make find-kernelization-general
@@ -14,13 +16,25 @@ for ((n=2;n<=7;n++))
 do
     for ((nc=0;nc<=n;nc++))
     do
+        echo "Handle n: $n, nc: $nc"
         ./find-kernelization-general  -n $n -nc $nc -kernelization-efficiency -remove-iso \
-                -output-path ../data/output/experiments/kernelization/small/iso-rem/aggregate > ../data/output/experiments/kernelization/small/iso-rem/out-exe_n"$n"_c"$nc".txt
-        ./find-kernelization-general  -n $n -nc $nc -kernelization-efficiency \
-                -output-path ../data/output/experiments/kernelization/small/iso-kept/aggregate > ../data/output/experiments/kernelization/small/iso-kept/out-exe_n"$n"_c"$nc".txt
+                -output-path ../data/output/experiments/kernelization/small/iso-rem/aggregate > ../data/output/experiments/kernelization/small/iso-rem/out-exe_n"$n"_c"$nc".txt && echo "Done iso-rem" &
+        
         ./find-kernelization-general  -n $n -nc $nc -remove-iso \
-                -output-path ../data/output/experiments/kernelization/small/iso-rem-no-kernelization/aggregate > ../data/output/experiments/kernelization/small/iso-rem-no-kernelization/out-exe_n"$n"_c"$nc".txt
-        ./find-kernelization-general  -n $n -nc $nc \
-                -output-path ../data/output/experiments/kernelization/small/iso-kept-no-kernelization/aggregate > ../data/output/experiments/kernelization/small/iso-kept-no-kernelization/out-exe_n"$n"_c"$nc".txt
+                -output-path ../data/output/experiments/kernelization/small/iso-rem-no-kernelization/aggregate > ../data/output/experiments/kernelization/small/iso-rem-no-kernelization/out-exe_n"$n"_c"$nc".txt && echo "Done iso-rem-no-kernelization" &
+        if [ $n -lt 7 ] ; then
+                dorough=""
+        else
+                dorough="-dorough"
+        fi
+
+        ./find-kernelization-general  -n $n -nc $nc -kernelization-efficiency $dorough \
+                -output-path ../data/output/experiments/kernelization/small/iso-kept/aggregate > ../data/output/experiments/kernelization/small/iso-kept/out-exe_n"$n"_c"$nc".txt && echo "Done iso-kept" &
+
+        ./find-kernelization-general  -n $n -nc $nc $dorough \
+                -output-path ../data/output/experiments/kernelization/small/iso-kept-no-kernelization/aggregate > ../data/output/experiments/kernelization/small/iso-kept-no-kernelization/out-exe_n"$n"_c"$nc".txt && echo "Done iso-kept-no-kernelization" &
+
+        echo "... wait"
+        wait
     done
 done

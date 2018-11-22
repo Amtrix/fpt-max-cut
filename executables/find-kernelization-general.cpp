@@ -237,6 +237,14 @@ bool IsSuperset(graph_edges &superset, graph_edges &subset) {
     return true;
 }
 
+void OutputAppendix(InputParser &input, int n, int nc, int graphcnt, int numcls, double coverage = -1) {
+    if (input.cmdOptionExists("-output-path")) {
+        const string output_path2 = input.getCmdOption("-output-path");
+        ofstream out2(output_path2, fstream::app);
+        out2 << setw(20) << n << setw(20) << nc << setw(20) << graphcnt << setw(20) << numcls << setw(20) << coverage << endl;
+    }
+}
+
 int main(int argc, char **argv){
     ios_base::sync_with_stdio(false);
     InputParser input(argc, argv);
@@ -315,8 +323,10 @@ int main(int argc, char **argv){
     strbuffer << "Total number of classes -- including visited isos (with visited isomorphisms) [kRemoveIso has to be active]: " << tot_class_count.size() << endl; // beware, using = false increases this too.
     strbuffer << "Graph set computation complete." << endl;
 
-    if (kRoughAnalaysis) {
+    if (input.cmdOptionExists("-dorough")) {
         cout << strbuffer.str() << endl;
+
+        OutputAppendix(input, n, nc,  all_graphs_edges.size(), class_count.size());
         return 0;
     }
 
@@ -530,14 +540,12 @@ int main(int argc, char **argv){
     strbuffer << endl;
 
     cout << strbuffer.str() << endl;
-
     if (input.cmdOptionExists("-output-path")) {
         const string output_path = input.getCmdOption("-output-path") + ".meta";
         ofstream out(output_path, fstream::app);
         out << strbuffer.str() << endl;
-
-        const string output_path2 = input.getCmdOption("-output-path");
-        ofstream out2(output_path2, fstream::app);
-        out2 << setw(20) << n << setw(20) << nc << setw(20) << all_graphs_edges.size() << setw(20) << num_of_classes << setw(20) << coverage << endl;
+        
+        OutputAppendix(input, n, nc,  all_graphs_edges.size(), num_of_classes, coverage);
     }
+    
 }
