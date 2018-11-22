@@ -12,9 +12,15 @@ do
     for j in "${arrrhg[@]}"
     do
         ./$selected_build -action "kernelization" -iterations $num_iterations -sample-kagen $kagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*5)) -rhgfix $j -total-allowed-solver-time -1 \
-                    -benchmark-output ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"out > ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"out-exe
+                    -benchmark-output ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"out > ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"out-exe &
+
+        check_and_wait_if_threadpool_full
 
         ./$selected_build -action "kernelization" -iterations $num_iterations -sample-kagen $kagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*5)) -rhgfix $j -total-allowed-solver-time -1 -support-weighted-result \
-                    -benchmark-output ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"outw > ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"outw-exe
+                    -benchmark-output ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"outw > ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"outw-exe &
+        
+        check_and_wait_if_threadpool_full
     done
 done
+
+wait_and_reset_threadpool

@@ -14,3 +14,5 @@ do
     ./$selected_build -action "kernelization" -iterations $num_iterations -sample-kagen $kagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*5)) -total-allowed-solver-time -1 -support-weighted-result \
                   -benchmark-output ../data/output/experiments/kernelization/n"$i"w/out > ../data/output/experiments/kernelization/n"$i"w/out-exe
 done
+
+wait_and_reset_threadpool
