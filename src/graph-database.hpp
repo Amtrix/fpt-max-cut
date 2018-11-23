@@ -79,9 +79,9 @@ public:
             ((void) input);
 
             ba_lo_minimum_vertex_deg = 1, ba_hi_minimum_vertex_deg = 16;
-            gnm_lo_num_edges = 0, gnm_hi_num_edges = 8;
+            gnm_lo_num_edges = 0, gnm_hi_num_edges = 32;
             rhg_lo_e = 2.1, rhg_hi_e = 6.5;
-            rhg_lo_avg_vertex_deg = 2, rhg_hi_avg_vertex_deg = 16;
+            rhg_lo_avg_vertex_deg = 1, rhg_hi_avg_vertex_deg = 32;
 
             num_nodes = 8192;
             if (input.cmdOptionExists("-num-nodes")) {

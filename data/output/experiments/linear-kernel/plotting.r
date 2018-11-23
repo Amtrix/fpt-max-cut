@@ -62,8 +62,6 @@ data_table <- do.call("data.frame", data_table) # flatten
 # Set appropriate kagen type.
 row_cnt <- nrow(data_table)
 data_table$gtype = floor(data_table[,"X.sec"]/(row_cnt/5))
-
-
 data_table <- data_table[with(data_table, order(gtype, density.mean)), ]
 
 # Open a PDF to store the plot into
