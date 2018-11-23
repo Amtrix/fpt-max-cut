@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a arr=("512" "512w" "2048" "2048w" "2048e" "2048ew")
+declare -a arr=("512" "512w" "2048" "2048w" "40000" "40000w")
 
 for i in "${arr[@]}"
 do
