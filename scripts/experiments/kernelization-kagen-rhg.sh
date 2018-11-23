@@ -11,12 +11,12 @@ for i in "${arr[@]}"
 do
     for j in "${arrrhg[@]}"
     do
-        ./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen 300 -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -rhgfix $j -total-allowed-solver-time -1 \
+        ./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen $kkagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -rhgfix $j -total-allowed-solver-time -1 \
                     -benchmark-output ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"out > ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"out-exe &
 
         check_and_wait_if_threadpool_full
 
-        ./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen 300 -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -rhgfix $j -total-allowed-solver-time -1 -support-weighted-result \
+        ./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen $kkagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -rhgfix $j -total-allowed-solver-time -1 -support-weighted-result \
                     -benchmark-output ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"outw > ../data/output/experiments/kernelization/rhgfix/n"$i"_"$j"outw-exe &
         
         check_and_wait_if_threadpool_full
