@@ -81,12 +81,12 @@ pdf(opt$out, width=10, height=5)
     # Define some ranges for our plotting area
     xrange <- range(data_table[,x])
     yrange <- range(0, data_table[,y])
-    yrange[2] <- 1.1
+    yrange[2] <- 1
     xrange[1] <- xrange[1] - 0.5
     xrange[2] <- xrange[2] + 1
 
     # Initialize the plotting area
-    plot(xrange, yrange, yaxt='n', col="black", type="n", main="stuff", ann=FALSE)
+    plot(xrange, yrange, yaxt='n', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
