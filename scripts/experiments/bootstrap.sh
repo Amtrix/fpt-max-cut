@@ -26,6 +26,7 @@ if [ ! "$bootstrap_done" = true ] ; then
 
     # CONFIG FOR TEST CASES IS HERE
     bootstrap_done=true
+    num_iterations=1
     knum_iterations=1
     kkagen_instances=150
     ################################

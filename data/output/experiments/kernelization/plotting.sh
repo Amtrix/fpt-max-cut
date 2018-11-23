@@ -1,6 +1,8 @@
 #!/bin/bash
 
-declare -a arr=("512" "512w" "2048" "2048w" "40000" "40000w")
+rm plots/*.pdf
+
+declare -a arr=("512" "512w" "2048" "2048w" "8000" "8000w")
 
 for i in "${arr[@]}"
 do
