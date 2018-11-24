@@ -118,7 +118,10 @@ data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
             points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
 
         if (do_loess) {
-            lo <- loess(sub[[y]] ~ sub[[x]], sub, span=loess_val)
+            loessv = loess_val
+            if (dx == 1) loessv = 0.1
+
+            lo <- loess(sub[[y]] ~ sub[[x]], sub, span=loessv)
             lines(sub[[x]], predict(lo), col=col_vec[[dx + 1]], lwd=4)
         }
     }

@@ -122,7 +122,14 @@ public:
      * Often used graph functionalities. All const.
      **/
     int GetNumNodes() const { return num_nodes; }
-    int GetRealNumNodes() const { return GetAllExistingNodes().size(); }
+    int GetRealNumNodes() const {
+        const auto& nodes = GetAllExistingNodes();
+        int ret = nodes.size();
+        for (auto node : nodes)
+            if (Degree(node) == 0)
+                ret--;
+        return ret;
+    }
     int GetRealNumEdges() const { return GetAllExistingEdges().size(); }
     vector<int> GetAllExistingNodes() const;
     const vector<int>& GetAdjacency(int node) const { return g_adj_list.at(node); }

@@ -54,7 +54,7 @@ nam_vec = c("BA","GNM","RGG2D","RGG3D","RHG")#, "original", "task a", "task b", 
 data_table      <- read.table(paste(res_folder, file, sep=""), comment.char = "#", col.names = columns)
 
 
-data_table$ratio_e = 1 - (data_table[,"X..E.Gk.."]/data_table[,"X..E.G.."])
+data_table$ratio_e = 1 - (data_table[,"X..V.Gk.."]/data_table[,"X..V.G.."])
 data_table$density = data_table[,"X..E.G.."]/data_table[,"X..V.G.."]
 data_table <- aggregate(. ~ X.sec+X.file, data_table, function(x) c(mean = min(x), sd = sd(x)))
 data_table <- do.call("data.frame", data_table) # flatten
@@ -92,7 +92,7 @@ pdf(opt$out, width=10, height=5)
     # Label titles for both axes
     title(xlab="Graph density: |E| / |V|"     , line=2.3)
     title(ylab="", line=2.3)
-    title(main=bquote("Kernelization efficiency for KaGen graph instances; metric: e(G) = 1 - " ~ frac(group("|",E(G[ker]),"|"),group("|",E(G),"|"))))
+    title(main=bquote("Kernelization efficiency for KaGen graph instances; metric: e(G) = 1 - " ~ frac(group("|",V(G[ker]),"|"),group("|",V(G),"|"))))
 
     # Draws the 4 lines of measurements
     for (dx in c(1,2,3,4,5)) {
