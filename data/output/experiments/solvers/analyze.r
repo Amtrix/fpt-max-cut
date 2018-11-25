@@ -42,6 +42,9 @@ GetDatasetId <- function(name) {
 
 print(data_table)
 
+data_table$avgdeg <- data_table$eg / data_table$vg
+data_table$vrem <- 1 - (data_table$vgk / data_table$vg)
+data_table$ktime <- data_table$ktime / 1000.0
 data_table <- aggregate(. ~ file, data_table, function(x) c(mean = min(x), sd = sd(x)))
 
 print(data_table)
