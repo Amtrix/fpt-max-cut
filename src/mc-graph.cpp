@@ -1355,6 +1355,7 @@ bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
         inflicted_cut_change_to_kernelized -= GetAdjacency(rem_node1).size();
         RemoveNode(rem_node1);
         RemoveNode(rem_node2);
+        rules_vrem[RuleIds::Rule8] += 2;
         ret = true;
     }
     
@@ -1613,6 +1614,7 @@ bool MaxCutGraph::ApplyR10ASTCandidate(const tuple<int,int,int,int,int>& candida
     int ex_L = get<0>(candidate), a = get<1>(candidate), b = get<2>(candidate),
            c = get<3>(candidate), ex_R = get<4>(candidate);
 
+    rules_vrem[RuleIds::Rule10AST] += 2;
     RemoveNode(a);
     RemoveNode(c);
     AddEdge(ex_L, b);
@@ -1775,6 +1777,7 @@ bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>
         }
     }
 
+    rules_vrem[RuleIds::RuleS2] += rem_nodes.size();
     for (auto node : rem_nodes)
         RemoveNode(node);
     
@@ -2023,6 +2026,7 @@ bool MaxCutGraph::ApplyS5Candidate(const tuple<int,int,int,int>& candidate) {
     
     RemoveNode(a);
     RemoveNode(b);
+    rules_vrem[RuleIds::RuleS5] += 2;
     AddEdge(ex_L, ex_R);
     inflicted_cut_change_to_kernelized -= 2;
     return true;
@@ -2385,7 +2389,7 @@ void MaxCutGraph::MakeUnweighted() {
 }
 
 void MaxCutGraph::MakeWeighted() {
-    while (PerformKernelization(RuleIds::SpecialRule1) || PerformKernelization(RuleIds::SpecialRule2));
+    while (PerformKernelization(RuleIds::SpecialRule2));
 }
 
 double MaxCutGraph::ExecuteLinearKernelization() {
@@ -2412,7 +2416,7 @@ double MaxCutGraph::ExecuteLinearKernelization() {
 
 void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool> &preset_is_external) {
     vector<RuleIds> exec_order_stage1 = {
-        RuleIds::Rule9X, RuleIds::Rule8, RuleIds::RuleS2, RuleIds::Rule10AST, RuleIds::RuleS5, RuleIds::RuleS3
+        RuleIds::Rule8, RuleIds::RuleS2, RuleIds::RuleS5, RuleIds::RuleS3
     };
 
     vector<RuleIds> exec_order_stage2 = {

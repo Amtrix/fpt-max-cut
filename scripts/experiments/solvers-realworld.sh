@@ -4,7 +4,7 @@ if [ ! "$bootstrap_done" = true ] ; then
     source ./bootstrap.sh
 fi
 
-./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite realworld -live-maxcut-analysis \
+./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite realworld -live-maxcut-analysis -total-allowed-solver-time 2000 \
                   -benchmark-output ../data/output/experiments/solvers/real-world/out > ../data/output/experiments/solvers/real-world/out-exe
 
 

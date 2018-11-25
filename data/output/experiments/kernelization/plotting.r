@@ -83,11 +83,11 @@ pdf(opt$out, width=10, height=5)
     xrange <- range(data_table[,x])
     yrange <- range(0, data_table[,y])
     yrange[2] <- 1
-    xrange[1] <- xrange[1] - 0.5
+    xrange[1] <- 0
     xrange[2] <- xrange[2] + 1
     print(yrange)
     # Initialize the plotting area
-    plot(xrange, yrange, yaxt='n', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
+    plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
@@ -108,7 +108,7 @@ pdf(opt$out, width=10, height=5)
         }
     }
     # Shows the legend
-    legend(xrange[2] - 0.75, yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec)
+    legend("topright", yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec)
 }
 
 

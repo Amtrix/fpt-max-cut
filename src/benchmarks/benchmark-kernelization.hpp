@@ -39,7 +39,7 @@ public:
             }
             
             bool chg_happened = false;
-            for (int i = 0; i < (int)provided_kernelization_order.size() /*&& !chg_happened*/; ++i) { // some basics tests have shown that performance remains same even if the !chg_happened part is removed.
+            for (int i = 0; i < (int)provided_kernelization_order.size() /* && !chg_happened**/; ++i) { // some basics tests have shown that performance remains same even if the !chg_happened part is removed. This helps detect inclusions!
                 cout << ("Trying the " + kRuleNames.at(provided_kernelization_order.at(i)) + " kernelization rule. Timestamps: " + to_string(!reset_timestamps_each_time)) << endl;
                 int cnt = 0;
                 while (kernelized.PerformKernelization(provided_kernelization_order.at(i))) { // exhaustively!
@@ -185,8 +185,8 @@ public:
             if (total_time > sub_on_kernelized_runtime && fabs(k_change) > 1e-9) {
                 OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time) + " of which kernelization has used: " + to_string(sub_on_kernelized_runtime) + " [seconds].");
 
-                Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "mqlib");
-                Burer2002Callback mqlib_cb_k(total_time, &input, kernelized.GetGraphNaming(), kernelized.GetMixingId(), kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, -k_change, "mqlib-kernelized");
+                Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), mixingid, G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "mqlib");
+                Burer2002Callback mqlib_cb_k(total_time, &input, kernelized.GetGraphNaming(), mixingid, kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, -k_change, "mqlib-kernelized");
 
                 auto F_mqlib   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, total_time, &mqlib_cb));
                 auto F_mqlib_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, total_time - sub_on_kernelized_runtime, &mqlib_cb_k), -k_change);
@@ -206,8 +206,8 @@ public:
                 
 
 #ifdef LOCALSOLVER_EXISTS
-                LocalSolverCallback localsolver_cb  (total_time, &input, G.GetGraphNaming(), G.GetMixingId(), G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "localsolver");
-                LocalSolverCallback localsolver_cb_k(total_time, &input, kernelized.GetGraphNaming(), kernelized.GetMixingId(), kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, -k_change, "localsolver-kernelized");
+                LocalSolverCallback localsolver_cb  (total_time, &input, G.GetGraphNaming(), mixingid, G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "localsolver");
+                LocalSolverCallback localsolver_cb_k(total_time, &input, kernelized.GetGraphNaming(), mixingid, kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, -k_change, "localsolver-kernelized");
 
                 auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time, &localsolver_cb));
                 auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime, &localsolver_cb_k), -k_change);
@@ -339,10 +339,10 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2, RuleIds::Rule8,  RuleIds::Rule10AST , RuleIds::RuleS3, RuleIds::RuleS5, RuleIds::Rule9X   /*
+          RuleIds::RuleS2, RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3/*
 
                     ON REMOVED RULES(!!!!):
-                         EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9 
+                         EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9 (S2), RuleIds::Rule9X (S2), RuleIds::Rule10AST (S5)
                          EXCLUDED (see below reasons):    RuleIds::Rule10
                          VERY LITTLE USAGE: RuleIds::RuleS4   (argue in thesis though why you left it out (if you do it))
                          

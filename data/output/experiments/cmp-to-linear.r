@@ -97,11 +97,11 @@ data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
     yrange <- range(data_table[,y])
     yrange <- yrange * 1.1
     yrange[2] <- 1
-    xrange[1] <- xrange[1] - 0.5
+    xrange[1] <- 0
     xrange[2] <- xrange[2] + 1
     print(yrange)
     # Initialize the plotting area
-    plot(xrange, yrange, yaxt='n', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
+    plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes

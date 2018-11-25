@@ -469,6 +469,7 @@ private:
     unordered_map<RuleIds, int> rules_usage_count;
     unordered_map<RuleIds, int> rules_check_count;
     unordered_map<RuleIds, double> rules_time_usage_total;
+    unordered_map<RuleIds, double> rules_vrem;
 
     string graph_naming;
     int mixing_id = -1;
