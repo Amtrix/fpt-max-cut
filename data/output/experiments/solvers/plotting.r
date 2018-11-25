@@ -13,6 +13,7 @@ out_folder="./plots/"
 col_vec = c("darkorange","red2","dodgerblue2","black",
             "purple", "palegreen4", "palevioletred4","khaki4","mediumorchid1", "aquamarine2")
 pnt_vec  = c(18,4,18,15,0,18,4,18,15,0)
+pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 columns <- c("sec", "numnodes","numedges","timex","maxcutsz","file")
 
 data_table <- read.table(paste(res_folder, "out-maxcut_live-localsolver", sep=""), comment.char = "#", col.names = columns)
@@ -81,32 +82,52 @@ for (i in 0:(length(datasets)-1)) {
     # Define some ranges for our plotting area
     xrange <- range(data_table[,x])
     yrange <- range(0,1)
+    xrange[2] <- 600
 
     plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
+    c_legend_names <- c()
     for (i in 0:(length(datasets)-1)) {
         sub <- dplyr::filter(data_table, xsec == i)
         subk <- dplyr::filter(data_table_k, xsec == i)
 
         sub <- sub[with(sub, order(timex)), ]
         subk <- subk[with(subk, order(timex)), ]
+        exists <- FALSE
 
         if (length(sub$timex) > 0) {
-            # points(sub[,x] , sub[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]])
-            lo <- loess(sub[,y] ~ sub[,x], sub, span=0.1)
-            lines(sub[,x], predict(lo), col=col_vec[[i + 1]], lwd=2.5)
+            points(sub[,x] , sub[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]], cex=0.3)
+            #lo <- loess(sub[,y] ~ sub[,x], sub, span=0.1)
+            #lines(sub[,x], predict(lo), col=col_vec[[i + 1]], lwd=2)
+
+            exists <- TRUE
         }
 
         if (length(subk$timex) > 0) {
-            # points(sub[,x] , sub[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]])
-            lo <- loess(subk[,y] ~ subk[,x], subk, span=0.1)
-            lines(subk[,x], predict(lo), col=col_vec[[i + 1]], lwd=2.5)
+            points(sub[,x] , sub[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]], cex=0.3)
+            #lo <- loess(subk[,y] ~ subk[,x], subk, span=0.1)
+            #lines(subk[,x], predict(lo), col=col_vec[[i + 1]], lwd=2)
+
+            exists <- TRUE
         }
 
-       
+        if (exists) {
+            c_legend_names <- c(c_legend_names, i + 1)
+        }
+
        # points(subk[,x] , subk[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]])
     }
+
+
+    namevec <- datasets[c_legend_names]
+    print(namevec)
+    namevec <- lapply(namevec, function(x) basename(tools::file_path_sans_ext(x)))
+  #  namevec <- lapply(namevec, function(x) gsub("(.*)/.*","\\0",x))
+
+  print(namevec)
+
+    legend("bottomright", yrange[2], namevec, lty=, col=col_vec[c_legend_names], pch=pnt_vec1)
 }
 
 #warnings()
