@@ -5,6 +5,9 @@ options(scipen = 999)
 library("optparse")
 library(dplyr)
 
+printpoints <- FALSE
+printloess <- TRUE
+loessv <- 0.1
 eliminate_in_kernelized_too <- TRUE
 
 
@@ -97,17 +100,27 @@ for (i in 0:(length(datasets)-1)) {
         exists <- FALSE
 
         if (length(sub$timex) > 0) {
-            points(sub[,x] , sub[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]], cex=0.3)
-            #lo <- loess(sub[,y] ~ sub[,x], sub, span=0.1)
-            #lines(sub[,x], predict(lo), col=col_vec[[i + 1]], lwd=2)
+            if (printpoints) {
+                points(sub[,x] , sub[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]], cex=0.3)
+            }
+
+            if (printloess) {
+                lo <- loess(sub[,y] ~ sub[,x], sub, span=loessv)
+                lines(sub[,x], predict(lo), col=col_vec[[i + 1]], lwd=2)
+            }
 
             exists <- TRUE
         }
 
         if (length(subk$timex) > 0) {
-            points(sub[,x] , sub[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]], cex=0.3)
-            #lo <- loess(subk[,y] ~ subk[,x], subk, span=0.1)
-            #lines(subk[,x], predict(lo), col=col_vec[[i + 1]], lwd=2)
+            if (printpoints) {
+                points(sub[,x] , sub[,y] , col=col_vec[[i + 1]], pch=pnt_vec[[1]], cex=0.3)
+            }
+
+            if (printloess) {
+                lo <- loess(subk[,y] ~ subk[,x], subk, span=loessv)
+                lines(subk[,x], predict(lo), col=col_vec[[i + 1]], lwd=2)
+            }
 
             exists <- TRUE
         }

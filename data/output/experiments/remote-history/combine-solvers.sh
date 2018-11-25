@@ -1,6 +1,6 @@
 #/bin/bash
 
-declare -a arr=("out-maxcut_live-localsolver" "out-maxcut_live-localsolver-kernelized")
+declare -a arr=("out-maxcut_live-localsolver" "out-maxcut_live-localsolver-kernelized" "out")
 
 for i in "${arr[@]}"
 do
