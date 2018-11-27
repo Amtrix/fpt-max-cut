@@ -88,6 +88,7 @@ pdf(opt$out, width=10, height=5)
 data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
 
 {
+    par(cex = 1.2)
     # Here we choose the two comlumns, that we use for the plot
     y="diff_e"
     x="density.mean"

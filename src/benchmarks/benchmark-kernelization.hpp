@@ -289,6 +289,11 @@ public:
                                 localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff,
                                 local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff,
                                 EE, EE_k, (double)MAXCUT_best_size, kernelization_time});
+            
+            if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
+                G.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid), true);
+                kernelized.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid) + "-kernelized", true);
+            }
         }
 
         custom_assert(accum.size() > 0);

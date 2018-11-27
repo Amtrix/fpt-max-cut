@@ -298,7 +298,8 @@ public:
      **/
     vector<vector<int>> GetCliquesWithAtLeastOneInternal() const;
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false) const;
-    void PrintGraph(std::ostream& out) const;
+    void PrintGraph(std::ostream& out, bool printweight = false) const;
+    void PrintGraph(const std::string path, bool printweight = false) const;
     string PrintDegrees(const unordered_map<int,bool>& preset_is_external = {}) const;
     void PrintReductionsUsage() const;
     int GetRuleUsage(RuleIds rule) const;

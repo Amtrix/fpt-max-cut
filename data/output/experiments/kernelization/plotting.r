@@ -75,6 +75,12 @@ pdf(opt$out, width=10, height=5)
 #v_count <- data_table[,"X..V.G.."][1]
 
 {   
+    par(cex = 1.2)
+    #par(cex.main = 1.3)
+    #par(cex.lab  = 1.3)
+    #par(cex.axis = 1.3)
+
+
     # Here we choose the two comlumns, that we use for the plot
     y="ratio_e.mean"
     x="density.mean"
@@ -87,12 +93,13 @@ pdf(opt$out, width=10, height=5)
     xrange[2] <- xrange[2] + 1
     print(yrange)
     # Initialize the plotting area
+    
     plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
-    title(xlab="Graph density: |E| / |V|"     , line=2.3)
-    title(ylab="", line=2.3)
+    title(xlab="Graph density: |E| / |V|"     , line=2.5)
+    title(ylab="", line=2.5)
     title(main=bquote("Kernelization efficiency for KaGen graph instances; metric: e(G) = 1 - " ~ frac(group("|",V(G[ker]),"|"),group("|",V(G),"|"))))
 
     # Draws the 4 lines of measurements

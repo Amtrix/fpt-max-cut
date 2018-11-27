@@ -65,6 +65,7 @@ print(subset(data_table, V==2))
 
 # Open a PDF to store the plot into
 pdf(opt$out, width=10, height=5)
+par(cex = 1.2)
 
 caption <- "Kernelization coverage - isomorphisms removed"
 if (opt$mode == "iso-kept")
@@ -95,7 +96,7 @@ for (entry in list(
 
     # Label titles for both axes
     title(xlab="Number of external vertices in subgraph"     , line=2.3)
-    title(ylab="coverage", line=3.3)
+    title(ylab="", line=3.3)
     title(main=entry[2])
 
     # Draws the 4 lines of measurements

@@ -37,6 +37,9 @@ Flags when kagen graph sampling is used for graph instance generations:
     -rhgfix [number]
     Turn of random selection between 2 and 6 and use the given fixed one by this parameter.
 
+    -output-graphs-dir [path]
+    Output all generated graphs into the directoriy with mixingid used as identifier.
+
 Flags for benchmark current kernelization performance:
     -support-weighted-result
     If the resulting graph is allowed to be weighted -- allows further reduciton in terms of number of vertices/edges.

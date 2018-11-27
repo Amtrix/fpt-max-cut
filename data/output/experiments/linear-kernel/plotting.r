@@ -74,6 +74,7 @@ pdf(opt$out, width=10, height=5)
 #print(data_table)
 
 {   
+    par(cex = 1.2)
     # Here we choose the two comlumns, that we use for the plot
     y="ratio_e.mean"
     x="density.mean"

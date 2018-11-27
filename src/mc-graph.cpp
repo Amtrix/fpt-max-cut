@@ -2436,16 +2436,36 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
     }
 }
 
-void MaxCutGraph::PrintGraph(std::ostream& out) const {
-    out << num_nodes << " " << GetRealNumEdges() << endl;
+void MaxCutGraph::PrintGraph(std::ostream& out, bool printweight) const {
+    auto currentv = GetAllExistingNodes();
+    out << currentv.size() << " " << GetRealNumEdges() << endl;
 
-    for (int i = 0; i < num_nodes; ++i) {
-        const auto &adj = GetAdjacency(i);
+    int idgiver = 1;
+    unordered_map<int,int> mapping_nodes;
+    for (auto v : currentv) {
+        const auto &adj = GetAdjacency(v);
         for (auto node : adj) {
-            if (i < node)
-                out << i + 1<< " " << node + 1<< " " << 1 << endl;
+            int w = node;
+
+            if (mapping_nodes[v] == 0) mapping_nodes[v] = idgiver++;
+            if (mapping_nodes[w] == 0) mapping_nodes[w] = idgiver++;
+            
+
+            if (mapping_nodes[v] < mapping_nodes[w]) {
+                out << mapping_nodes[v] << " " << mapping_nodes[w];
+                
+                int weight = GetEdgeWeight(make_pair(v,w));
+                if (printweight) out << " " << weight << endl;
+                else out << endl;
+            }
         }
     }
+}
+
+void MaxCutGraph::PrintGraph(const std::string path, bool printweight) const {
+    ofstream out(path.c_str());
+    PrintGraph(out, printweight);
+    out.close();
 }
 
 void MaxCutGraph::PrintReductionsUsage() const {
