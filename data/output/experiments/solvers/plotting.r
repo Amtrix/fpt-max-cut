@@ -43,7 +43,7 @@ eliminate_in_kernelized_too <- TRUE
 res_folder="./"
 out_folder="./plots/"
 col_vec = c("darkorange","red2","dodgerblue2","black",
-            "red","purple", "palevioletred4","darkgreen","mediumorchid1", "aquamarine2")
+            "red","purple", "red","darkgreen","mediumorchid1", "aquamarine2")
 pnt_vec  = c(18,4,18,15,0,18,4,18,15,0)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 columns <- c("sec", "numnodes","numedges","timex","maxcutsz","file")
@@ -71,6 +71,8 @@ data_table$xsec <- lapply(data_table[,"file"], function(x) GetDatasetId(x))
 data_table_k$xsec <- lapply(data_table_k[,"file"], function(x) GetDatasetId(x))
 #data_table$timex <- data_table$timex * 1.01
 
+print(datasets)
+
 for (i in 0:(length(datasets)-1)) {
     sub <- dplyr::filter(data_table, xsec == i)
     subk <- dplyr::filter(data_table_k, xsec == i)
@@ -81,6 +83,12 @@ for (i in 0:(length(datasets)-1)) {
     totmx = max(mx,mxk)
     hasfailed = mx == 0
     hasfailed_k = mxk == 0
+
+    if (i == 3 || i == 4) {
+        print(paste("====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================== SKIPPED: ", datasets[i+1]))
+        hasfailed <- TRUE
+        hasfailed_k <- TRUE
+    }
 
     if (totmx < 500000) {
         hasfailed <- TRUE
@@ -120,7 +128,7 @@ for (i in 0:(length(datasets)-1)) {
 
     # Define some ranges for our plotting area
     xrange <- range(data_table[,x])
-    yrange <- range(0.4,1)
+    yrange <- range(0.8,1)
     xrange[2] <- 600
 
     plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
@@ -146,7 +154,7 @@ for (i in 0:(length(datasets)-1)) {
 
             if (printloess) {
                 lo <- loess(sub[,y] ~ sub[,x], sub, span=loessv)
-                lines(sub[,x], predict(lo), col=col_vec[[i + 1]], lwd=2)
+                lines(sub[,x], predict(lo), col=col_vec[[i + 1]], lwd=1.2, lty=2)
             }
 
             exists <- TRUE
@@ -159,7 +167,7 @@ for (i in 0:(length(datasets)-1)) {
 
             if (printloess) {
                 lo <- loess(subk[,y] ~ subk[,x], subk, span=loessv)
-                lines(subk[,x], predict(lo), col=col_vec[[i + 1]], lwd=2)
+                lines(subk[,x], predict(lo), col=col_vec[[i + 1]], lwd=1.2)
             }
 
             exists <- TRUE
