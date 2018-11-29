@@ -99,6 +99,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
     }
 
     SetGraphNaming(path);
+    OutputDebugLog("Reading: " + path);
 
     const string adj_sfx = ".graph";
     const string edge_sfx = ".edges";

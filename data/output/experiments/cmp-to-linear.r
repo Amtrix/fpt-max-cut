@@ -60,12 +60,13 @@ nam_vec = c("BA","GNM","RGG2D","RGG3D","RHG")#, "original", "task a", "task b", 
 data_table      <- read.table(paste(res_folder, opt$file, sep=""), comment.char = "#", col.names = columnsA)
 data_table_cmp  <- read.table(paste(res_folder, opt$filelinear, sep=""), comment.char = "#", col.names = columnsB)
 
-data_table$ratio_e     = 1 - (data_table[,"X..E.Gk.."]/data_table[,"X..E.G.."])
-data_table_cmp$ratio_e = 1 - (data_table_cmp[,"X..E.Gk.."]/data_table_cmp[,"X..E.G.."])
+#data_table$ratio_e     = 1 - (data_table[,"X..E.Gk.."]/data_table[,"X..E.G.."])
+#data_table_cmp$ratio_e = 1 - (data_table_cmp[,"X..E.Gk.."]/data_table_cmp[,"X..E.G.."])
 
 table_list = list(data_table, data_table_cmp)
 res <- lapply(table_list, function(dtable) {
     dtable$ratio_e = 1 - (dtable[,"X..E.Gk.."]/dtable[,"X..E.G.."])
+    dtable$ratio_v = 1 - (dtable[,"X..V.Gk.."]/dtable[,"X..V.G.."])
     dtable$density = dtable[,"X..E.G.."]/dtable[,"X..V.G.."]
     dtable <- aggregate(. ~ X.sec+X.file, dtable, function(x) c(mean = min(x), sd = sd(x)))
     dtable <- do.call("data.frame", dtable) # flatten
@@ -86,11 +87,12 @@ pdf(opt$out, width=10, height=5)
 
 
 data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
+data_table$diff_v = data_table$ratio_v.mean - data_table_cmp$ratio_v.mean
 
 {
     par(cex = 1.2)
     # Here we choose the two comlumns, that we use for the plot
-    y="diff_e"
+    y="diff_v"
     x="density.mean"
 
     # Define some ranges for our plotting area
