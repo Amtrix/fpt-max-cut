@@ -35,4 +35,14 @@ check_and_wait_if_threadpool_full
 
 check_and_wait_if_threadpool_full
 
+./$selected_build -action "kernelization" -iterations 1 -disk-suite biqmac-rudy -total-allowed-solver-time -1 \
+                  -benchmark-output ../data/output/experiments/kernelization/graph-gen/biqmac-rudy/out > ../data/output/experiments/kernelization/graph-gen/biqmac-rudy/out-exe \
+                  -output-graphs-dir ../data/output/experiments/kernelization/graph-gen/biqmac-rudy/graphs/ &
+
+check_and_wait_if_threadpool_full
+
+./$selected_build -action "kernelization" -iterations 1 -disk-suite biqmac-rudy -total-allowed-solver-time -1 -support-weighted-result \
+                -benchmark-output ../data/output/experiments/kernelization/graph-gen/biqmac-rudyw/out > ../data/output/experiments/kernelization/graph-gen/biqmac-rudyw/out-exe \
+                -output-graphs-dir ../data/output/experiments/kernelization/graph-gen/biqmac-rudyw/graphs/ &
+
 wait_and_reset_threadpool

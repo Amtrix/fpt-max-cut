@@ -4,13 +4,13 @@ cwd=$(pwd)
 source ./bootstrap.sh
 
 echo "#0 Running"
-source $cwd/kernelization-kagen-rhg.sh
+source $cwd/stats-kernelization-kagen-rhg.sh
 
 echo "#1 Running"
-source $cwd/kernelization-kagen.sh
+source $cwd/stats-kernelization-kagen.sh
 
 echo "#2 Running"
-source $cwd/linear-kernel-kagen.sh
+source $cwd/stats-linear-kernel-kagen.sh
 
 #echo "#3 Running"
 #source $cwd/timekernelization-kagen-n100k-500k-sparse.sh

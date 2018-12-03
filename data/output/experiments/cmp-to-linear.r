@@ -42,7 +42,7 @@ if (is.null(opt$loess)) {
 
 # Some variables that are used in various ways, to construct the plots
 types_to_test = c(0,1,2,3,4)
-res_folder="./"
+res_folder=""
 col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
 pnt_vec  = c(18,4,18,15,0)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
@@ -109,8 +109,8 @@ data_table$diff_v = data_table$ratio_v.mean - data_table_cmp$ratio_v.mean
 
     # Label titles for both axes
     title(xlab="Graph density: |E| / |V|"     , line=2.3)
-    title(ylab="", line=2.3)
-    title(main=expression("Absolute difference in efficiency:  e(G"[new]*") - e(G"[old]*")"))
+    title(ylab=expression("e"[absDiff]*""), line=3.2)
+    title(main=expression("Absolute difference in efficiency: e"[absDiff]*" = e(G"[new]*") - e(G"[old]*")"))
 
     # Draws the 4 lines of measurements
     for (dx in types_to_test) {

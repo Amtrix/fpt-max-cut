@@ -71,6 +71,9 @@ data_table$xsec <- lapply(data_table[,"file"], function(x) GetDatasetId(x))
 data_table_k$xsec <- lapply(data_table_k[,"file"], function(x) GetDatasetId(x))
 #data_table$timex <- data_table$timex * 1.01
 
+#data_table <- dplyr::filter(data_table, timex < 600)
+#data_table_k <- dplyr::filter(data_table_k, timex < 600)
+
 print(datasets)
 
 for (i in 0:(length(datasets)-1)) {
@@ -135,8 +138,8 @@ for (i in 0:(length(datasets)-1)) {
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     title(xlab="Time in seconds"     , line=2.3)
-    title(ylab="", line=3)
-    title(main=expression("Achieved Max-Cut over time by Localsolver: initial vs. kernelized graph"))
+    title(ylab="Solution size (% of max found)", line=3.3)
+    title(main=expression("Solution size over time by Localsolver: initial vs. kernelized graph"))
 
     c_legend_names <- c()
     for (i in 0:(length(datasets)-1)) {
@@ -154,7 +157,7 @@ for (i in 0:(length(datasets)-1)) {
 
             if (printloess) {
                 lo <- loess(sub[,y] ~ sub[,x], sub, span=loessv)
-                lines(sub[,x], predict(lo), col=col_vec[[i + 1]], lwd=1.2, lty=2)
+                lines(sub[,x], predict(lo), col=col_vec[[i + 1]], lwd=1.8, lty=2)
             }
 
             exists <- TRUE
@@ -167,7 +170,7 @@ for (i in 0:(length(datasets)-1)) {
 
             if (printloess) {
                 lo <- loess(subk[,y] ~ subk[,x], subk, span=loessv)
-                lines(subk[,x], predict(lo), col=col_vec[[i + 1]], lwd=1.2)
+                lines(subk[,x], predict(lo), col=col_vec[[i + 1]], lwd=1.8)
             }
 
             exists <- TRUE

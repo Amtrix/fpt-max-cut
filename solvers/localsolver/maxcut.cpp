@@ -157,55 +157,6 @@ int main(int argc, char** argv) {
             cerr << "No input file" << endl;
         }
 
-        // UNCOMMENT THIS WHEN WANTING TO COMPUTE CUT FOR ALL DATASETS 
-        
-        /*
-        ofstream out("../../data/output/localsolver-lower-bound-cut-size/output_2.0-3sec");
-        for (unsigned int i = 0; i < kDataSetCount; ++i) {
-            auto sets = GetAllDatasets(paths[i]);
-            for (unsigned int i = 0; i < sets.size(); ++i) {
-                cout << sets[i] << endl;
-                string datapath = sets[i];
-            
-                Maxcut model;
-                model.readInstance(datapath);
-                model.solve(atoi("5"));
-                int cutsize = model.getCutSize();
-
-                MaxCutGraph G(datapath);
-
-                int k = 0;
-                int rule_taken;
-                OutputDebugLog("----------- START: APPLYING ONE-WAY REDUCTION RULES TO COMPUTE S -----------");
-                MaxCutGraph G_processing_oneway = G; // ! make sure no pointers in G !
-                while ((rule_taken = TryOneWayReduce(G_processing_oneway, k)) != -1) {
-                    OutputDebugLog("RULE: " + to_string(rule_taken));
-                    OutputDebugLog("-----------");
-                }
-
-                double k_dest = cutsize - G.GetEdwardsErdosBound();
-
-                out.width(50);
-                out << datapath.substr(6) << " ";
-                out.width(15);
-                out << G.GetNumNodes() << " ";
-                out.width(15);
-                out << G.GetRealNumEdges() << " ";
-                out.width(15);
-                out << G.GetEdwardsErdosBound() << " ";
-                out.width(15);
-                out << cutsize << " ";
-                out.width(15);
-                out << k_dest << " ";
-                out.width(17);
-                out << (k/4.0) << " ";
-                out.width(17);
-                out << k_dest + (k/4.0) << endl;
-                out.flush();
-            }
-        }
-        */
-
         return 0;
     } catch (const exception& e){
         cerr << "Error occurred: " << e.what() << endl;

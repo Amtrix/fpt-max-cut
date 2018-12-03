@@ -99,7 +99,7 @@ pdf(opt$out, width=10, height=5)
 
     # Label titles for both axes
     title(xlab="Graph density: |E| / |V|"     , line=2.5)
-    title(ylab="", line=2.5)
+    title(ylab="e(G)", line=3.3)
     title(main=bquote("Kernelization efficiency for KaGen graph instances; metric: e(G) = 1 - " ~ frac(group("|",V(G[ker]),"|"),group("|",V(G),"|"))))
 
     # Draws the 4 lines of measurements
