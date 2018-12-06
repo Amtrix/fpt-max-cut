@@ -1,13 +1,16 @@
 #/bin/bash
 
+func_localize() {
+    local cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+    outdir_ifnot_given=$cwd/experiments-plots/solvers
+    source $cwd/generate-bootstrap.sh
 
-outdir_ifnot_given=$cwd/experiments-plots/solvers
-source $cwd/generate-bootstrap.sh
+    mkdir -p $outdir/real-world
 
-mkdir -p $outdir/real-world
+    Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver.pdf
+    Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver-nopoints-loess.pdf --nopoints --loess 0.01
+    Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver-loess.pdf --loess 0.01
+}
 
-Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver.pdf
-Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver-nopoints-loess.pdf --nopoints --loess 0.01
-Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver-loess.pdf --loess 0.01
+func_localize

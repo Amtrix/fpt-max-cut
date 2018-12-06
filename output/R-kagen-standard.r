@@ -17,7 +17,13 @@ option_list = list(
 
 
     make_option(c("--nopoints"), action="store_true", type="logical", default=FALSE, 
-              help="If points should be omitted", metavar="logical")
+              help="If points should be omitted", metavar="logical"),
+    
+    make_option(c("--type"), type="character", default="kagen",
+              help="Plotting type: kagen, by_name [default= %default]", metavar="character"),
+    
+    make_option(c("--nolegend"), action="store_true", type="logical", default=FALSE, 
+              help="No legend in result.", metavar="logical")
 ); 
  
 opt_parser = OptionParser(option_list=option_list);
@@ -43,27 +49,29 @@ file=opt$file
 col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
 pnt_vec = c(9,18,17,15,0)
 columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT','#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD','#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
+kagen_nam_vec = c("BA","GNM","RGG2D","RGG3D","RHG")#, "original", "task a", "task b", "task c")
 
 
-#Need readjustment for each case:
-x_start <- 15
-x_start_legend <- 9
-case_type <- "ba_1024"
-nam_vec = c("BA","GNM","RGG2D","RGG3D","RHG")#, "original", "task a", "task b", "task c")
                                                             
 # Read the results from the csv files
 data_table      <- read.table(paste(res_folder, file, sep=""), comment.char = "#", col.names = columns)
-
 data_table$ratio_e = 1 - (data_table[,"X..V.Gk.."]/data_table[,"X..V.G.."])
 data_table$density = data_table[,"X..E.G.."]/data_table[,"X..V.G.."]
 data_table <- aggregate(. ~ X.sec+X.file, data_table, function(x) c(mean = min(x), sd = sd(x)))
 data_table <- do.call("data.frame", data_table) # flatten
 
 
-row_cnt <- nrow(data_table)
-data_table$gtype = floor(data_table[,"X.sec"]/(row_cnt/5))
-#data_table <- data_table[with(data_table, order(X.sec,density)), ]
-data_table <- data_table[with(data_table, order(gtype, density.mean)), ]
+# From here on we group the individual entries together.
+if (opt$type == "kagen") {
+    row_cnt <- nrow(data_table)
+    data_table$gtype = floor(data_table[,"X.sec"]/(row_cnt/5))
+    #data_table <- data_table[with(data_table, order(X.sec,density)), ]
+    data_table <- data_table[with(data_table, order(gtype, density.mean)), ]
+} else {
+    data_table$gtype <- data_table[,"X.sec"]
+}
+
+
 
 
 # Open a PDF to store the plot into
@@ -103,19 +111,29 @@ pdf(opt$out, width=10, height=5)
     title(main=bquote("Kernelization efficiency. Metric: e(G) = 1 - " ~ frac(group("|",V(G[ker]),"|"),group("|",V(G),"|"))))
 
     # Draws the 4 lines of measurements
-    for (dx in c(1,2,3,4,5)) {
-       sub <- dplyr::filter(data_table, gtype == dx - 1)
+    if (opt$type == "kagen") {
+        for (dx in c(1,2,3,4,5)) {
+            sub <- dplyr::filter(data_table, gtype == dx - 1)
 
+            if (!opt$nopoints)
+                points(sub[,x] , sub[,y] , col=col_vec[[dx]], pch=pnt_vec[[dx]])
+
+            if (do_loess) {
+                lo <- loess(sub[[y]] ~ sub[[x]], sub, span=loess_val)
+                lines(sub[[x]], predict(lo), col=col_vec[[dx]], lwd=4)
+            }
+        }
+        # Shows the legend
+        legend("topright", yrange[2], kagen_nam_vec, lty=, col=col_vec, pch=pnt_vec)
+    } else {
         if (!opt$nopoints)
-            points(sub[,x] , sub[,y] , col=col_vec[[dx]], pch=pnt_vec[[dx]])
+            points(data_table[,x] , data_table[,y] , col=col_vec[[dx]], pch=1)
 
         if (do_loess) {
-            lo <- loess(sub[[y]] ~ sub[[x]], sub, span=loess_val)
-            lines(sub[[x]], predict(lo), col=col_vec[[dx]], lwd=4)
+            lo <- loess(data_table[[y]] ~ data_table[[x]], data_table, span=loess_val)
+            lines(data_table[[x]], predict(lo), col=col_vec[[dx]], lwd=4)
         }
     }
-    # Shows the legend
-    legend("topright", yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec)
 }
 
 

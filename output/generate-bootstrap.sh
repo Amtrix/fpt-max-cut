@@ -1,11 +1,11 @@
 #/bin/bash
 
-cwdboot="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+cwdbootplots="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 standard_exp_subdir=kernelization
 
-experiments=$cwdboot/experiments
-experiments_B=$cwdboot/experiments-presentation
+experiments=$cwdbootplots/experiments
+experiments_B=$cwdbootplots/experiments-presentation
 
 kagendata_standard=$experiments/$standard_exp_subdir
 kagendata_linear_fpt=$experiments/linear-kernel
