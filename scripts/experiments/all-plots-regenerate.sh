@@ -1,6 +1,9 @@
 #!/bin/bash
 
-cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-outdir=$cwd/../../data/output/plots/cmp
+cwdmain="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-source $cwd/../../data/output/experiments/generate-cmp-plots.sh
+source $cwdmain/../../output/generate-solvers-plots.sh
+source $cwdmain/../../output/generate-stats-cmp-plots.sh
+source $cwdmain/../../output/generate-stats-linear_fpt-plots.sh
+source $cwdmain/../../output/generate-stats-standard-plots.sh
+
