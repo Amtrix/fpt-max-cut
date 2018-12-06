@@ -2,9 +2,14 @@
 
 cwdboot="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-kagendata_standard=$cwdboot/experiments/kernelization
-kagendata_linear_fpt=$cwdboot/experiments/linear-kernel
-timeana_realworld=$cwdboot/experiments/solvers/real-world
+standard_exp_subdir=kernelization
+
+experiments=$cwdboot/experiments
+experiments_B=$cwdboot/experiments-presentation
+
+kagendata_standard=$experiments/$standard_exp_subdir
+kagendata_linear_fpt=$experiments/linear-kernel
+timeana_realworld=$experiments/solvers/real-world
 
 #if [ -z ${outdir+x} ] ; then
     outdir=$outdir_ifnot_given
