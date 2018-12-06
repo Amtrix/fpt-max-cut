@@ -18,3 +18,5 @@ wait_and_reset_threadpool
 
 
 #to test solvers: ./benchmark-debug -action "kernelization" -iterations 1 -sample-kagen 1 -benchmark-output ../data/output/experiments/solvers/real-world/out-test -total-allowed-solver-time 2
+
+# THIS DOES NOT WORK WITH LOCALSOLVER AS THEY ONLY PROVIDE ONE TOKEN PER LICENSE!

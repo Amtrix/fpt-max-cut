@@ -1,22 +1,28 @@
 #!/bin/bash
 
-if [ ! "$bootstrap_done" = true ] ; then
-    source ./bootstrap.sh
-fi
+func_localize() {
+    local cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-declare -a arr=("512" "2048" "8000")
+    if [ ! "$bootstrap_done" = true ] ; then
+        source $cwd/bootstrap.sh
+    fi
 
-for i in "${arr[@]}"
-do
-    ./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen $kkagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -total-allowed-solver-time -1 \
-                  -benchmark-output ../data/output/experiments/kernelization/n"$i"/out > ../data/output/experiments/kernelization/n"$i"/out-exe &
+    declare -a arr=("512" "2048" "8000")
 
-    check_and_wait_if_threadpool_full
+    for i in "${arr[@]}"
+    do
+        $builddir/./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen $kkagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -total-allowed-solver-time -1 \
+                    -benchmark-output $experiment_outdir/kernelization/n"$i"/out > $experiment_outdir/kernelization/n"$i"/out-exe &
 
-    ./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen $kkagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -total-allowed-solver-time -1 -support-weighted-result \
-                  -benchmark-output ../data/output/experiments/kernelization/n"$i"w/out > ../data/output/experiments/kernelization/n"$i"w/out-exe &
+        check_and_wait_if_threadpool_full
 
-    check_and_wait_if_threadpool_full
-done
+        $builddir/./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen $kkagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -total-allowed-solver-time -1 -support-weighted-result \
+                    -benchmark-output $experiment_outdir/kernelization/n"$i"w/out > $experiment_outdir/kernelization/n"$i"w/out-exe &
 
-wait_and_reset_threadpool
+        check_and_wait_if_threadpool_full
+    done
+
+    wait_and_reset_threadpool
+}
+
+func_localize

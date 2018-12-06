@@ -41,7 +41,6 @@ eliminate_in_kernelized_too <- TRUE
 
 
 res_folder=""
-out_folder="./plots/"
 col_vec = c("darkorange","red2","dodgerblue2","black",
             "red","purple", "red","darkgreen","mediumorchid1", "aquamarine2")
 pnt_vec  = c(18,4,18,15,0,18,4,18,15,0)
