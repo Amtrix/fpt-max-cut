@@ -3,7 +3,7 @@
 
 options("width"=230)
 library("optparse")
-library(dplyr)
+suppressWarnings(suppressMessages(library("dplyr")))
 
 option_list = list(
     make_option(c("-f", "--file"), type="character", default=NULL, 
@@ -99,7 +99,6 @@ pdf(opt$out, width=10, height=5)
     yrange[2] <- 1
     xrange[1] <- 0
     xrange[2] <- xrange[2] + 1
-    print(yrange)
     # Initialize the plotting area
     
     plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)

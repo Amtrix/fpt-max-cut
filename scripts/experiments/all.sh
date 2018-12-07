@@ -4,7 +4,7 @@ func_localize() {
     #just to make it unique, weird suffix added
     local cwdallmain576="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-    
+
     source $cwdallmain576/bootstrap.sh
 
     #echo "#0 Running"
@@ -26,6 +26,12 @@ func_localize() {
     source $cwdallmain576/all-plots-regenerate.sh
 
     echo "Done!"
+
+    rm $experiment_outdir/gitcommit.info
+    touch $experiment_outdir/gitcommit.info
+    git rev-parse HEAD > $experiment_outdir/gitcommit.info
+    echo "\n" >> $experiment_outdir/gitcommit.info
+    git rev-parse --short HEAD >> $experiment_outdir/gitcommit.info
 }
 
 func_localize

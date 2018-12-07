@@ -13,13 +13,17 @@ func_localize() {
 
     for i in "${arr[@]}"
     do
+        set -o xtrace
         Rscript $cwd/R-kagen-standard.r --file $kagendata_standard/n$i/out --out $outdir/kagen/plot-n$i.pdf
+        set +o xtrace
 
         for j in "${arrl[@]}"
         do
             local noperiodj="${j//./}"
+            set -o xtrace
             Rscript $cwd/R-kagen-standard.r --file $kagendata_standard/n$i/out --out $outdir/kagen/plot-n$i-$noperiodj.pdf --loess $j
             Rscript $cwd/R-kagen-standard.r --file $kagendata_standard/n$i/out --out $outdir/kagen/plot-n$i-$noperiodj-nop.pdf --loess $j --nopoints
+            set +o xtrace
         done
     done
 }

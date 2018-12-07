@@ -3,7 +3,7 @@
 options("width"=230)
 options(scipen = 999)
 library("optparse")
-library(dplyr)
+suppressWarnings(suppressMessages(library("dplyr")))
 
 option_list = list(
     make_option(c("-f", "--file"), type="character", default=NULL, 
@@ -73,7 +73,6 @@ data_table_k$xsec <- lapply(data_table_k[,"file"], function(x) GetDatasetId(x))
 #data_table <- dplyr::filter(data_table, timex < 600)
 #data_table_k <- dplyr::filter(data_table_k, timex < 600)
 
-print(datasets)
 
 for (i in 0:(length(datasets)-1)) {
     sub <- dplyr::filter(data_table, xsec == i)
@@ -87,7 +86,6 @@ for (i in 0:(length(datasets)-1)) {
     hasfailed_k = mxk == 0
 
     if (i == 3 || i == 4) {
-        print(paste("====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================== SKIPPED: ", datasets[i+1]))
         hasfailed <- TRUE
         hasfailed_k <- TRUE
     }
@@ -96,8 +94,6 @@ for (i in 0:(length(datasets)-1)) {
         hasfailed <- TRUE
         hasfailed_k <- TRUE
     }
-
-    print(paste(i, mx, mxk, totmx))
 
     if (hasfailed_k && !hasfailed) {
         print("exception state quit: hasfailedk but not hasfailed")
@@ -184,11 +180,9 @@ for (i in 0:(length(datasets)-1)) {
 
 
     namevec <- datasets[c_legend_names]
-    print(namevec)
     namevec <- lapply(namevec, function(x) basename(tools::file_path_sans_ext(x)))
   #  namevec <- lapply(namevec, function(x) gsub("(.*)/.*","\\0",x))
 
-  print(namevec)
 
     legend("bottomright", yrange[2], namevec, lty=, col=col_vec[c_legend_names], pch=pnt_vec1)
 }

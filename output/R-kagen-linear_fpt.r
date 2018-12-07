@@ -3,7 +3,7 @@
 
 options("width"=230)
 library("optparse")
-library(dplyr)
+suppressWarnings(suppressMessages(library("dplyr")))
 
 option_list = list(
     make_option(c("-f", "--file"), type="character", default=NULL, 

@@ -2,7 +2,7 @@
 
 options("width"=230)
 library("optparse")
-library(dplyr)
+suppressWarnings(suppressMessages(library("dplyr")))
 
 option_list = list(
     make_option(c("-fA", "--fileA"), type="character", default=NULL, 
@@ -102,7 +102,7 @@ data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
     yrange[2] <- 0.6
     xrange[1] <- 0
     xrange[2] <- xrange[2] + 1
-    print(yrange)
+
     # Initialize the plotting area
     plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
