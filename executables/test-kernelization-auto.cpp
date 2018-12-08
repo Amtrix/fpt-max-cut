@@ -29,7 +29,8 @@ string serializestr(vector<int> vec) {
 }
 
 const vector<RuleIds> kernelization_order = {
-    RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
+    RuleIds::RuleS2, RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3
+//    RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
 };
 
 std::function<void()> suite[] = {
@@ -62,6 +63,8 @@ std::function<void()> suite[] = {
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             auto heur_sol = G.ComputeMaxCutWithMQLib(2);
             auto heur_sol_k = kernelized.ComputeMaxCutWithMQLib(2);
+            cout << "Non-kernelized: " << heur_sol.first << endl;
+            cout << "Kernelized: " << heur_sol_k.first - k_change << endl;
             VERIFY_RETURN_ON_FAIL(heur_sol.first, heur_sol_k.first - k_change);
 
             auto rule_usages = kernelized.GetUsageVector();

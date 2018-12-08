@@ -19,7 +19,8 @@ enum class RuleIds : int {
     SpecialRule2,
     RevSpecialRule1,
     RevSpecialRule2,
-    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6
+    RevSpecialRule2Signed,
+    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed
 };
 
 extern const map<RuleIds, string> kRuleDescriptions;
@@ -270,7 +271,7 @@ public:
     vector<pair<int,int>> GetRevSpecialRule2Candidates() const;
     //Applications.
     bool ApplyRevSpecialRule1(const pair<int,int> &candidate);
-    bool ApplyRevSpecialRule2(const pair<int,int> &candidate);
+    bool ApplyRevSpecialRule2(const pair<int,int> &candidate, const bool make_signed = false);
 
 
     /**
@@ -279,6 +280,7 @@ public:
     bool PerformKernelization(const RuleIds rule_id, const unordered_map<int,bool>& preset_is_external = {});
     void MakeUnweighted();
     void MakeWeighted();
+    void MakeSigned();
     double ExecuteLinearKernelization();
     void ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool>& preset_is_external);
     

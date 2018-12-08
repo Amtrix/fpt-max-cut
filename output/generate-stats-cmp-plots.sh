@@ -32,11 +32,19 @@ func_localize() {
     do
         local noperiodi="${i//./}"
         set -o xtrace
+        #unweighted with unweighted result
         Rscript $cwd/R-kagen-cmp-standard_A-to-standard_B.r    --fileA $kagendata_standard/n2048/out --fileB $experiments_B/$standard_exp_subdir/n2048/out \
-                                                            --out $outdir/experiments_B/plotw-$noperiodi.pdf --loess $i
+                                                               --out $outdir/experiments_B/plot-$noperiodi.pdf --loess $i
 
         Rscript $cwd/R-kagen-cmp-standard_A-to-standard_B.r    --fileA $kagendata_standard/n2048/out --fileB $experiments_B/$standard_exp_subdir/n2048/out \
-                                                            --out $outdir/experiments_B/plotw-$noperiodi-nop.pdf --loess $i --nopoints
+                                                               --out $outdir/experiments_B/plot-$noperiodi-nop.pdf --loess $i --nopoints
+
+        #weighted with weighted result
+        Rscript $cwd/R-kagen-cmp-standard_A-to-standard_B.r    --fileA $kagendata_standard/n2048w/out --fileB $experiments_B/$standard_exp_subdir/n2048w/out \
+                                                               --out $outdir/experiments_B/plotw-$noperiodi.pdf --loess $i
+
+        Rscript $cwd/R-kagen-cmp-standard_A-to-standard_B.r    --fileA $kagendata_standard/n2048w/out --fileB $experiments_B/$standard_exp_subdir/n2048w/out \
+                                                               --out $outdir/experiments_B/plotw-$noperiodi-nop.pdf --loess $i --nopoints
         set +o xtrace
     done
 }

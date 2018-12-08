@@ -1,11 +1,18 @@
 #!/bin/bash
-cd "${0%/*}"
-cd ../build
 
-make test-*
+func_localize() {
+    local cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+    builddir=$cwd/../build
 
-set -o xtrace
-./test-articulation-and-biconnected
-./test-graph-functionality
-./test-kernelization-all
-./test-kernelization-auto
+    cd $builddir
+
+    make test-*
+
+    set -o xtrace
+    $builddir/./test-articulation-and-biconnected
+    $builddir/./test-graph-functionality
+    $builddir/./test-kernelization-all
+    $builddir/./test-kernelization-auto
+}
+
+func_localize

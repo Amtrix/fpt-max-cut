@@ -7,7 +7,8 @@ func_localize() {
         source $cwd/bootstrap.sh
     fi
 
-    declare -a arr=("512" "2048" "8000")
+    declare -a arr=("512" "2048")
+    # "8000")
 
     for i in "${arr[@]}"
     do

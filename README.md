@@ -25,6 +25,10 @@ General flags:
     If one is given, both are required. Specifies the edge weights. Sampled at random. If sampler find 0, it resamples as that would influence number of edges.
     If graph has already given edges weights, this is ignored.
 
+    -output-graphs-dir [path]
+    Output all graphs into the directoriy -- kernelized and non-kernelized.
+
+
 Flags when kagen graph sampling is used for graph instance generations:
 
     -num-nodes [number]
@@ -37,8 +41,6 @@ Flags when kagen graph sampling is used for graph instance generations:
     -rhgfix [number]
     Turn of random selection between 2 and 6 and use the given fixed one by this parameter.
 
-    -output-graphs-dir [path]
-    Output all generated graphs into the directoriy with mixingid used as identifier.
 
 Flags for benchmark current kernelization performance:
     -support-weighted-result

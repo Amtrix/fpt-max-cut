@@ -99,7 +99,7 @@ data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
     xrange <- range(data_table[,x])
     yrange <- range(data_table[,y])
     yrange <- yrange * 1.1
-    yrange[2] <- 0.6
+    yrange[2] <- max(0.6, yrange[2])
     xrange[1] <- 0
     xrange[2] <- xrange[2] + 1
 

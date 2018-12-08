@@ -47,6 +47,7 @@ public:
                     cnt++;
                 }
                 cout << ("         ... tried further " + to_string(cnt) + " times again.") << endl;
+                cout << ("             cut_change =  " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
                 LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
             }
 
@@ -64,7 +65,18 @@ public:
 
     void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}, const bool force_timestampless_kernelization = false) {
         // First transform graph into unweighted. /////////////
-        auto t0 = GetCurrentTime();//std::chrono::high_resolution_clock::now();
+        auto t0 = GetCurrentTime();
+        kernelized.MakeWeighted();
+
+        auto edgest = kernelized.GetAllExistingEdges();
+       // cout << "Weighted graph: " << kernelized.GetInflictedCutChangeToKernelized() << endl;
+       // for (auto e : edgest)
+       //     cout << e.first << " " << e.second << " " << kernelized.GetEdgeWeight(e) << endl;
+
+        kernelized.MakeSigned();
+        KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false);
+
+
         kernelized.MakeUnweighted();
         OutputDebugLog("Made unweighted");
         LogTime(t0);

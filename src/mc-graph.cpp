@@ -15,20 +15,22 @@
 
 
 const map<RuleIds, string> kRuleDescriptions = {
-    {RuleIds::SpecialRule1,    "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 3 to a single edge."},
-    {RuleIds::SpecialRule2,    "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 2 to a single edge."},
-    {RuleIds::RevSpecialRule1, "Reversed Special Reduction Rule for handling weighted<->unweighted."},
-    {RuleIds::RevSpecialRule2, "Reversed Special Reduction Rule for handling weighted<->unweighted."},
-    {RuleIds::Rule8,           "Reduction Rule for handling cliques with uniform neighbhor set. Rule 8 in linear kernel paper."},
-    {RuleIds::Rule9,           "Reduction Rule for handling special triangles sharing one common vertex. Rule 9 in linear kernel paper."},
-    {RuleIds::Rule9X,          "Reduction Rule for handling cliques in cliques with > /2 size. Rule 9 in max-balanced-subgraph paper."},
-    {RuleIds::Rule10,          "Reduction Rule for handling special bridge induced by a single vertex 'u'. Rule 10 in max-balanced-subgraph paper."},
-    {RuleIds::Rule10AST,       "Reduction Rule for handling induced paths of length 4. Rule 10 in AST paper."},
-    {RuleIds::RuleS2,          "Selfmade Reduction Rule for handling cliques with <= n/2 external vertices."},
-    {RuleIds::RuleS3,          "Selfmade Reduction Rule for handling cliques with an missing edge -> adds it to it."},
-    {RuleIds::RuleS4,          "Selfmade Reduction Rule for handling two quads cases."},
-    {RuleIds::RuleS5,          "Selfmade Reduction Rule for handling induced paths of length 3."},
-    {RuleIds::RuleS6,          "?????????????????"},
+    {RuleIds::SpecialRule1,       "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 3 to a single edge."},
+    {RuleIds::SpecialRule2,       "Special Reduction Rule for handling weighted<->unweighted: Compresses paths of length 2 to a single edge."},
+    {RuleIds::RevSpecialRule1,    "Reversed Special Reduction Rule for handling weighted<->unweighted."},
+    {RuleIds::RevSpecialRule2,    "Reversed Special Reduction Rule for handling weighted<->unweighted."},
+    {RuleIds::Rule8,              "Reduction Rule for handling cliques with uniform neighbhor set. Rule 8 in linear kernel paper."},
+    {RuleIds::Rule9,              "Reduction Rule for handling special triangles sharing one common vertex. Rule 9 in linear kernel paper."},
+    {RuleIds::Rule9X,             "Reduction Rule for handling cliques in cliques with > /2 size. Rule 9 in max-balanced-subgraph paper."},
+    {RuleIds::Rule10,             "Reduction Rule for handling special bridge induced by a single vertex 'u'. Rule 10 in max-balanced-subgraph paper."},
+    {RuleIds::Rule10AST,          "Reduction Rule for handling induced paths of length 4. Rule 10 in AST paper."},
+    {RuleIds::RuleS2,             "Selfmade Reduction Rule for handling cliques with <= n/2 external vertices."},
+    {RuleIds::RuleS3,             "Selfmade Reduction Rule for handling cliques with an missing edge -> adds it to it."},
+    {RuleIds::RuleS4,             "Selfmade Reduction Rule for handling two quads cases."},
+    {RuleIds::RuleS5,             "Selfmade Reduction Rule for handling induced paths of length 3."},
+    {RuleIds::RuleS6,             "?????????????????"},
+    {RuleIds::Rule8Signed,        "Signed version of Rule8"},
+    {RuleIds::RevSpecialRule2Signed, "Variant of special rule rev 2 that that leaves a -1 edge => implies signed max-cut."}
 };
 
 const map<RuleIds, string> kRuleNames = {
@@ -46,11 +48,14 @@ const map<RuleIds, string> kRuleNames = {
     {RuleIds::RuleS4,          "RuleS4"},
     {RuleIds::RuleS5,          "RuleS5"},
     {RuleIds::RuleS6,          "RuleS6"},
+    {RuleIds::Rule8Signed,     "Rule8Signed"},
+    {RuleIds::RevSpecialRule2Signed, "RevSpecialRule2Signed"}
 };
 
 const vector<RuleIds> kAllRuleIds = {
     RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
-    RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6
+    RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
+    RuleIds::Rule8Signed, RuleIds::RevSpecialRule2Signed
 };
 
 struct trie_node_r8 {
@@ -1280,6 +1285,23 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
     if (!break_on_first)
         CURRENT_TIMESTAMPS.R8 = current_kernelization_time;
 
+    auto getr8key = [&](const int root) {
+        vector<int> key;
+        key.push_back(root);
+
+        const auto& adj = GetAdjacency(root);
+
+        for (auto adj_node : adj) {
+            int w = GetEdgeWeight(make_pair(root, adj_node));
+            custom_assert(w == 1 || w == -1);
+            
+            if (w == 1 ) key.push_back(adj_node);
+            if (w == -1) key.push_back(-adj_node);
+        }
+        
+        sort(key.begin(), key.end());
+        return key;
+    };
 
     
     const int sz_fix = (int)current_v.size();
@@ -1293,29 +1315,22 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
         }
     }
 
-    int preset_inv = -1;
+  //  int preset_inv = -1;
     trie_r8 partitions;
     for (auto root : current_v) {
-        if (visited[root]) continue;
+        if (visited[root] || KeyExists(root, preset_is_external)) continue;
         visited[root] = 1;
 
-        auto key = SetUnion(GetAdjacency(root), vector<int>{root});
-        if (KeyExists(root, preset_is_external))
-            key.push_back(--preset_inv); // makes unable to match other vertices' adjacency with this one.
-
+        vector<int> key = getr8key(root);
         sort(key.begin(), key.end());
         partitions.Insert(key, root);
     }
 
     for (auto root : current_v) {
         if (visited[root] == 2) continue;
+        if (KeyExists(root, preset_is_external)) continue;
 
-        auto key = SetUnion(GetAdjacency(root), vector<int>{root}); // O(Ng(root))
-        if (KeyExists(root, preset_is_external))
-            key.push_back(--preset_inv); // makes unable to match other vertices' adjacency with this one.
-
-
-        sort(key.begin(), key.end());
+        auto key = getr8key(root); // O(Ng(root))
         const auto X = partitions.Retrieve(key); // O(Ng(root))
         const auto NG = SetSubstract(key, X); // O(Ng(root))
 
@@ -2121,15 +2136,15 @@ bool MaxCutGraph::CandidateSatisfiesSpecialRule1(const tuple<int,int,int,int> &c
 }
 
 bool MaxCutGraph::CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candidate) const {
+    int a = get<0>(candidate), b = get<1>(candidate), c = get<2>(candidate);
+
     if (MapEqualCheck(removed_node, get<0>(candidate), true)) return false;
     if (MapEqualCheck(removed_node, get<1>(candidate), true)) return false;
     if (MapEqualCheck(removed_node, get<2>(candidate), true)) return false;
     
-    int b = get<1>(candidate);
+    
     auto adj = GetAdjacency(b);
     if (adj.size() != 2) return false;
-
-    int a = get<0>(candidate), c = get<2>(candidate);
 
    //// if (MapEqualCheck(edge_weight, MakeEdgeKey(a,b), 1) == false) return false;
    // if (MapEqualCheck(edge_weight, MakeEdgeKey(b,c), 1) == false) return false;
@@ -2201,9 +2216,17 @@ bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate) {
 
     int a = get<0>(candidate), b = get<1>(candidate), c = get<2>(candidate);
     int w1 = edge_weight.at(MakeEdgeKey(a,b)), w2 = edge_weight.at(MakeEdgeKey(b,c));
-    RemoveNode(b);
-    AddEdge(a, c, -min(w1, w2));
-    inflicted_cut_change_to_kernelized -= w1 + w2;
+    //cout << a << " " << b << " " << c << "(" << w1 << " " << w2 << ") => " << a << " " << c << "(" << -min(w1,w2) << " ) = " << inflicted_cut_change_to_kernelized - (w1 + w2) << endl;
+
+    if (w1 > 0 || w2 > 0) {
+        RemoveNode(b);
+        AddEdge(a, c, -min(w1, w2));
+        inflicted_cut_change_to_kernelized -= w1 + w2;
+    } else {
+        RemoveNode(b);
+        AddEdge(a, c, -w1 + (-w2));
+        inflicted_cut_change_to_kernelized -= w1 + w2;
+    }
 
     return true;
 }
@@ -2253,18 +2276,23 @@ bool MaxCutGraph::ApplyRevSpecialRule1(const pair<int,int> &candidate) {
     return true;
 }
 
-bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
+bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate, const bool make_signed) {
     int a = candidate.first, b = candidate.second;
     int w = edge_weight.at(MakeEdgeKey(candidate));
 
     custom_assert(w < 0);
+    if (w == -1 && make_signed) return false;
 
     RemoveEdgesBetween(a, b);
-    for (int i = 0; i < -w; ++i) {
+    for (int i = 0; i < -(w + make_signed); ++i) {
         int middle = CreateANode();
         AddEdge(a, middle, 1);
         AddEdge(b, middle, 1);
         inflicted_cut_change_to_kernelized += 2;
+    }
+
+    if (make_signed) {
+        AddEdge(a, b, -1);
     }
 
     return true;
@@ -2285,6 +2313,14 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
             break;
         }
         case RuleIds::Rule8: { // preset_ext_supp=TRUE
+            auto candidates = GetR8Candidates(false, preset_is_external);
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyR8Candidate(candidate);
+
+            break;
+        }
+        case RuleIds::Rule8Signed: { // preset_ext_supp=TRUE
+            //cout << "Rule8Signed not implemented yet." << endl;
             auto candidates = GetR8Candidates(false, preset_is_external);
             for (auto candidate : candidates)
                 rules_usage_count[rule_id] += ApplyR8Candidate(candidate);
@@ -2362,6 +2398,13 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
 
             break;
         }
+        case RuleIds::RevSpecialRule2Signed: {
+           const auto &candidates = GetRevSpecialRule2Candidates();
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyRevSpecialRule2(candidate, true);
+
+            break;
+        }
         case RuleIds::RevSpecialRule1: {
             const auto &candidates = GetRevSpecialRule1Candidates();
             for (auto candidate : candidates)
@@ -2372,7 +2415,7 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
         case RuleIds::RevSpecialRule2: {
             const auto &candidates = GetRevSpecialRule2Candidates();
             for (auto candidate : candidates)
-                rules_usage_count[rule_id] += ApplyRevSpecialRule1(candidate);
+                rules_usage_count[rule_id] += ApplyRevSpecialRule2(candidate);
 
             break;
         }
@@ -2392,6 +2435,20 @@ void MaxCutGraph::MakeUnweighted() {
 void MaxCutGraph::MakeWeighted() {
     while (PerformKernelization(RuleIds::SpecialRule2));
 }
+
+void MaxCutGraph::MakeSigned() {
+    MakeWeighted();
+    while (PerformKernelization(RuleIds::RevSpecialRule1) || PerformKernelization(RuleIds::RevSpecialRule2Signed));
+
+#ifdef DEBUG
+    const auto& e = GetAllExistingEdges();
+    for (auto p : e) {
+        int w = GetEdgeWeight(p);
+        custom_assert(w == 1 || w == -1);
+    }
+#endif
+}
+
 
 double MaxCutGraph::ExecuteLinearKernelization() {
 
