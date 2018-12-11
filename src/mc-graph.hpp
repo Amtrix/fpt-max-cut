@@ -19,7 +19,7 @@ enum class RuleIds : int {
     SpecialRule2,
     RevSpecialRule1,
     RevSpecialRule2,
-    RevSpecialRule2Signed,
+    SpecialRule2Signed,
     Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed
 };
 
@@ -259,19 +259,19 @@ public:
     bool CandidateSatisfiesSpecialRule1(const tuple<int,int,int,int> &candidate) const;
     bool CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candidate) const;
     // 3-paths. Used for handling integer weights > 1.
-    vector<tuple<int,int,int,int>> GetSpecialRule1Candidates() const;
+    //vector<tuple<int,int,int,int>> GetSpecialRule1Candidates() const;
     // 2-paths. Used for handlging integer weights < 0.
     vector<tuple<int,int,int>> GetSpecialRule2Candidates() const;
     // Applications.
-    bool ApplySpecialRule1(const tuple<int,int,int,int> &candidate);
-    bool ApplySpecialRule2(const tuple<int,int,int> &candidate);
+    //bool ApplySpecialRule1(const tuple<int,int,int,int> &candidate);
+    bool ApplySpecialRule2(const tuple<int,int,int> &candidate, const bool make_signed = false);
     // Returns all edges with integer weight > 1.
     vector<pair<int,int>> GetRevSpecialRule1Candidates() const;
     // Returns all edges with integer weight < 0.
     vector<pair<int,int>> GetRevSpecialRule2Candidates() const;
     //Applications.
     bool ApplyRevSpecialRule1(const pair<int,int> &candidate);
-    bool ApplyRevSpecialRule2(const pair<int,int> &candidate, const bool make_signed = false);
+    bool ApplyRevSpecialRule2(const pair<int,int> &candidate);
 
 
     /**
@@ -310,7 +310,10 @@ public:
     vector<int> GetUsageVector() const;
     // Get cut size according to 0/1 coloring of nodes. grouping is a 0-1 vector. Vertex x is colored by grouping[x]. 
     int GetCutSize(const vector<int> &grouping) const;
-    double GetInflictedCutChangeToKernelized() const { return inflicted_cut_change_to_kernelized; }
+    double GetInflictedCutChangeToKernelized() const {
+        if (fabs(inflicted_cut_change_to_kernelized) < 1e-9) return -1e-18;
+        return inflicted_cut_change_to_kernelized;
+    }
     void SetMixingId(int id) { mixing_id = id; }
     int GetMixingId() const { return mixing_id; }
 

@@ -30,7 +30,7 @@ const map<RuleIds, string> kRuleDescriptions = {
     {RuleIds::RuleS5,             "Selfmade Reduction Rule for handling induced paths of length 3."},
     {RuleIds::RuleS6,             "?????????????????"},
     {RuleIds::Rule8Signed,        "Signed version of Rule8"},
-    {RuleIds::RevSpecialRule2Signed, "Variant of special rule rev 2 that that leaves a -1 edge => implies signed max-cut."}
+    {RuleIds::SpecialRule2Signed, "Variant of special rule  2 that that creates only {-1,1} edges."}
 };
 
 const map<RuleIds, string> kRuleNames = {
@@ -49,13 +49,13 @@ const map<RuleIds, string> kRuleNames = {
     {RuleIds::RuleS5,          "RuleS5"},
     {RuleIds::RuleS6,          "RuleS6"},
     {RuleIds::Rule8Signed,     "Rule8Signed"},
-    {RuleIds::RevSpecialRule2Signed, "RevSpecialRule2Signed"}
+    {RuleIds::SpecialRule2Signed, "SpecialRule2Signed"}
 };
 
 const vector<RuleIds> kAllRuleIds = {
     RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
     RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
-    RuleIds::Rule8Signed, RuleIds::RevSpecialRule2Signed
+    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed
 };
 
 struct trie_node_r8 {
@@ -2152,6 +2152,7 @@ bool MaxCutGraph::CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candi
     return min(adj[0], adj[1]) == min(a,c) && max(adj[0], adj[1]) == max(a,c);
 }
 
+/*
 vector<tuple<int,int,int,int>> MaxCutGraph::GetSpecialRule1Candidates() const {
     vector<tuple<int,int,int, int>> ret;
     
@@ -2178,7 +2179,7 @@ vector<tuple<int,int,int,int>> MaxCutGraph::GetSpecialRule1Candidates() const {
     }
 
     return ret;
-}
+}*/
 
 vector<tuple<int,int,int>> MaxCutGraph::GetSpecialRule2Candidates() const {
     vector<tuple<int,int,int>> ret;
@@ -2196,6 +2197,7 @@ vector<tuple<int,int,int>> MaxCutGraph::GetSpecialRule2Candidates() const {
     return ret;
 }
 
+/*
 bool MaxCutGraph::ApplySpecialRule1(const tuple<int,int,int,int> &candidate) {
     if (!CandidateSatisfiesSpecialRule1(candidate))
         return false;
@@ -2208,25 +2210,25 @@ bool MaxCutGraph::ApplySpecialRule1(const tuple<int,int,int,int> &candidate) {
     inflicted_cut_change_to_kernelized -= w1 + w2 + w3 - min(w1, min(w2, w3));
 
     return true;
-}
+}*/
 
-bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate) {
+bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate, const bool make_signed) {
     if (!CandidateSatisfiesSpecialRule2(candidate))
         return false;
 
     int a = get<0>(candidate), b = get<1>(candidate), c = get<2>(candidate);
     int w1 = edge_weight.at(MakeEdgeKey(a,b)), w2 = edge_weight.at(MakeEdgeKey(b,c));
-    //cout << a << " " << b << " " << c << "(" << w1 << " " << w2 << ") => " << a << " " << c << "(" << -min(w1,w2) << " ) = " << inflicted_cut_change_to_kernelized - (w1 + w2) << endl;
 
-    if (w1 > 0 || w2 > 0) {
-        RemoveNode(b);
-        AddEdge(a, c, -min(w1, w2));
-        inflicted_cut_change_to_kernelized -= w1 + w2;
-    } else {
-        RemoveNode(b);
-        AddEdge(a, c, -w1 + (-w2));
-        inflicted_cut_change_to_kernelized -= w1 + w2;
-    }
+    int same = max(0, w1 + w2);
+    int diff = max(w1, w2);
+    int res_weight = diff - same;
+
+    if (make_signed && res_weight == 1 && res_weight != -1)
+        return false;
+
+    RemoveNode(b);
+    AddEdge(a, c, res_weight);
+    inflicted_cut_change_to_kernelized -= same;
 
     return true;
 }
@@ -2276,24 +2278,19 @@ bool MaxCutGraph::ApplyRevSpecialRule1(const pair<int,int> &candidate) {
     return true;
 }
 
-bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate, const bool make_signed) {
+bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
     int a = candidate.first, b = candidate.second;
     int w = edge_weight.at(MakeEdgeKey(candidate));
 
     custom_assert(w < 0);
-    if (w == -1 && make_signed) return false;
 
     RemoveEdgesBetween(a, b);
-    for (int i = 0; i < -(w + make_signed); ++i) {
+    //for (int i = 0; i < -w; ++i) {
         int middle = CreateANode();
-        AddEdge(a, middle, 1);
-        AddEdge(b, middle, 1);
-        inflicted_cut_change_to_kernelized += 2;
-    }
-
-    if (make_signed) {
-        AddEdge(a, b, -1);
-    }
+        AddEdge(a, middle, -w);
+        AddEdge(b, middle, -w);
+        inflicted_cut_change_to_kernelized += 2 * (-w);
+    //}
 
     return true;
 }
@@ -2385,9 +2382,9 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
         
 
         case RuleIds::SpecialRule1: {
-            const auto &candidates = GetSpecialRule1Candidates();
-            for (auto candidate : candidates)
-                rules_usage_count[rule_id] += ApplySpecialRule1(candidate);
+            while(1) {
+                cout << "DEPRECATED!" << endl;
+            }
 
             break;
         }
@@ -2398,13 +2395,14 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
 
             break;
         }
-        case RuleIds::RevSpecialRule2Signed: {
-           const auto &candidates = GetRevSpecialRule2Candidates();
+        case RuleIds::SpecialRule2Signed: {
+            const auto &candidates = GetSpecialRule2Candidates();
             for (auto candidate : candidates)
-                rules_usage_count[rule_id] += ApplyRevSpecialRule2(candidate, true);
+                rules_usage_count[rule_id] += ApplySpecialRule2(candidate, true);
 
             break;
         }
+
         case RuleIds::RevSpecialRule1: {
             const auto &candidates = GetRevSpecialRule1Candidates();
             for (auto candidate : candidates)
@@ -2437,8 +2435,8 @@ void MaxCutGraph::MakeWeighted() {
 }
 
 void MaxCutGraph::MakeSigned() {
-    MakeWeighted();
-    while (PerformKernelization(RuleIds::RevSpecialRule1) || PerformKernelization(RuleIds::RevSpecialRule2Signed));
+    MakeUnweighted();
+    while (PerformKernelization(RuleIds::SpecialRule2Signed));
 
 #ifdef DEBUG
     const auto& e = GetAllExistingEdges();

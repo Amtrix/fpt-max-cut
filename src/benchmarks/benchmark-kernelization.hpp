@@ -66,18 +66,25 @@ public:
     void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}, const bool force_timestampless_kernelization = false) {
         // First transform graph into unweighted. /////////////
         auto t0 = GetCurrentTime();
-        kernelized.MakeWeighted();
+        kernelized.MakeWeighted(); // !!!!!!!!!!!! changes 5% on gnm for worse...!
 
         auto edgest = kernelized.GetAllExistingEdges();
-       // cout << "Weighted graph: " << kernelized.GetInflictedCutChangeToKernelized() << endl;
-       // for (auto e : edgest)
-       //     cout << e.first << " " << e.second << " " << kernelized.GetEdgeWeight(e) << endl;
+        cout << "Weighted graph: " << kernelized.GetInflictedCutChangeToKernelized() << endl;
+        for (auto e : edgest)
+            cout << e.first << " " << e.second << " " << kernelized.GetEdgeWeight(e) << endl;
 
-        kernelized.MakeSigned();
-        KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false);
+      //  kernelized.MakeSigned();
+      //  KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false);
 
 
         kernelized.MakeUnweighted();
+
+         edgest = kernelized.GetAllExistingEdges();
+        cout << "Weighted graph: " << kernelized.GetInflictedCutChangeToKernelized() << endl;
+        for (auto e : edgest)
+            cout << e.first << " " << e.second << " " << kernelized.GetEdgeWeight(e) << endl;
+
+            
         OutputDebugLog("Made unweighted");
         LogTime(t0);
         ////////////////////////////////////////
