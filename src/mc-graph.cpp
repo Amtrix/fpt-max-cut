@@ -285,7 +285,7 @@ void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
 
     edge_weight[keyAB] += weight;
     edge_weight[keyBA] += weight;
-
+    
     ResetComputedTopology();
 }
 
@@ -2223,7 +2223,11 @@ bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate, const b
     int diff = max(w1, w2);
     int res_weight = diff - same;
 
-    if (make_signed && res_weight == 1 && res_weight != -1)
+    int added_res_weight = res_weight;
+    if (AreAdjacent(a, c))
+        added_res_weight += GetEdgeWeight(make_pair(a, c));
+
+    if (make_signed && added_res_weight != 1 && added_res_weight != -1 && added_res_weight != 0)
         return false;
 
     RemoveNode(b);
@@ -2442,7 +2446,7 @@ void MaxCutGraph::MakeSigned() {
     const auto& e = GetAllExistingEdges();
     for (auto p : e) {
         int w = GetEdgeWeight(p);
-        custom_assert(w == 1 || w == -1);
+        custom_assert_with_msg(w == 1 || w == -1, "Expected a signed edge but got " + to_string(w) + " for edge (" + to_string(p.first) + ", " + to_string(p.second) + ")");
     }
 #endif
 }
