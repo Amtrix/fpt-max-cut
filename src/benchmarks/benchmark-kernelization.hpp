@@ -46,7 +46,7 @@ public:
                     chg_happened = true;
                     cnt++;
                 }
-                cout << ("         ... tried further " + to_string(cnt) + " times again.") << endl;
+                cout << ("         ... executed applications " + to_string(cnt) + " times.") << endl;
                 cout << ("             cut_change =  " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
                 LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
             }
@@ -68,8 +68,18 @@ public:
         auto t0 = GetCurrentTime();
         //kernelized.MakeWeighted();
         kernelized.MakeSigned();
-        KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false);
 
+        cout << "CUT: " << kernelized.GetInflictedCutChangeToKernelized() << endl;
+        auto edges = kernelized.GetAllExistingEdges();
+        for (auto e : edges)
+            cout << e.first << " " << e.second << " = " << kernelized.GetEdgeWeight(e) << endl;
+
+        KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false);
+        
+        cout << "CUT: " << kernelized.GetInflictedCutChangeToKernelized() << endl;
+        edges = kernelized.GetAllExistingEdges();
+        for (auto e : edges)
+            cout << e.first << " " << e.second << " = " <<  kernelized.GetEdgeWeight(e) << endl;
 
         kernelized.MakeUnweighted();
         OutputDebugLog("Made unweighted");

@@ -1368,7 +1368,16 @@ bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
         int rem_node1 = clique[frem], rem_node2 = clique[srem];
         custom_assert(GetAdjacency(rem_node1).size() == GetAdjacency(rem_node2).size());
 
-        inflicted_cut_change_to_kernelized -= GetAdjacency(rem_node1).size();
+        const auto adj = GetAdjacency(rem_node1);
+        int cnt_minus_edges = 0;
+        for (auto w : adj)
+            cnt_minus_edges += GetEdgeWeight(make_pair(rem_node1,w)) == -1;
+
+        inflicted_cut_change_to_kernelized -= adj.size() - cnt_minus_edges * 2; // times 2 as two nodes are removed (with same adjacency!).
+        
+
+
+        
         RemoveNode(rem_node1);
         RemoveNode(rem_node2);
         rules_vrem[RuleIds::Rule8] += 2;

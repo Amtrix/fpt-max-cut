@@ -50,7 +50,7 @@ std::function<void()> suite[] = {
         vector<int> case_coverage_cnt(kAllRuleIds.size(), 0); // hacky size init.
         //for (string data_filepath : all_sets_to_evaluate) {
         for (auto G : graph_db) {
-            cout << "================ RUNNING TEST INSTANCE ON " + G.GetGraphNaming() + " ================ " << endl;
+            cout << "============================== RUNNING TEST INSTANCE ON " + G.GetGraphNaming() + " ================================ " << endl;
 
             // Kernelization here.
             MaxCutGraph kernelized = G;

@@ -236,7 +236,7 @@ std::function<void()> suite[] = {
     },
     []{
         cout << "... testing R8Signed" << endl;
-        MaxCutGraph G(20);
+        MaxCutGraph G(7);
         G.AddEdge(0, 1);
         G.AddEdge(0, 2);
         G.AddEdge(1, 2);
@@ -247,13 +247,24 @@ std::function<void()> suite[] = {
         G.AddEdge(4, 6);
         G.AddEdge(5, 6);
         const auto edges_initial = G.GetAllExistingEdges();
+        auto candidates = G.GetR8Candidates(false, {});
+        VERIFY(candidates.size(), 0);
+
+        auto candidates_s2 = G.GetS2Candidates(false, false, {});
+        VERIFY(candidates_s2.size(), 0);
+
+        auto candidates_s5 = G.GetS5Candidates(false, {}, false);
+        VERIFY(candidates_s5.size(), 0);
+
+        auto candidates_s3 = G.GetS3Candidates(false, {});
+        VERIFY(candidates_s3.size(), 0);
 
         G.MakeSigned();
         VERIFY(G.GetEdgeWeight(make_pair(0, 6)), -1);
         VERIFY(G.GetEdgeWeight(make_pair(1, 6)), -1);
         VERIFY(G.GetEdgeWeight(make_pair(2, 6)), -1);
 
-        auto candidates = G.GetR8Candidates(false, {});
+        candidates = G.GetR8Candidates(false, {});
         VERIFY(candidates.size(), 1);
 
         G.MakeUnweighted();
