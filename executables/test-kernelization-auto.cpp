@@ -84,6 +84,9 @@ std::function<void()> suite[] = {
 
 int main() {
     for (const auto test : suite) {
+        InitializeTest();
         test();
     }
+
+    return HAS_FAILED_ONCE;
 }

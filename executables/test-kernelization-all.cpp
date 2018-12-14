@@ -277,7 +277,10 @@ int main() {
     int testid = 1;
     for (const auto test : suite) {
         cout << "Running " << (testid++) << endl;
+        InitializeTest();
         test();
         cout << "... OK!" << endl;
     }
+
+    return HAS_FAILED_ONCE;
 }
