@@ -35,8 +35,7 @@ public:
     }
 
     void Evaluate(InputParser& input, const MaxCutGraph& main_graph) {
-        BenchmarkAction::Evaluate(input, main_graph);
-        string data_filepath_key = BenchmarkAction::GetKey(main_graph.GetGraphNaming());
+        GenerateMissingMixingId(main_graph);
 
         int num_iterations = 1;
         if (input.cmdOptionExists("-iterations")) {

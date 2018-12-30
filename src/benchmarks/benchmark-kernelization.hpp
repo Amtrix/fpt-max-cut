@@ -68,18 +68,8 @@ public:
         auto t0 = GetCurrentTime();
         //kernelized.MakeWeighted();
         kernelized.MakeSigned();
-
-        cout << "CUT: " << kernelized.GetInflictedCutChangeToKernelized() << endl;
-        auto edges = kernelized.GetAllExistingEdges();
-        for (auto e : edges)
-            cout << e.first << " " << e.second << " = " << kernelized.GetEdgeWeight(e) << endl;
-
         KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false);
         
-        cout << "CUT: " << kernelized.GetInflictedCutChangeToKernelized() << endl;
-        edges = kernelized.GetAllExistingEdges();
-        for (auto e : edges)
-            cout << e.first << " " << e.second << " = " <<  kernelized.GetEdgeWeight(e) << endl;
 
         kernelized.MakeUnweighted();
         OutputDebugLog("Made unweighted");
@@ -360,7 +350,7 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2, RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3/*
+          /*RuleIds::RuleS2,*/ RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3/*
 
                     ON REMOVED RULES(!!!!):
                          EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9 (S2), RuleIds::Rule9X (S2), RuleIds::Rule10AST (S5)

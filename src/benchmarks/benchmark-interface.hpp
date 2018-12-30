@@ -45,11 +45,13 @@ public:
 
     void GenerateMissingMixingId(const MaxCutGraph& main_graph) {
         string key = GetKey(main_graph.GetGraphNaming());
+        cout << " =====> " << key << endl;
         if (mixingid[key] == 0) mixingid[key] = mixingid_giver++;
     }
 
     int GetMixingId(const MaxCutGraph &G) const {
         if (G.GetMixingId() != -1) return G.GetMixingId();
+        cout << "+> " << GetKey(G.GetGraphNaming()) << endl;
         return mixingid.at(GetKey(G.GetGraphNaming()));
     }
 

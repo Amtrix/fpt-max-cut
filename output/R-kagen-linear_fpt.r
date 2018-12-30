@@ -71,7 +71,7 @@ pdf(opt$out, width=10, height=5)
 
 #v_count <- data_table[,"X..V.G.."][1]
 
-#print(data_table)
+print(data_table)
 
 {   
     par(cex = 1.2)
