@@ -34,6 +34,15 @@ double GetAverage(const vector<double> val) {
     return res / (val.size());
 }
 
+double GetValInRow(Table table, vector<string> row, string colname) {
+    int coldx = GetColumnIndex(table, colname);
+    return stod(row[coldx]);
+}
+string GetStrInRow(Table table, vector<string> row, string colname) {
+    int coldx = GetColumnIndex(table, colname);
+    return row[coldx];
+}
+
 vector<double> ToDVec(const vector<string> val) {
     vector<double> dval;
     for (int i = 0; i < (int)val.size(); ++i)
@@ -240,7 +249,7 @@ Table GetColumnSubsetTable(Table source, vector<string> cols) {
     return make_pair(captions, actual);
 }
 
-void CreateNewColumn(Table& table, string type) {
+void CreateNewColumn(Table& table, string type, std::function<string(vector<string> row)> build_func = {}) {
     table.first.push_back(type);
     if (type == "GRAPH_DENSITY") {
         vector<string> valA = GetColumnVals(table, "#num_nodes");
@@ -272,6 +281,10 @@ void CreateNewColumn(Table& table, string type) {
             
             string res = entry.substr(lastslash, lastperiod - lastslash);
             table.second[i].push_back(res);
+        }
+    } else {
+        for (int i = 0; i < table.second.size(); ++i) {
+            table.second[i].push_back(build_func(table.second[i]));
         }
     }
 }

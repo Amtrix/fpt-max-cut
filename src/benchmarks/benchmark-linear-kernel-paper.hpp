@@ -139,8 +139,8 @@ public:
 
             OutputLinearKernelAnalysis(input, G.GetGraphNaming(), BenchmarkAction::GetMixingId(G), iteration,
                 G.GetRealNumNodes(), G.GetRealNumEdges(), G_processing_twoway.GetRealNumNodes(), G_processing_twoway.GetRealNumEdges(),
-                s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc, oneway_time, twoway_time, oneway_reduc_time, adhoc_time,
-                mcpre, mcpre_time, mcpost, mcpost_time);
+                s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc, oneway_time / 1000.0, twoway_time / 1000.0, oneway_reduc_time / 1000.0, adhoc_time / 1000.0,
+                mcpre, mcpre_time / 1000.0, mcpost, mcpost_time / 1000.0);
         }
 
         
