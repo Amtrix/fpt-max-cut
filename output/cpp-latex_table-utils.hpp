@@ -54,13 +54,16 @@ string GetColType(const vector<string> vals) {
     int double_err = 0;
     for (int i = 0; i < (int)vals.size(); ++i) {
         string val = vals[i];
-
+        size_t pos;
         try {
-            stod(val);
+            stod(val, &pos);
         }
         catch(std::invalid_argument& e){
             double_err++;
+            continue;
         }
+
+        if (pos != val.size()) double_err++;
     }
 
     if (double_err > 0) {
@@ -153,8 +156,8 @@ Table Aggregate(const Table table, const string colname) {
     for (int c = 0; c < (int)restable.first.size(); ++c) {
         vector<string> vals = GetColumnVals(restable, c);
 
-        if (has_sd[c]) continue;
-        if (!is_double[c]) continue;
+        if (has_sd.at(c)) continue;
+        if (!is_double.at(c)) continue;
 
         for (int r = 0; r < restable.second.size(); ++r) {
             string entry = restable.second[r][c];
@@ -212,5 +215,63 @@ void PrintTable(Table table) {
     for (int r = 0; r < rowcnt; ++r) {
         for (int c = 0; c < table.first.size(); ++c) cout << setw(colsz[c] + 3) << table.second[r][c];
         cout << endl;
+    }
+}
+
+Table GetColumnSubsetTable(Table source, vector<string> cols) {
+    Captions captions;
+    for (int i = 0; i < cols.size(); ++i) captions.push_back(source.first.at(GetColumnIndex(source, cols[i])));
+
+    TableData rotated;
+    for (int i = 0; i < cols.size(); ++i) {
+        rotated.push_back(GetColumnVals(source, cols[i]));
+    }
+
+    if (rotated.size() == 0) throw std::logic_error("You do not want this, yo!");
+
+    TableData actual;
+    for (int r = 0; r < rotated[0].size(); ++r) {
+        vector<string> row;
+        for (int c = 0; c < rotated.size(); ++c)
+            row.push_back(rotated[c][r]);
+        actual.push_back(row);
+    }
+
+    return make_pair(captions, actual);
+}
+
+void CreateNewColumn(Table& table, string type) {
+    table.first.push_back(type);
+    if (type == "GRAPH_DENSITY") {
+        vector<string> valA = GetColumnVals(table, "#num_nodes");
+        vector<string> valB = GetColumnVals(table, "#num_edges");
+
+        vector<double> dvalA = ToDVec(valA);
+        vector<double> dvalB = ToDVec(valB);
+
+        if (dvalA.size() != dvalB.size()) throw std::logic_error("Columns can't have different sizes!");
+
+        for (int i = 0; i < dvalA.size(); ++i) {
+            table.second[i].push_back(to_string(dvalB[i] / dvalA[i]));
+        }
+    } else if (type == "GRAPH_NAME") {
+        vector<string> vals = GetColumnVals(table, "#file");
+        
+        for (int i = 0; i < vals.size(); ++i) {
+            string entry = vals[i];
+            int lastslash = 0;
+            int lastperiod = entry.size();
+
+            for (int dx = 0; dx < entry.size(); ++dx)
+                if(entry[dx] == '/' || entry[dx] == '\\')
+                    lastslash = dx + 1;
+            
+            for (int dx = lastslash; dx < entry.size(); ++dx)
+                if (entry[dx] == '.')
+                    lastperiod = dx;
+            
+            string res = entry.substr(lastslash, lastperiod - lastslash);
+            table.second[i].push_back(res);
+        }
     }
 }
