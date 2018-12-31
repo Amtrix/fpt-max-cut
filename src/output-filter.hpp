@@ -87,7 +87,10 @@ void OutputLinearKernelAnalysis(const InputParser& input,
                                 const int rand_marked_cnt,
                                 const double oneway_time,
                                 const double twoway_time,
-                                const double oneway_reduc_time);
+                                const double oneway_reduc_time,
+                                const double rand_marked_time,
+                                const int mcpre, const double mcpre_time,
+                                const int mcpost, const double mcpost_time);
 
 void OutputLiveMaxcut(const InputParser& input,
                       const string dataset,

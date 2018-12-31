@@ -1083,50 +1083,37 @@ int MaxCutGraph::Algorithm2MarkedComputation() {
     return num_nodes - (int)selection.size();
 }
 
-int MaxCutGraph::Algorithm3MarkedComputation_Randomized() {
-    if (paper_S.size() == 0) return 0; // already optimal
-    srand((unsigned)time(0));
-    vector<int> save_start_S = paper_S;
-    save_start_S.clear();
-    for (int i = 0; i < num_nodes; ++i)
-        save_start_S.push_back(i);
-   
-    unsigned int ret = (unsigned int)1e9;
-    for (int i = 0; i < 20; ++i) {
-        vector<int> S = save_start_S;
-
-        while (S.size() > 0) {
-            bool was_possible = false;
-            for (int i = 0; i < 10; ++i) {
-                auto node = S[rand()%S.size()];
-                auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
-                auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
-                MaxCutGraph G_minus_newS(*this, when_node_added);
-                
-                if (G_minus_newS.IsCliqueForest()) {
-                    S.erase(std::remove(S.begin(), S.end(), node), S.end());
-                    was_possible = true;
-                    break;
-                }
-            }
-            for (int node : S) {
-                auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
-                auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
-                MaxCutGraph G_minus_newS(*this, when_node_added);
-                
-                if (G_minus_newS.IsCliqueForest()) {
-                    S.erase(std::remove(S.begin(), S.end(), node), S.end());
-                    was_possible = true;
-                    break;
-                }
-            }
-            if (!was_possible) break;
-        }
-
-
-        if (S.size() < ret) ret = S.size();
+vector<int> MaxCutGraph::Algorithm3MarkedComputation(const vector<int> initial) {
+    //if (paper_S.size() == 0) return 0; // already optimal
+    //srand((unsigned)time(0));
+    vector<int> S = initial;
+ //   S.clear(); // ??????????????????
+    
+    if (initial.size() == 0) {
+        for (int i = 0; i < num_nodes; ++i)
+            S.push_back(i);
     }
-    return ret;
+   
+  //  unsigned int ret = (unsigned int)1e9;
+    bool chg_happened = true;
+    while (chg_happened) {
+        chg_happened = false;
+        auto Scpy = S;
+        for (unsigned int i = 0; i < Scpy.size(); ++i) {
+            auto node = Scpy[i];
+            auto G_minus_S_vertex_set = SetSubstract(GetAllExistingNodes(), S);
+            auto when_node_added = SetUnion(G_minus_S_vertex_set, vector<int>{node});
+            MaxCutGraph G_minus_newS(*this, when_node_added);
+
+            if (G_minus_newS.IsCliqueForest()) {
+                S.erase(std::remove(S.begin(), S.end(), node), S.end());
+                chg_happened = true;
+            }
+        }
+    }
+
+
+    return S;
 }
 
 tuple<int, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const vector<int>& S_color) {
@@ -1239,9 +1226,14 @@ tuple<int, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const
     return make_tuple(sol + p, computed_maxcut_coloring_tmp);
 }
 
-int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S) {
+int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S, const int break_after_time_sec) {
     int mx_sol = 0;
+    auto t0 = std::chrono::high_resolution_clock::now();
     for (int mask = 0; mask < (1 << S.size()); ++mask) {
+        auto t1 = std::chrono::high_resolution_clock::now();
+        double T = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
+        if (T > break_after_time_sec * 1000) break;
+
         vector<int> s_color;
         for (unsigned int i = 0; i < S.size(); ++i)
             if (mask & (1<<i)) s_color.push_back(1);
@@ -1251,6 +1243,18 @@ int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S) {
         mx_sol = max(mx_sol, get<0>(sol));
     }
     return mx_sol;
+}
+
+tuple<int,double> MaxCutGraph::GetMaxCutWithMarkedVertexSet(const int limit_S, const int limit_time_sec) {
+    const auto marked_vertex_set = GetMarkedVertexSet();
+    if ((int)marked_vertex_set.size() > limit_S) return make_tuple(-1, -1);
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    int sz = ComputeOptimalColoringBruteforce(marked_vertex_set, limit_time_sec);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double T = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
+    
+    return make_tuple(sz, T);
 }
 
 vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bool make_maximum) const {

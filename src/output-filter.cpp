@@ -59,7 +59,7 @@ vector<int> kMarkedSizeColumnDescriptor =   {10, 10, 15, 22, 15, 50};
 vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
 vector<int> kernelizationCountDescriptor =  {10, 10, 10, 10, 10, 10, 60};
 vector<int> kernelizationDescriptor =       {15, 15, 15, 15, 15, 15, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 100};
-vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,100};
+vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,30,30,30,30,30,100};
 vector<int> liveMaxcutDescriptor = {20,20,20,20,20,100};
 
 void InitOutputFiles(const InputParser& input) {
@@ -101,7 +101,7 @@ void InitOutputFiles(const InputParser& input) {
         if (action == "linear-kernel") {
             const string output_path = input.getCmdOption("-benchmark-output");
             ofstream out(output_path);
-            print_row(out, markedSetDescriptor, "sssssssssssss", "#sec", "#it", "#num_nodes", "#num_edges", "#num_nodes_k", "#num_edges_k", "#marked_cnt", "#marked_time", "twoway_time", "#marked_cnt_reduc", "#marked_cnt_reduc_time", "#marked_cnt_rand", "#file");
+            print_row(out, markedSetDescriptor, "ssssssssssssssssss", "#sec", "#it", "#num_nodes", "#num_edges", "#num_nodes_k", "#num_edges_k", "#marked_cnt", "#marked_time", "twoway_time", "#marked_reduc_cnt", "#marked_reduc_time", "#marked_rand_cnt", "#marked_rand_time", "#mcpre", "mcpre_time","#mcpost", "mcpost_time", "#file");
         }
 
         if (input.cmdOptionExists("-live-maxcut-analysis")) {
@@ -216,11 +216,15 @@ void OutputLinearKernelAnalysis(const InputParser& input,
                                 const int rand_marked_cnt,
                                 const double oneway_time,
                                 const double twoway_time,
-                                const double oneway_reduc_time) {
+                                const double oneway_reduc_time,
+                                const double rand_marked_time,
+                                const int mcpre, const double mcpre_time,
+                                const int mcpost, const double mcpost_time) {
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output");
         ofstream out(output_path, fstream::app);
-        print_row(out, markedSetDescriptor, "dddddddffdfds", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, marked_cnt, oneway_time, twoway_time, marked_cnt_reduced, oneway_reduc_time, rand_marked_cnt, dataset.c_str());
+        print_row(out, markedSetDescriptor, "dddddddffdfdfdfdfs", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, marked_cnt, oneway_time, twoway_time,
+            marked_cnt_reduced, oneway_reduc_time, rand_marked_cnt, rand_marked_time, mcpre, mcpre_time, mcpost, mcpost_time, dataset.c_str());
     }
 }
 

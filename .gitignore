@@ -11,3 +11,4 @@ solvers/localsolver/maxcut
 output/**/*
 !output/*.sh
 !output/*.r
+**/*.o

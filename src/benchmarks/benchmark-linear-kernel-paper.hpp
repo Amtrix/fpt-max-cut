@@ -69,6 +69,7 @@ public:
 
             auto t1 = std::chrono::high_resolution_clock::now();
             double oneway_time = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
+            //t0 = t1; we want total time if reduce done too!
 
             auto marked_vertex_set = G_processing_oneway.GetMarkedVerticesByOneWayRules();
             G.SetMarkedVertices(marked_vertex_set);
@@ -84,13 +85,22 @@ public:
             int s_size_oneway_with_reverse = -1;
             double oneway_reduc_time = -1;
             int s_size_adhoc = -1;
+            double adhoc_time = -1;
             if (perform_reduce == "yes") {
-                G.ReduceMarksetVertexSet();
-                marked_vertex_set = G_processing_oneway.GetMarkedVerticesByOneWayRules();
+                marked_vertex_set = G.Algorithm3MarkedComputation(marked_vertex_set);
+                G.UpdateMarkedVertices(marked_vertex_set);
                 s_size_oneway_with_reverse = marked_vertex_set.size();
                 auto t2 = std::chrono::high_resolution_clock::now();
                 oneway_reduc_time = std::chrono::duration_cast<std::chrono::microseconds> (t2 - t0).count()/1000.;
-                s_size_adhoc = G.Algorithm3MarkedComputation_Randomized();
+                t0 = t2;
+
+
+                marked_vertex_set = G.Algorithm3MarkedComputation();
+                G.UpdateMarkedVertices(marked_vertex_set);
+                s_size_adhoc = marked_vertex_set.size();
+                auto t3 = std::chrono::high_resolution_clock::now();
+                adhoc_time = std::chrono::duration_cast<std::chrono::microseconds> (t3 - t0).count()/1000.;
+                t0 = t3;
             }
             ///////////////////////////
 
@@ -114,8 +124,14 @@ public:
             double twoway_time = std::chrono::duration_cast<std::chrono::microseconds> (tk1 - tk0).count()/1000.;
             ///////////////////////////
 
+            int mcpre = -1, mcpost = -1;
+            double mcpre_time = -1, mcpost_time = -1;
+            
+            tie(mcpre, mcpre_time)   = G.GetMaxCutWithMarkedVertexSet(20, 180);
+            tie(mcpost, mcpost_time) = G.GetMaxCutWithMarkedVertexSet(20, 180);
 
 
+            cout << "CUTS: " << mcpre << "(" << mcpre_time << ")  " << mcpost << "(" << mcpost_time << ")  " << endl;
             cout << "All rules usage count: ";
             for (int i = 0; i < 20; ++i) cout << curr_tot_used_rules[i] << " ";
             cout << endl;
@@ -123,7 +139,8 @@ public:
 
             OutputLinearKernelAnalysis(input, G.GetGraphNaming(), BenchmarkAction::GetMixingId(G), iteration,
                 G.GetRealNumNodes(), G.GetRealNumEdges(), G_processing_twoway.GetRealNumNodes(), G_processing_twoway.GetRealNumEdges(),
-                s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc, oneway_time, twoway_time, oneway_reduc_time);
+                s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc, oneway_time, twoway_time, oneway_reduc_time, adhoc_time,
+                mcpre, mcpre_time, mcpost, mcpost_time);
         }
 
         

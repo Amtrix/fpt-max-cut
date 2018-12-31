@@ -9,7 +9,7 @@
 #include "src/graph-database.hpp"
 #include "src/colormod.hpp"
 
-#include "src/benchmarks/benchmark-marked-set.hpp"
+//#include "src/benchmarks/benchmark-marked-set.hpp"
 #include "src/benchmarks/benchmark-kernelization.hpp"
 #include "src/benchmarks/benchmark-count-clique-with-internal.hpp"
 #include "src/benchmarks/benchmark-playground.hpp"
@@ -70,7 +70,8 @@ int main(int argc, char **argv){
     if (action == "kernelization") {
         benchmark_action.reset(new Benchmark_Kernelization());
     } else if (action == "eval-marked-set") {
-        benchmark_action.reset(new Benchmark_MarkedSet());
+        exit(-1);
+        //benchmark_action.reset(new Benchmark_MarkedSet());
     } else if (action == "count-clique-internal") {
         benchmark_action.reset(new Benchmark_CountCliquesWithInternal());
     } else if (action == "playground") {

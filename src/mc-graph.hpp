@@ -195,9 +195,11 @@ public:
      **/
     vector<int> GetMarkedVerticesByOneWayRules() const;
     void SetMarkedVertices(const vector<int>& S) { paper_S = S; }
+    void UpdateMarkedVertices(const vector<int>& S) { if (S.size() < paper_S.size()) paper_S = S; }
+    vector<int> GetMarkedVertexSet() const { return paper_S; }
     void ReduceMarksetVertexSet();
     int Algorithm2MarkedComputation();
-    int Algorithm3MarkedComputation_Randomized();
+    vector<int> Algorithm3MarkedComputation(const vector<int> = {});
 
 
     /**
@@ -206,8 +208,8 @@ public:
     // Makes assumption(!) that S is subset of G. We can't check this, as this is time-critical.
     tuple<int, vector<int>> MaxCutExtension(const vector<int>& S, const vector<int>& S_color);
     // Bruteforces coloring of S and does MaxCutExtension to induce a maxcut result for remainder of graph.
-    int ComputeOptimalColoringBruteforce(const vector<int>& S);
-
+    int ComputeOptimalColoringBruteforce(const vector<int>& S, const int break_after_time_sec = 1);
+    tuple<int,double> GetMaxCutWithMarkedVertexSet(const int limit_S, const int limit_time_sec);
 
 
     /**
