@@ -282,6 +282,12 @@ void CreateNewColumn(Table& table, string type, std::function<string(vector<stri
             string res = entry.substr(lastslash, lastperiod - lastslash);
             table.second[i].push_back(res);
         }
+    } else if (type == "VEFFICIENCY") {
+        for (int i = 0; i < table.second.size(); ++i) {
+            double num_nodes = GetValInRow(table, table.second[i], "#num_nodes");
+            double num_nodes_k = GetValInRow(table, table.second[i], "#num_nodes_k");
+            table.second[i].push_back(to_string(1 - (num_nodes_k / num_nodes)));
+        }
     } else {
         for (int i = 0; i < table.second.size(); ++i) {
             table.second[i].push_back(build_func(table.second[i]));
