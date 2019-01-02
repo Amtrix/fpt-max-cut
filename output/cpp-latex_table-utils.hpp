@@ -17,7 +17,49 @@ vector<string> GetColumnVals(Table table, int coldx);
 vector<string> GetColumnVals(Table table, string colname);
 Table GetSubset(const Table source, const string colname, const string colval);
 
-void PrintTable(Table table);
+void PrintTable(Table table, ostream& out = cout);
+
+string RemoveSDIfPresent(string entry) {
+    if (entry.back() == ')')
+        return entry.substr(0, entry.size() - string(" (0.00)").size());
+    return entry;
+}
+
+Table SortMethodA(Table source) {
+    sort(source.second.begin(), source.second.end(), [&](auto rowA, auto rowB) {
+        int coldx = GetColumnIndex(source, "GRAPH_DENSITY");
+        string strA = rowA[coldx], strB = rowB[coldx];
+
+        double valA = stod(RemoveSDIfPresent(strA)), valB = stod(RemoveSDIfPresent(strB));
+        return valA < valB;
+    });
+
+    return source;
+}
+
+Table SortMethodB(Table source) {
+    sort(source.second.begin(), source.second.end(), [&](auto rowA, auto rowB) {
+        int coldx = GetColumnIndex(source, "#num_edges");
+        string strA = rowA[coldx], strB = rowB[coldx];
+
+        double valA = stod(RemoveSDIfPresent(strA)), valB = stod(RemoveSDIfPresent(strB));
+        return valA < valB;
+    });
+
+    return source;
+}
+
+string latexify(string w, bool remove_decimals = false) {
+    string ret = "";
+    int period = 0;
+    for (int i = 0; i < w.size(); ++i)  {
+        if (w[i] == '_') ret += "\\_";
+        else ret += w[i];
+    }
+
+    if (remove_decimals) return ret.substr(0, w.size() - 3);
+    return ret;
+}
 
 template <typename T>
 std::string to_string_with_precision(const T a_value, const int n = 6)
@@ -117,6 +159,7 @@ vector<string> ReadTableLine(ifstream &in, bool allow_empty) {
 Table ReadTable(ifstream &in) {
     Captions captions = ReadTableLine(in, false);
     TableData table_data;
+
     while(in.eof() == false) {
         table_data.push_back(ReadTableLine(in));
 
@@ -205,7 +248,7 @@ vector<string> GetColumnVals(Table table, string colname) {
     return GetColumnVals(table, coldx);;
 }
 
-void PrintTable(Table table) {
+void PrintTable(Table table, ostream& out) {
     vector<int> colsz;
     for (int c = 0; c < table.first.size(); ++c) colsz.push_back(table.first[c].size());
 
@@ -217,13 +260,13 @@ void PrintTable(Table table) {
     }
     
 
-    for (int c = 0; c < table.first.size(); ++c) cout << setw(colsz[c] + 3) << table.first[c];
-    cout << endl;
+    for (int c = 0; c < table.first.size(); ++c) out << setw(colsz[c] + 3) << table.first[c];
+    out << endl;
 
     int rowcnt = GetRowCount(table);
     for (int r = 0; r < rowcnt; ++r) {
-        for (int c = 0; c < table.first.size(); ++c) cout << setw(colsz[c] + 3) << table.second[r][c];
-        cout << endl;
+        for (int c = 0; c < table.first.size(); ++c) out << setw(colsz[c] + 3) << table.second[r][c];
+        out << endl;
     }
 }
 
@@ -292,5 +335,26 @@ void CreateNewColumn(Table& table, string type, std::function<string(vector<stri
         for (int i = 0; i < table.second.size(); ++i) {
             table.second[i].push_back(build_func(table.second[i]));
         }
+    }
+}
+
+void SetColumnValue(Table& table, string colname, std::function<string(vector<string> row)> build_func = {}) {
+    int dx = GetColumnIndex(table, colname);
+    for (int i = 0; i < table.second.size(); ++i)
+        table.second[i][dx] = build_func(table.second[i]);
+}
+
+void AppendTable(Table &destination, const Table& table) {
+    if (destination.first.size() == 0) destination.first = table.first;
+
+    bool ok = destination.first.size() == table.first.size();
+    for (int i = 0; i < destination.first.size() && ok; ++i)
+        if (destination.first[i] != table.first[i]) ok = false;
+
+    if (!ok)
+        throw std::logic_error("Can't append tables with different captions.");
+    
+    for (int i = 0; i < table.second.size(); ++i) {
+        destination.second.push_back(table.second[i]);
     }
 }

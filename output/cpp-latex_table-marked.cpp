@@ -2,47 +2,6 @@
 #include "./cpp-latex_table-utils.hpp"
 using namespace std;
 
-string RemoveSDIfPresent(string entry) {
-    if (entry.back() == ')')
-        return entry.substr(0, entry.size() - string(" (0.00)").size());
-    return entry;
-}
-
-Table SortMethodA(Table source) {
-    sort(source.second.begin(), source.second.end(), [&](auto rowA, auto rowB) {
-        int coldx = GetColumnIndex(source, "GRAPH_DENSITY");
-        string strA = rowA[coldx], strB = rowB[coldx];
-
-        double valA = stod(RemoveSDIfPresent(strA)), valB = stod(RemoveSDIfPresent(strB));
-        return valA < valB;
-    });
-
-    return source;
-}
-
-Table SortMethodB(Table source) {
-    sort(source.second.begin(), source.second.end(), [&](auto rowA, auto rowB) {
-        int coldx = GetColumnIndex(source, "#num_edges");
-        string strA = rowA[coldx], strB = rowB[coldx];
-
-        double valA = stod(RemoveSDIfPresent(strA)), valB = stod(RemoveSDIfPresent(strB));
-        return valA < valB;
-    });
-
-    return source;
-}
-
-string latexify(string w, bool remove_decimals = false) {
-    string ret = "";
-    int period = 0;
-    for (int i = 0; i < w.size(); ++i)  {
-        if (w[i] == '_') ret += "\\_";
-        else ret += w[i];
-    }
-
-    if (remove_decimals) return ret.substr(0, w.size() - 3);
-    return ret;
-}
 
 void HandleLinearKernel(Table table) {
     CreateNewColumn(table, "GRAPH_DENSITY");
@@ -72,8 +31,8 @@ void HandleLinearKernel(Table table) {
         return latexify(marked_cnt, true) + " [" + latexify(spart, false) + "]";
     });
 
-    vector<bool> remove_decimals = { false,          true,      false,    false,          false,            false,               false };
-    vector<string> interesting = {"GRAPH_NAME","#num_edges", "GRAPH_DENSITY", "#marked_time", "custom_S_part_nice", "#marked_reduc_time", "custom_Sx_part_nice"};
+    vector<bool> remove_decimals = { false,          true,      false,          false,             false,            false,               false };
+    vector<string> interesting = {"GRAPH_NAME","#num_edges", "GRAPH_DENSITY", "custom_S_part_nice", "#marked_time", "custom_Sx_part_nice", "#marked_reduc_time"};
 
     table = GetColumnSubsetTable(table, interesting);
 
@@ -124,8 +83,8 @@ void HandleLinearKernelEfficiency(Table table) {
         return to_string_with_precision(stod(A) + stod(B), 2);
     });
 
-    vector<bool> remove_decimals = { false,       true,          true,      false,            false,               false,          false,    true};
-    vector<string> interesting = {"GRAPH_NAME", "#num_nodes", "#num_edges", "GRAPH_DENSITY", "custom_Sx_part_nice", "VEFFICIENCY", "Tker",  "#mcpost"};
+    vector<bool> remove_decimals = { false,       true,          true,      false,            false,               false,          false,    false};
+    vector<string> interesting = {"GRAPH_NAME", "#num_nodes", "#num_edges", "GRAPH_DENSITY", "custom_Sx_part_nice", "VEFFICIENCY", "Tker",  "mcpost_time"};
 
     table = GetColumnSubsetTable(table, interesting);
 

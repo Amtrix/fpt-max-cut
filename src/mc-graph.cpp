@@ -1253,6 +1253,9 @@ tuple<int,double> MaxCutGraph::GetMaxCutWithMarkedVertexSet(const int limit_S, c
     int sz = ComputeOptimalColoringBruteforce(marked_vertex_set, limit_time_sec);
     auto t1 = std::chrono::high_resolution_clock::now();
     double T = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
+
+    if (T > limit_time_sec * 1000)
+        return make_tuple(sz, -1);
     
     return make_tuple(sz, T);
 }

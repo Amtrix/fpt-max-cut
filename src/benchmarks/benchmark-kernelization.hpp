@@ -350,7 +350,7 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          /*RuleIds::RuleS2,*/ RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3/*
+          RuleIds::RuleS2, RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3/*
 
                     ON REMOVED RULES(!!!!):
                          EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9 (S2), RuleIds::Rule9X (S2), RuleIds::Rule10AST (S5)
@@ -361,7 +361,7 @@ public:
     };
 
     const vector<RuleIds> finishing_rules_order = {
-        RuleIds::RuleS6
+       // RuleIds::RuleS6
     };
 
     // IMPORTANT INFORMATION:

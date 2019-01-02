@@ -127,8 +127,10 @@ public:
             int mcpre = -1, mcpost = -1;
             double mcpre_time = -1, mcpost_time = -1;
             
-            tie(mcpre, mcpre_time)   = G.GetMaxCutWithMarkedVertexSet(20, 180);
-            tie(mcpost, mcpost_time) = G.GetMaxCutWithMarkedVertexSet(20, 180);
+            if (input.cmdOptionExists("-do-linear-kernel-mc")) {
+                tie(mcpre, mcpre_time)   = G.GetMaxCutWithMarkedVertexSet(20, 180);
+                tie(mcpost, mcpost_time) = G.GetMaxCutWithMarkedVertexSet(20, 180);
+            }
 
 
             cout << "CUTS: " << mcpre << "(" << mcpre_time << ")  " << mcpost << "(" << mcpost_time << ")  " << endl;
