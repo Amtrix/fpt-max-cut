@@ -100,7 +100,8 @@ void HandleLinearKernelEfficiency(Table table) {
     }
 }
 
-int main() {
+int main(int argc, char **argv){
+    
     ifstream in("experiments/linear-kernel/real-world-small/out");
     Table table = ReadTable(in);
     

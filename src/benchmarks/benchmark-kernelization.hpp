@@ -361,7 +361,7 @@ public:
     };
 
     const vector<RuleIds> finishing_rules_order = {
-       // RuleIds::RuleS6
+        RuleIds::RuleS6
     };
 
     // IMPORTANT INFORMATION:

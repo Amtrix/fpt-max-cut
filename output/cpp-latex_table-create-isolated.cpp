@@ -6,24 +6,31 @@ using namespace std;
 
 
 vector<string> paths = {
-    "experiments/kernelization/n2048/out",
-    "experiments/kernelization/n2048/missing-r8-only-signed/out",
-    "experiments/kernelization/n2048/missing-r8-with-signed/out",
-    "experiments/kernelization/n2048/missing-s2/out",
-    "experiments/kernelization/n2048/missing-s3/out",
-    "experiments/kernelization/n2048/missing-s5/out",
-    "experiments/kernelization/n2048/missing-s6/out"
+    "/kernelization/n2048/out",
+    "/kernelization/n2048/missing-r8-only-signed/out",
+    "/kernelization/n2048/missing-r8-with-signed/out",
+    "/kernelization/n2048/missing-s2/out",
+    "/kernelization/n2048/missing-s3/out",
+    "/kernelization/n2048/missing-s5/out",
+    "/kernelization/n2048/missing-s6/out"
 };
 
 Table table;
 vector<Table> subtables;
 
-const string selected_type = "RHG";
 
-int main() {
+
+int main(int argc, char **argv){
+    if (argc < 3) {
+        throw std::logic_error("Path to experiment required. Type of KaGen graphs required (BA, RGG2D, RGG3D, RHG, or GNM).");
+        exit(-1);
+    }
+
+    const string root_dir(argv[1]);
+    const string selected_type(argv[2]);
     
     for (int i = 0; i < paths.size(); ++i) {
-        ifstream in(paths[i].c_str());
+        ifstream in((root_dir + paths[i]).c_str());
 
         if (!in.is_open()) {
             cout << "Couldn't open: " << paths[i] << endl;

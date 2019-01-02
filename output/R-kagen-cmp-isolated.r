@@ -40,8 +40,8 @@ if (is.null(opt$loess)) {
 # Some variables that are used in various ways, to construct the plots
 types_to_test = c(0,1,2,3,4)
 res_folder=""
-col_vec = c("darkorange","red2","dodgerblue2","black", "purple", "black", "violet")
-pnt_vec  = c(18,4,18,15,0)
+col_vec = c("darkorange","red2","dodgerblue2","black", "purple", "green", "violet")
+pnt_vec  = c(19,4,18,15,0)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 pnt_vec2 = c(pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]])
 columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(G)+CUT','#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#locsearch(G)','#locsearch(Gk)+CUT','#locsearch.DIFF','#locsearch.DIFF.SD','#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file', 'kagentype')
@@ -84,6 +84,7 @@ data_table_main <- dplyr::filter(data_table, X.sec == 0)
 for (i in 1:6) {
     data_table_list[[i]] <- dplyr::filter(data_table, X.sec == i)
     data_table_list[[i]]$diff_v = data_table_list[[i]]$ratio_v - data_table_main$ratio_v
+    data_table_list[[i]]$diff_e = data_table_list[[i]]$ratio_e - data_table_main$ratio_e
 }
 
 print(data_table_list[[1]])
@@ -98,7 +99,7 @@ pdf(opt$out, width=10, height=5)
     par(cex = 1.2)
 
     # Here we choose the two comlumns, that we use for the plot
-    y="diff_v"
+    y="diff_e"
     x="density"
 
     # Define some ranges for our plotting area
@@ -117,6 +118,7 @@ pdf(opt$out, width=10, height=5)
 
     yrange <- yrange * 1.1
     yrange[2] <- max(-yrange[1], yrange[2])
+    yrange[2] <- 0.04
     xrange[1] <- 0
     xrange[2] <- xrange[2] + 1
 
@@ -135,19 +137,21 @@ pdf(opt$out, width=10, height=5)
        #points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
 
        if (!opt$nopoints)
-            points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
+            points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]], cex=0.6)
 
         if (do_loess) {
             loessv = loess_val
             if (dx == 1) loessv = 0.1
 
             lo <- loess(sub[[y]] ~ sub[[x]], sub, span=loessv)
-            lines(sub[[x]], predict(lo), col=col_vec[[dx + 1]], lwd=4)
+            lines(sub[[x]], predict(lo), col=col_vec[[dx + 1]], lwd=2)
         }
     }
 
+    lines(c(0,10), c(0,0), col=col_vec[[4]],lty=3)
+
     # Shows the legend
-    legend("topright", yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec1)
+    legend("bottomright", yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec1)
 }
 
 
