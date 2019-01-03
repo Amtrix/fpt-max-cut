@@ -7,7 +7,6 @@ using namespace std;
 
 vector<string> paths = {
     "/kernelization/n2048/out",
-    "/kernelization/n2048/missing-r8-only-signed/out",
     "/kernelization/n2048/missing-r8-with-signed/out",
     "/kernelization/n2048/missing-s2/out",
     "/kernelization/n2048/missing-s3/out",

@@ -43,8 +43,8 @@ if (is.null(opt$loess)) {
 # Some variables that are used in various ways, to construct the plots
 types_to_test = c(0,1,2,3,4)
 res_folder=""
-col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
-pnt_vec  = c(18,4,18,15,0)
+col_vec = c("green3","red2","dodgerblue2","black", "purple")
+pnt_vec  = c(20,2,18,15,0)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 pnt_vec2 = c(pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]])
 columnsA  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(G)+CUT','#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#locsearch(G)','#locsearch(Gk)+CUT','#locsearch.DIFF','#locsearch.DIFF.SD','#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
@@ -118,7 +118,7 @@ data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
        #points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
 
        if (!opt$nopoints)
-            points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
+            points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec1[[dx + 1]], cex=1)
 
         if (do_loess) {
             loessv = loess_val

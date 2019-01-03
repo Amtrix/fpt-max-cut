@@ -8,6 +8,7 @@
 #include "../utils.hpp"
 #include "../output-filter.hpp"
 #include "../graph-database.hpp"
+#include "./solver-helper.hpp"
 
 #include <iostream>
 #include <thread>
@@ -127,22 +128,6 @@ public:
             num_iterations = stoi(input.getCmdOption("-iterations"));
         }
 
-        int locsearch_iterations = 1;
-        if (input.cmdOptionExists("-locsearch-iterations")) {
-            locsearch_iterations = stoi(input.getCmdOption("-locsearch-iterations"));
-            cout << "Note: Local search iterations: " << locsearch_iterations << endl;
-        }
-        int mqlib_iterations = 1;
-        if (input.cmdOptionExists("-mqlib-iterations")) {
-            mqlib_iterations = stoi(input.getCmdOption("-mqlib-iterations"));
-            cout << "Note: MQLIB solver iterations: " << mqlib_iterations << endl;
-        }
-        int localsolver_iterations = 1;
-        if (input.cmdOptionExists("-localsolver-iterations")) {
-            localsolver_iterations = stoi(input.getCmdOption("-localsolver-iterations"));
-            cout << "Note: localsolver solver iterations: " << localsolver_iterations << endl;
-        }
-
         if (input.cmdOptionExists("-support-weighted-result")) {
             inputFlagToWeightedIsSet = true;
         } else {
@@ -162,96 +147,20 @@ public:
             double kernelization_time = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
 
 
-            // Already needed for upcoming sections.
-            double k_change = kernelized.GetInflictedCutChangeToKernelized();
-
             // Compute solver results.
-            double local_search_cut_size = -1, local_search_cut_size_k = -1, local_search_rate = 0, local_search_rate_sddiff = 0;
-            double mqlib_cut_size = -1, mqlib_cut_size_k = -1, mqlib_rate = 0, mqlib_rate_sddiff = 0;
-            double localsolver_cut_size = -1, localsolver_cut_size_k = -1, localsolver_rate = 0, localsolver_rate_sddiff = 0;
-            int local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_size_best = -1;
-
-            vector<int> tmp_def_param_trash;
-            std::tie(local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff, local_search_cut_size_best)
-                = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &G, tmp_def_param_trash)),
-                                             TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &kernelized, tmp_def_param_trash), -k_change),
-                                             locsearch_iterations);
-
-            
             int sub_on_kernelized_runtime = 0;
-            sub_on_kernelized_runtime = round(kernelization_time / 1000.0);
-
-            int total_time = -1;
-            if (input.cmdOptionExists("-total-allowed-solver-time")) {
-                total_time = stoi(input.getCmdOption("-total-allowed-solver-time"));
-            } else {
-                total_time = max(sub_on_kernelized_runtime * 5, 10);
-            }
-
-            if (total_time > sub_on_kernelized_runtime && fabs(k_change) > 1e-9) {
-                OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time) + " of which kernelization has used: " + to_string(sub_on_kernelized_runtime) + " [seconds].");
-
-                Burer2002Callback mqlib_cb  (total_time, &input, G.GetGraphNaming(), mixingid, G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "mqlib");
-                Burer2002Callback mqlib_cb_k(total_time, &input, kernelized.GetGraphNaming(), mixingid, kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, -k_change, "mqlib-kernelized");
-
-                auto F_mqlib   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, total_time, &mqlib_cb));
-                auto F_mqlib_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &kernelized, total_time - sub_on_kernelized_runtime, &mqlib_cb_k), -k_change);
-
-                vector<double> res_mqlib, res_mqlib_k;
-                std::thread thread_mqlib ([&]{
-                    for (int i = 0; i < mqlib_iterations; ++i) {
-                        res_mqlib.push_back(F_mqlib());
-                    }
-                });
-                std::thread thread_mqlib_k ([&]{
-                    for (int i = 0; i < mqlib_iterations; ++i) {
-                        res_mqlib_k.push_back(F_mqlib_k());
-                    }
-                });
-
-                
-
-#ifdef LOCALSOLVER_EXISTS
-                LocalSolverCallback localsolver_cb  (total_time, &input, G.GetGraphNaming(), mixingid, G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "localsolver");
-                LocalSolverCallback localsolver_cb_k(total_time, &input, kernelized.GetGraphNaming(), mixingid, kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), sub_on_kernelized_runtime, -k_change, "localsolver-kernelized");
-
-                auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time, &localsolver_cb));
-                auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time - sub_on_kernelized_runtime, &localsolver_cb_k), -k_change);
-
-                vector<double> res_localsolver, res_localsolver_k;
-               // std::thread thread_localsolver ([&]{
-                    for (int i = 0; i < localsolver_iterations; ++i) {
-                        res_localsolver.push_back(F_localsolver());
-                    }
-               // });
-               // std::thread thread_localsolver_k ([&]{
-                    for (int i = 0; i < localsolver_iterations; ++i) {
-                        res_localsolver_k.push_back(F_localsolver_k());
-                    }
-               // });
-
-               // thread_localsolver.join(); thread_localsolver_k.join();
-
-                std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
-                    = ComputeAverageAndDeviation(res_localsolver, res_localsolver_k);
-#endif
-
-                thread_mqlib.join(); thread_mqlib_k.join();
-
-                std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
-                    = ComputeAverageAndDeviation(res_mqlib, res_mqlib_k);
-            } else {
-                cout << "Testing the solvers was skipped due to insufficient time or no kernelization done. Provided: " << total_time << "; spent on kernelization: " << sub_on_kernelized_runtime << " [seconds]." << endl;
-                cout << "Kernelization: " << -k_change << endl;
-            }
+            sub_on_kernelized_runtime = round(kernelization_time / 1000.0);            
+            SolverEvaluation::Evaluate(mixingid, input, sub_on_kernelized_runtime, G, kernelized);
+            
 
             // Some variables.
             double EE = G.GetEdwardsErdosBound();
             double EE_k = kernelized.GetEdwardsErdosBound();
-            int MAXCUT_best_size = max(local_search_cut_size_best, max(mqlib_cut_size_best,localsolver_cut_size_best));
+            int MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));
 
             // Some output
-            cout << "VERIFY CUT VAL:  localsearch(" << local_search_cut_size << ", " << local_search_cut_size_k << ")   mqlib(" << mqlib_cut_size << ", " << mqlib_cut_size_k << ")" << endl;
+            cout << "VERIFY CUT VAL:  localsearch(" << SolverEvaluation::local_search_cut_size << ", " << SolverEvaluation::local_search_cut_size_k
+                 << ")   mqlib(" << SolverEvaluation::mqlib_cut_size << ", " << SolverEvaluation::mqlib_cut_size_k << ")" << endl;
             cout << "              G: " << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
             cout << "     kernelized: " << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
 
@@ -277,23 +186,24 @@ public:
             last_times_all = times_all;
 
 
+            double k_change = kernelized.GetInflictedCutChangeToKernelized();
             OutputKernelization(input, main_graph.GetGraphNaming(),
                                 mixingid, iteration,
                                 G.GetRealNumNodes(), G.GetRealNumEdges(),
                                 kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                 -k_change,
-                                mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff,
-                                localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff,
-                                local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff,
+                                SolverEvaluation::mqlib_cut_size, SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
+                                SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
+                                SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
                                 EE, EE_k, MAXCUT_best_size, kernelization_time);
             
             accum.push_back({(double)mixingid, (double)iteration,
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                 (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                 -k_change,
-                                (double)mqlib_cut_size, (double)mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff,
-                                localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff,
-                                local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff,
+                                (double)SolverEvaluation::mqlib_cut_size, (double)SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
+                                SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
+                                SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
                                 EE, EE_k, (double)MAXCUT_best_size, kernelization_time});
             
             if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {

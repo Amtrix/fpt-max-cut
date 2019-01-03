@@ -9,9 +9,9 @@ func_localize() {
 
     declare -a types=("RHG" "RGG2D" "RGG3D" "GNM" "BA")
 
+    mkdir -p $cwd/experiments-plots/cmp/isolated
     for i in "${types[@]}"
     do
-        echo $i
         $cwd/./cpp-latex_table-create-isolated.o $cwd/experiments $i
         Rscript $cwd/R-kagen-cmp-isolated.r -t $i -o $cwd/experiments-plots/cmp/isolated/$i.pdf
     done

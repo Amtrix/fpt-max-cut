@@ -40,7 +40,7 @@ if (is.null(opt$loess)) {
 # Some variables that are used in various ways, to construct the plots
 types_to_test = c(0,1,2,3,4)
 res_folder=""
-col_vec = c("darkorange","red2","dodgerblue2","black", "purple", "green", "violet")
+col_vec = c("green3","red2","dodgerblue2","black", "purple", "green", "violet")
 pnt_vec  = c(19,4,18,15,0)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 pnt_vec2 = c(pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]])
@@ -51,8 +51,8 @@ columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','
 
 #Need readjustment for each case:
 x_start_legend <- 3
-nam_vec = c("-r8s","-r8","-s2","-s3","-s5","-s6")#, "original", "task a", "task b", "task c")
-
+nam_vec = c("Removed: Reduction Rule 2+","Removed: Reduction Rule 20","Removed: Reduction Rule 22","Removed: Reduction Rule 21","Removed: Reduction Rule 23")#, "original", "task a", "task b", "task c")
+# r8, s2, s3, s5, s6
 file=paste("./experiments/kernelization/n2048/isolated-aggregate/isolated-rules-", opt$type, sep="")
                                                             
 # Read the results from the csv files
@@ -99,13 +99,13 @@ pdf(opt$out, width=10, height=5)
     par(cex = 1.2)
 
     # Here we choose the two comlumns, that we use for the plot
-    y="diff_e"
+    y="diff_v"
     x="density"
 
     # Define some ranges for our plotting area
     xrange <- c(0,0)
     yrange <- c(0,0)
-    for (i in 1:6) {
+    for (i in 1:5) {
         xrange <- range(xrange, data_table_list[[i]][,x])
         yrange <- range(yrange, data_table_list[[i]][,y])
 
@@ -132,7 +132,7 @@ pdf(opt$out, width=10, height=5)
     title(main=expression("Absolute difference in efficiency: e"[absDiff]*" = e(G"[new]*") - e(G"[old]*")"))
 
     # Draws the 4 lines of measurements
-    for (dx in 0:5) {
+    for (dx in 0:4) {
        sub <- data_table_list[[dx + 1]]
        #points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
 
