@@ -7,7 +7,16 @@ func_localize() {
         source $cwd/bootstrap.sh
     fi
 
-    $builddir/./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite realworld -live-maxcut-analysis -total-allowed-solver-time 2000 \
+
+  #  allowed_total_time_seconds=2000
+    allowed_total_time_seconds=5
+
+    mkdir -p $experiment_outdir/solvers/real-world-small/
+    $builddir/./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite real-world-small -live-maxcut-analysis -total-allowed-solver-time $allowed_total_time_seconds \
+                    -benchmark-output $experiment_outdir/solvers/real-world-small/out > $experiment_outdir/solvers/real-world-small/out-exe
+
+    mkdir -p $experiment_outdir/solvers/real-world/
+    $builddir/./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite realworld -live-maxcut-analysis -total-allowed-solver-time $allowed_total_time_seconds \
                     -benchmark-output $experiment_outdir/solvers/real-world/out > $experiment_outdir/solvers/real-world/out-exe
 }
 

@@ -185,6 +185,8 @@ public:
             }
             last_times_all = times_all;
 
+            custom_assert(SolverEvaluation::biqmac_cut_size == SolverEvaluation::biqmac_cut_size_k || SolverEvaluation::biqmac_cut_size == -1 || SolverEvaluation::biqmac_cut_size_k == -1);
+
 
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
             OutputKernelization(input, main_graph.GetGraphNaming(),
@@ -195,6 +197,7 @@ public:
                                 SolverEvaluation::mqlib_cut_size, SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
                                 SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
                                 SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
+                                SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
                                 EE, EE_k, MAXCUT_best_size, kernelization_time);
             
             accum.push_back({(double)mixingid, (double)iteration,
@@ -204,6 +207,7 @@ public:
                                 (double)SolverEvaluation::mqlib_cut_size, (double)SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
                                 SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
                                 SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
+                                SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
                                 EE, EE_k, (double)MAXCUT_best_size, kernelization_time});
             
             if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
@@ -225,7 +229,7 @@ public:
             avg.push_back(sum / accum.size());
         }
 
-        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15], avg[16], avg[17], avg[18], avg[19], avg[20], avg[21], avg[22], "-avg");
+        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15], avg[16], avg[17], avg[18], avg[19], avg[20], avg[21], avg[22], avg[23], avg[24], "-avg");
     }
 
     void Evaluate(InputParser& input, const string data_filepath) {

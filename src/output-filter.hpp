@@ -67,6 +67,10 @@ void OutputKernelization(
                                 const double locsearch_k,
                                 const double locsearch_avg_rate,
                                 const double locsearch_sddiff,
+
+                                const double biqmac_time,
+                                const double biqmac_time_k,
+
                                 const double EE,
                                 const double EE_k,
                                 const int MAXCUT_best,

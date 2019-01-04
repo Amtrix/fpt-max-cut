@@ -4,6 +4,11 @@
 #include <string>
 #include <map>
 #include <experimental/filesystem>
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <thread>
+#include <csignal>
 using namespace std;
 using namespace std::experimental;
 
@@ -208,4 +213,104 @@ int GetANonZeroWeight(int edge_weight_lo, int edge_weight_hi) {
     }
 
     return res_w;
+}
+
+#define READ_POPEN2 0
+#define WRITE_POPEN2 1
+
+pid_t
+popen2(const char *binfile, const char* file_read_in, int *outfp)
+{
+    int pipeB[2];
+    pid_t pid;
+
+    if (pipe(pipeB) != 0) {
+        perror("pipe");
+        return -1;
+    }
+
+    pid = fork();
+
+    if (pid < 0) {
+        cout << "Error, pid < 0" << endl;
+        return pid;
+    } else if (pid == 0)
+    {
+        close(pipeB[READ_POPEN2]);
+        dup2(pipeB[WRITE_POPEN2], WRITE_POPEN2);
+
+        if (freopen(file_read_in, "r", stdin) == NULL) {
+            cout << "Error opening file." << endl;
+            exit(1);
+        }
+
+        execl(binfile, NULL);
+        perror("execl");
+        exit(1);
+    }
+
+    if (outfp == NULL)
+        close(pipeB[READ_POPEN2]);
+    else
+        *outfp = pipeB[READ_POPEN2];
+
+    close(pipeB[WRITE_POPEN2]);
+
+    return pid;
+}
+
+tuple<std::string, double>  exec_custom(const string binfile, const string rfilepath, int timelimit_seconds) {
+    OutputDebugLog("Executing: '" + binfile + "' with runtime in seconds: " + to_string(timelimit_seconds));
+    auto t0_total = std::chrono::high_resolution_clock::now();
+    double finish_time_ms;
+
+    int pid;
+    int outfp;
+    if ((pid=popen2(binfile.c_str(), rfilepath.c_str(), &outfp)) <= 0)
+    {
+        printf("Unable to exec\n");
+        exit(1);
+    }
+
+    bool killed = false;
+    bool done = false;
+    std::string result;
+
+    std::thread t_read([&]{
+        char buf[128];
+        while (read(outfp, buf, 128) > 0) {
+            result += string(buf);
+        }
+        done = true;
+        auto t1_total = std::chrono::high_resolution_clock::now();
+        finish_time_ms = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
+    });
+
+    this_thread::sleep_for(std::chrono::seconds(5));
+    
+    std::thread t([&]{
+        while (!done) {
+            auto t1_total = std::chrono::high_resolution_clock::now();
+            double tott_ms = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
+
+            if (!killed && tott_ms > timelimit_seconds * 1000) {
+                //cout << "Kill " << pid << " due to timeout -- reached " << tott_ms << " milliseconds." << endl;
+                kill(pid, SIGABRT);
+                killed = true;
+                close(outfp);
+                break;
+            }
+
+            this_thread::sleep_for(std::chrono::seconds(10));
+        }
+    });
+
+    t.join();
+    t_read.join();
+    
+    if (!killed) {
+        close(outfp);
+    }
+
+    return make_tuple(result, killed ? -1 : finish_time_ms);
 }

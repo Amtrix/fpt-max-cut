@@ -49,8 +49,15 @@ macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
     target_link_libraries(${TARGETNAME} PRIVATE ${TARGET_LIBS})
     target_compile_definitions(${TARGETNAME} PRIVATE ${DEBUGMODE} ${LOCALSOLVER_FLAG})
 
+    target_compile_definitions(${TARGETNAME} PRIVATE PROJECT_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+
     if (${LOCALSOLVER_LICENSE_EXISTS})
-        target_compile_definitions(${TARGETNAME} PRIVATE LOCALSOLVER_EXISTS=1)
+#        target_compile_definitions(${TARGETNAME} PRIVATE LOCALSOLVER_EXISTS=1)
+    endif()
+
+    IF(EXISTS /mnt/d/master-thesis/BiqMac/bab)
+        target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_PATH="/mnt/d/master-thesis/BiqMac")
+        target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_EXISTS=1)
     endif()
 endmacro(add_binary_exec)
 

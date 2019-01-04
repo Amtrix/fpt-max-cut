@@ -7,6 +7,12 @@
 #include <cassert>
 #include <map>
 #include <functional>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <array>
 
 using namespace std;
 using namespace std::experimental;
@@ -123,3 +129,8 @@ inline bool MapEqualCheck(const unordered_map<KeyType, ValType> &m, const KeyTyp
 }
 
 int GetANonZeroWeight(int edge_weight_lo, int edge_weight_hi);
+
+
+
+// Returns output and execution time in milliseconds.
+tuple<std::string, double> exec_custom(const string binfile, const string rfilepath, int timelimit_seconds = 5);
