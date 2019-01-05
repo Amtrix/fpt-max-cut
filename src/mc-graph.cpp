@@ -1247,7 +1247,7 @@ int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S, const in
 
 tuple<int,double> MaxCutGraph::GetMaxCutWithMarkedVertexSet(const int limit_S, const int limit_time_sec) {
     const auto marked_vertex_set = GetMarkedVertexSet();
-    if ((int)marked_vertex_set.size() > limit_S) return make_tuple(-1, -1);
+    if ((int)marked_vertex_set.size() > limit_S) return make_tuple(-1, -1000);
 
     auto t0 = std::chrono::high_resolution_clock::now();
     int sz = ComputeOptimalColoringBruteforce(marked_vertex_set, limit_time_sec);
@@ -1255,7 +1255,7 @@ tuple<int,double> MaxCutGraph::GetMaxCutWithMarkedVertexSet(const int limit_S, c
     double T = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
 
     if (T > limit_time_sec * 1000)
-        return make_tuple(sz, -1);
+        return make_tuple(sz, -1000);
     
     return make_tuple(sz, T);
 }
