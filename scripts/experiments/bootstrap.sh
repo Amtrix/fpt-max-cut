@@ -27,8 +27,8 @@ func_localize() {
         # CONFIG FOR TEST CASES IS HERE
         experiment_outdir=$cwdboot/../../output/experiments
         bootstrap_done=true
-        num_iterations=1
-        knum_iterations=1
+        num_iterations=10
+        knum_iterations=10
         kkagen_instances=150 # kernelization stats (stats-kernelization-kagen)
         ################################
 
