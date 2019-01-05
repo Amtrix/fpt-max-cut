@@ -97,8 +97,8 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 
     if (use_solver_mask & Solvers::Localsearch) {
         vector<int> tmp_def_param_trash;
+        std::tie(local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff, local_search_cut_size_best)
                     = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &G, tmp_def_param_trash)),
-                std::tie(local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff, local_search_cut_size_best)
                                                 TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &kernelized, tmp_def_param_trash), -k_change),
                                                 locsearch_iterations);
     }
