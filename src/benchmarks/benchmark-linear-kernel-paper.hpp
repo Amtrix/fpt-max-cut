@@ -129,7 +129,7 @@ public:
             
             if (input.cmdOptionExists("-do-mc-extension-algo")) {
                 tie(mcpre, mcpre_time)   = G.GetMaxCutWithMarkedVertexSet(29, 60*180); // 3 hours
-                tie(mcpost, mcpost_time) = G.GetMaxCutWithMarkedVertexSet(29, 60*180); // 3 hours
+                tie(mcpost, mcpost_time) = G_processing_twoway.GetMaxCutWithMarkedVertexSet(29, 60*180); // 3 hours
             }
 
 
