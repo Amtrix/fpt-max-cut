@@ -31,6 +31,9 @@ General flags:
     -no-biqmac
     Never execute BiqMac solver.
 
+    -do-mc-extension-algo
+    If a clique forest should be computed an max-cut extension algorithm run. Only works for linear-kernel right now!
+
 
 Flags when kagen graph sampling is used for graph instance generations:
 
