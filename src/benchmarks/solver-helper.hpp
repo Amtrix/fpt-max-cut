@@ -59,8 +59,6 @@ double ParseBiqmacOutput_MxcCutSize(const string bm_output) {
 }
 
 void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_kernelization_seconds, const MaxCutGraph& G, const MaxCutGraph& kernelized, int use_solver_mask = Solvers::All) {
-    const string biqmac_dir = BIQMAC_PATH;
-    const string project_build_dir = PROJECT_BUILD_DIR;
     const double k_change = kernelized.GetInflictedCutChangeToKernelized();
 
     local_search_cut_size = -1, local_search_cut_size_k = -1, local_search_rate = 0, local_search_rate_sddiff = 0;
@@ -99,8 +97,8 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 
     if (use_solver_mask & Solvers::Localsearch) {
         vector<int> tmp_def_param_trash;
-                std::tie(local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff, local_search_cut_size_best)
                     = ComputeAverageAndDeviation(TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &G, tmp_def_param_trash)),
+                std::tie(local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff, local_search_cut_size_best)
                                                 TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeLocalSearchCut, &kernelized, tmp_def_param_trash), -k_change),
                                                 locsearch_iterations);
     }
@@ -136,6 +134,8 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     
     std::shared_ptr<std::thread> thread_biqmac, thread_biqmac_k;
 #ifdef BIQMAC_EXISTS
+    const string biqmac_dir = BIQMAC_PATH;
+    const string project_build_dir = PROJECT_BUILD_DIR;
     if (!input.cmdOptionExists("-no-biqmac")) {
         if (use_solver_mask & Solvers::BiqMac) {
             thread_biqmac = std::make_shared<std::thread>([&]{
