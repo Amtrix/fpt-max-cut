@@ -59,12 +59,17 @@ double ParseBiqmacOutput_MxcCutSize(const string bm_output) {
 }
 
 void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_kernelization_seconds, const MaxCutGraph& G, const MaxCutGraph& kernelized, int use_solver_mask = Solvers::All) {
-    double k_change = kernelized.GetInflictedCutChangeToKernelized();
+    const string biqmac_dir = BIQMAC_PATH;
+    const string project_build_dir = PROJECT_BUILD_DIR;
+    const double k_change = kernelized.GetInflictedCutChangeToKernelized();
 
     local_search_cut_size = -1, local_search_cut_size_k = -1, local_search_rate = 0, local_search_rate_sddiff = 0;
     mqlib_cut_size = -1, mqlib_cut_size_k = -1, mqlib_rate = 0, mqlib_rate_sddiff = 0;
     localsolver_cut_size = -1, localsolver_cut_size_k = -1, localsolver_rate = 0, localsolver_rate_sddiff = 0;
     local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_size_best = -1;
+
+    biqmac_cut_size = -1, biqmac_cut_size_k = -1;
+    biqmac_time = -1, biqmac_time_k = -1;
 
 
     int total_time_seconds = -1;
@@ -115,8 +120,6 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     std::shared_ptr<std::thread> thread_mqlib, thread_mqlib_k;
     vector<double> res_mqlib, res_mqlib_k;
     if (use_solver_mask & Solvers::MqLib) {
-        cout << "Running MqLib." << endl;
-
         thread_mqlib = std::make_shared<std::thread>([&]{
             for (int i = 0; i < mqlib_iterations; ++i) {
                 res_mqlib.push_back(F_mqlib());
@@ -129,31 +132,34 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         });
     }
 
+
+    
     std::shared_ptr<std::thread> thread_biqmac, thread_biqmac_k;
 #ifdef BIQMAC_EXISTS
-    const string biqmac_dir = BIQMAC_PATH;
-    const string project_build_dir = PROJECT_BUILD_DIR;
-    cout << project_build_dir << endl;
-    if (use_solver_mask & Solvers::BiqMac) {
-        cout << "Running BiqMac." << endl;
+    if (!input.cmdOptionExists("-no-biqmac")) {
+        if (use_solver_mask & Solvers::BiqMac) {
+            thread_biqmac = std::make_shared<std::thread>([&]{
+                G.PrintGraph("out-tmp-graph-for-biqmac", true);
+                auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
 
-        thread_biqmac = std::make_shared<std::thread>([&]{
-            G.PrintGraph("out-tmp-graph-for-biqmac", true);
-            auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
+                biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
+                biqmac_time = get<1>(res);
 
-            biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
-            biqmac_time = get<1>(res);
-        });
+                cout << "G: " << biqmac_cut_size << " " << biqmac_time << endl;
+            });
 
-        thread_biqmac_k = std::make_shared<std::thread>([&]{
-            kernelized.PrintGraph("out-tmp-graph-for-biqmac-kernelized", true);
-            auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
+            thread_biqmac_k = std::make_shared<std::thread>([&]{
+                kernelized.PrintGraph("out-tmp-graph-for-biqmac-kernelized", true);
+                auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
 
-            biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
-            biqmac_time_k = get<1>(res);
-        });
-        
-        
+                biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
+                biqmac_time_k = get<1>(res);
+
+                cout << "Gk: " << biqmac_cut_size_k << " " << biqmac_time_k << endl;
+            });
+            
+            
+        }
     }
 #endif
     
@@ -165,8 +171,6 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time_seconds - already_spent_time_on_kernelization_seconds, &localsolver_cb_k), -k_change);
         
     if (use_solver_mask & Solvers::LocalSolver) {
-        cout << "Running LocalSolver." << endl;
-
         vector<double> res_localsolver, res_localsolver_k;
         // std::thread thread_localsolver ([&]{
             for (int i = 0; i < localsolver_iterations; ++i) {

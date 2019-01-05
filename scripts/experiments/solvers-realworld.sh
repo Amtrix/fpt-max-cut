@@ -9,14 +9,10 @@ func_localize() {
 
 
   #  allowed_total_time_seconds=2000
-    allowed_total_time_seconds=5
-
-    mkdir -p $experiment_outdir/solvers/real-world-small/
-    $builddir/./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite real-world-small -live-maxcut-analysis -total-allowed-solver-time $allowed_total_time_seconds \
-                    -benchmark-output $experiment_outdir/solvers/real-world-small/out > $experiment_outdir/solvers/real-world-small/out-exe
+    allowed_total_time_seconds=300
 
     mkdir -p $experiment_outdir/solvers/real-world/
-    $builddir/./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite realworld -live-maxcut-analysis -total-allowed-solver-time $allowed_total_time_seconds \
+    $builddir/./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite realworld -live-maxcut-analysis -total-allowed-solver-time $allowed_total_time_seconds -no-biqmac \
                     -benchmark-output $experiment_outdir/solvers/real-world/out > $experiment_outdir/solvers/real-world/out-exe
 }
 
@@ -24,3 +20,6 @@ func_localize
 
 
 #to test solvers: ./benchmark-debug -action "kernelization" -iterations 1 -sample-kagen 1 -benchmark-output ../data/output/experiments/solvers/real-world/out-test -total-allowed-solver-time 2
+
+
+#biqmac no brainer for cases of this size!

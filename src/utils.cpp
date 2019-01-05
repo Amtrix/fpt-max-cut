@@ -260,7 +260,7 @@ popen2(const char *binfile, const char* file_read_in, int *outfp)
 }
 
 tuple<std::string, double>  exec_custom(const string binfile, const string rfilepath, int timelimit_seconds) {
-    OutputDebugLog("Executing: '" + binfile + "' with runtime in seconds: " + to_string(timelimit_seconds));
+    cout << ("Executing: " + binfile + " with runtime in seconds: " + to_string(timelimit_seconds)) << endl;
     auto t0_total = std::chrono::high_resolution_clock::now();
     double finish_time_ms;
 
@@ -311,6 +311,8 @@ tuple<std::string, double>  exec_custom(const string binfile, const string rfile
     if (!killed) {
         close(outfp);
     }
+
+    cout << "RESULT FOR: " << rfilepath << " ==== " << result << " ( " << finish_time_ms << " ) " << endl;
 
     return make_tuple(result, killed ? -1 : finish_time_ms);
 }

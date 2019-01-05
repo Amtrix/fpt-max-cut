@@ -28,6 +28,9 @@ General flags:
     -output-graphs-dir [path]
     Output all graphs into the directoriy -- kernelized and non-kernelized.
 
+    -no-biqmac
+    Never execute BiqMac solver.
+
 
 Flags when kagen graph sampling is used for graph instance generations:
 
