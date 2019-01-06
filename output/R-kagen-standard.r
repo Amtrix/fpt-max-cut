@@ -48,7 +48,9 @@ res_folder=""
 file=opt$file
 col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
 pnt_vec = c(9,18,17,15,0)
-columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT','#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD','#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
+columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT',
+              '#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD','#BIQMAC_T(G)', '#BIQMAC_T(Gk)',
+              '#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
 kagen_nam_vec = c("BA","GNM","RGG2D","RGG3D","RHG")#, "original", "task a", "task b", "task c")
 
 

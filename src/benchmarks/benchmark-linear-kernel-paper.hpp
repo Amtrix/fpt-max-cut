@@ -128,8 +128,16 @@ public:
             double mcpre_time = -1, mcpost_time = -1;
             
             if (input.cmdOptionExists("-do-mc-extension-algo")) {
-                tie(mcpre, mcpre_time)   = G.GetMaxCutWithMarkedVertexSet(29, 60*180); // 3 hours
-                tie(mcpost, mcpost_time) = G_processing_twoway.GetMaxCutWithMarkedVertexSet(29, 60*180); // 3 hours
+                std::thread t1([&]{
+                    tie(mcpre, mcpre_time)   = G.GetMaxCutWithMarkedVertexSet(29, 60*180); // 3 hours
+                });
+                
+                std::thread t2([&]{
+                    tie(mcpost, mcpost_time) = G_processing_twoway.GetMaxCutWithMarkedVertexSet(29, 60*180); // 3 hours
+                });
+                
+                t1.join();
+                t2.join();
             }
 
 

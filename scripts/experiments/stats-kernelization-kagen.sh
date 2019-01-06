@@ -10,8 +10,8 @@ func_localize() {
     declare -a arr=("512" "2048")
     # "8000")
 
-    #declare subtype=""
-    declare subtype="/missing-s6"
+    declare subtype=""
+    #declare subtype="/missing-s6"
 
     for i in "${arr[@]}"
     do
