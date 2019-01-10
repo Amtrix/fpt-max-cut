@@ -68,21 +68,28 @@ public:
         // First transform graph into unweighted. /////////////
         auto t0 = GetCurrentTime();
         //kernelized.MakeWeighted();
-        kernelized.MakeSigned();
-        KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false);
-        
 
-        kernelized.MakeUnweighted();
-        OutputDebugLog("Made unweighted");
-        LogTime(t0);
-        ////////////////////////////////////////
-
-        // Reductions ////////////////////////////////////////
         auto selected_kernelization_order = kernelization_order;
         if (provide_order) selected_kernelization_order = provided_kernelization_order;
 
+        bool is_all_finished = false;
+        while (!is_all_finished) {
+            is_all_finished = true;
+            
+            // Signed reductions.
+           // kernelized.MakeSigned();
+          //  if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false))
+          //      is_all_finished = false;
         
-        KernelizeExec(kernelized, selected_kernelization_order, false);
+
+            // Unweighted reductions.
+            kernelized.MakeUnweighted();
+            OutputDebugLog("Made unweighted");
+            LogTime(t0);
+
+            if (KernelizeExec(kernelized, selected_kernelization_order, false))
+                is_all_finished = false;
+        }
 
         auto t_end_fast = std::chrono::high_resolution_clock::now();
         double time_fast_kernelization = std::chrono::duration_cast<std::chrono::microseconds> (t_end_fast - t0).count()/1000.;
@@ -156,7 +163,6 @@ public:
             // Some variables.
             double EE = G.GetEdwardsErdosBound();
             double EE_k = kernelized.GetEdwardsErdosBound();
-            int MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));
 
             // Some output
             cout << "VERIFY CUT VAL:  localsearch(" << SolverEvaluation::local_search_cut_size << ", " << SolverEvaluation::local_search_cut_size_k
@@ -185,10 +191,9 @@ public:
             }
             last_times_all = times_all;
 
-            custom_assert(SolverEvaluation::biqmac_cut_size == SolverEvaluation::biqmac_cut_size_k || SolverEvaluation::biqmac_cut_size == -1 || SolverEvaluation::biqmac_cut_size_k == -1);
-
-
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
+            custom_assert(SolverEvaluation::biqmac_cut_size == SolverEvaluation::biqmac_cut_size_k + int(-k_change) || SolverEvaluation::biqmac_cut_size == -1 || SolverEvaluation::biqmac_cut_size_k == -1);
+            
             OutputKernelization(input, main_graph.GetGraphNaming(),
                                 mixingid, iteration,
                                 G.GetRealNumNodes(), G.GetRealNumEdges(),
@@ -198,7 +203,7 @@ public:
                                 SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
                                 SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
                                 SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
-                                EE, EE_k, MAXCUT_best_size, kernelization_time);
+                                EE, EE_k, SolverEvaluation::MAXCUT_best_size, kernelization_time);
             
             accum.push_back({(double)mixingid, (double)iteration,
                                 (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
@@ -208,7 +213,7 @@ public:
                                 SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
                                 SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
                                 SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
-                                EE, EE_k, (double)MAXCUT_best_size, kernelization_time});
+                                EE, EE_k, (double)SolverEvaluation::MAXCUT_best_size, kernelization_time});
             
             if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
                 G.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid), true);

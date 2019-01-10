@@ -102,7 +102,8 @@ void InitOutputFiles(const InputParser& input) {
         if (action == "linear-kernel") {
             const string output_path = input.getCmdOption("-benchmark-output");
             ofstream out(output_path);
-            print_row(out, markedSetDescriptor, "ssssssssssssssssss", "#sec", "#it", "#num_nodes", "#num_edges", "#num_nodes_k", "#num_edges_k", "#marked_cnt", "#marked_time", "twoway_time", "#marked_reduc_cnt", "#marked_reduc_time", "#marked_rand_cnt", "#marked_rand_time", "#mcpre", "mcpre_time","#mcpost", "mcpost_time", "#file");
+            print_row(out, markedSetDescriptor, "ssssssssssssssssss", "#sec", "#it", "#num_nodes", "#num_edges", "#num_nodes_k", "#num_edges_k", "#marked_cnt", "#marked_time",
+                "twoway_time", "#marked_reduc_cnt", "#marked_reduc_time", "#marked_rand_cnt", "#marked_rand_time", "#mcpre", "mcpre_time","#mcpost", "mcpost_time", "#file");
         }
 
         if (input.cmdOptionExists("-live-maxcut-analysis")) {

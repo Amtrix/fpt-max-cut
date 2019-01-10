@@ -31,6 +31,8 @@ int local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_s
 int biqmac_cut_size = -1, biqmac_cut_size_k = -1;
 double biqmac_time = -1, biqmac_time_k = -1;
 
+int MAXCUT_best_size;
+
 
 /** EXAMPLE OUTPUT:
 
@@ -68,6 +70,8 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 
     biqmac_cut_size = -1, biqmac_cut_size_k = -1;
     biqmac_time = -1, biqmac_time_k = -1;
+
+    MAXCUT_best_size = -1;
 
 
     int total_time_seconds = -1;
@@ -110,6 +114,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         return;
     }
 
+
     Burer2002Callback mqlib_cb  (total_time_seconds, &input, G.GetGraphNaming(), mixingid, G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "mqlib");
     Burer2002Callback mqlib_cb_k(total_time_seconds, &input, kernelized.GetGraphNaming(), mixingid, kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), already_spent_time_on_kernelization_seconds, -k_change, "mqlib-kernelized");
     auto F_mqlib   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithMQLib, &G, total_time_seconds, &mqlib_cb));
@@ -117,7 +122,10 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 
     std::shared_ptr<std::thread> thread_mqlib, thread_mqlib_k;
     vector<double> res_mqlib, res_mqlib_k;
-    if (use_solver_mask & Solvers::MqLib) {
+
+    if (!input.cmdOptionExists("-no-mqlib") && (use_solver_mask & Solvers::MqLib)) { // EVALUATE MQLIB
+        OutputDebugLog("====> EVALUATE: MQLIB.");
+    
         thread_mqlib = std::make_shared<std::thread>([&]{
             for (int i = 0; i < mqlib_iterations; ++i) {
                 res_mqlib.push_back(F_mqlib());
@@ -136,30 +144,28 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 #ifdef BIQMAC_EXISTS
     const string biqmac_dir = BIQMAC_PATH;
     const string project_build_dir = PROJECT_BUILD_DIR;
-    if (!input.cmdOptionExists("-no-biqmac")) {
-        if (use_solver_mask & Solvers::BiqMac) {
-            thread_biqmac = std::make_shared<std::thread>([&]{
-                G.PrintGraph("out-tmp-graph-for-biqmac", true);
-                auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
+    if (!input.cmdOptionExists("-no-biqmac") && (use_solver_mask & Solvers::BiqMac)) { // EVALUATE BIQMAC
+        OutputDebugLog("====> EVALUATE: BiqMac.");
 
-                biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
-                biqmac_time = get<1>(res);
+        thread_biqmac = std::make_shared<std::thread>([&]{
+            G.PrintGraph("out-tmp-graph-for-biqmac", true);
+            auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
 
-                cout << "G: " << biqmac_cut_size << " " << biqmac_time << endl;
-            });
+            biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
+            biqmac_time = get<1>(res);
 
-            thread_biqmac_k = std::make_shared<std::thread>([&]{
-                kernelized.PrintGraph("out-tmp-graph-for-biqmac-kernelized", true);
-                auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
+            cout << "G: " << biqmac_cut_size << " " << biqmac_time << endl;
+        });
 
-                biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
-                biqmac_time_k = get<1>(res);
+        thread_biqmac_k = std::make_shared<std::thread>([&]{
+            kernelized.PrintGraph("out-tmp-graph-for-biqmac-kernelized", true);
+            auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
 
-                cout << "Gk: " << biqmac_cut_size_k << " " << biqmac_time_k << endl;
-            });
-            
-            
-        }
+            biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
+            biqmac_time_k = get<1>(res);
+
+            cout << "Gk: " << biqmac_cut_size_k << " " << biqmac_time_k << endl;
+        }); 
     }
 #endif
     
@@ -170,7 +176,9 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time_seconds, &localsolver_cb));
     auto F_localsolver_k = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &kernelized, total_time_seconds - already_spent_time_on_kernelization_seconds, &localsolver_cb_k), -k_change);
         
-    if (use_solver_mask & Solvers::LocalSolver) {
+    if (!input.cmdOptionExists("-no-localsolver") && (use_solver_mask & Solvers::LocalSolver)) { // EVALUATE LOCALSOLVER
+        OutputDebugLog("====> EVALUATE: LocalSolver.");
+
         vector<double> res_localsolver, res_localsolver_k;
         // std::thread thread_localsolver ([&]{
             for (int i = 0; i < localsolver_iterations; ++i) {
@@ -200,6 +208,10 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     if (thread_biqmac && thread_biqmac_k) {
         thread_biqmac->join(); thread_biqmac_k->join();
     }
+
+    MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));
+    MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size);
+    MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size_k + (int)(-k_change));
 }
 
 } // SolverEvaluation

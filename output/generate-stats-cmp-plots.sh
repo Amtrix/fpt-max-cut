@@ -27,6 +27,8 @@ func_localize() {
         set +o xtrace
     done
 
+    Rscript $cwd/R-kagen-cmp-standard_A-to-standard_B.r    --fileA $kagendata_standard/n2048/out --fileB $experiments_B/$standard_exp_subdir/n2048/out \
+                                                               --out $outdir/experiments_B/plot.pdf
 
     for i in "${arrl[@]}"
     do

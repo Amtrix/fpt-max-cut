@@ -5,7 +5,7 @@ cwdbootplots="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 standard_exp_subdir=kernelization
 
 experiments=$cwdbootplots/experiments
-experiments_B=$cwdbootplots/previous/experiments-signed
+experiments_B=$cwdbootplots/previous/base-kagen-stats-results
 
 kagendata_standard=$experiments/$standard_exp_subdir
 kagendata_linear_fpt=$experiments/linear-kernel
