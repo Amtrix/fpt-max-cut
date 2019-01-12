@@ -49,13 +49,14 @@ const map<RuleIds, string> kRuleNames = {
     {RuleIds::RuleS5,          "RuleS5"},
     {RuleIds::RuleS6,          "RuleS6"},
     {RuleIds::Rule8Signed,     "Rule8Signed"},
+    {RuleIds::Rule8SpecialCase,"Rule8SpecialCase"},
     {RuleIds::SpecialRule2Signed, "SpecialRule2Signed"}
 };
 
 const vector<RuleIds> kAllRuleIds = {
     RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
     RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
-    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed
+    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed, RuleIds::Rule8SpecialCase
 };
 
 struct trie_node_r8 {
@@ -1346,7 +1347,7 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
             visited[x] = 2;
         }
 
-        if (ok && X.size() > NG.size() && X.size() > 1 && IsClique(X)) {
+        if (ok && X.size() >= NG.size() && X.size() > 1 && IsClique(X)) {
             ret.push_back(X);
 
             if (break_on_first)
@@ -1389,6 +1390,16 @@ bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
         RemoveNode(rem_node2);
         rules_vrem[RuleIds::Rule8] += 2;
         ret = true;
+    }
+
+    if (szX == (int)NG.size() && szX >= 1) {
+        inflicted_cut_change_to_kernelized -= szX;
+        szX--;
+        RemoveNode(clique[dx]);
+        ret = true;
+
+        rules_vrem[RuleIds::Rule8] ++;
+        rules_usage_count[RuleIds::Rule8SpecialCase]++;
     }
     
     return ret;

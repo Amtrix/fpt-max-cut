@@ -20,7 +20,7 @@ enum class RuleIds : int {
     RevSpecialRule1,
     RevSpecialRule2,
     SpecialRule2Signed,
-    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed
+    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed, Rule8SpecialCase
 };
 
 extern const map<RuleIds, string> kRuleDescriptions;

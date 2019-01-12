@@ -3,7 +3,7 @@
 func_localize() {
     set -o xtrace
     local cwdboot="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-    builddir=$cwdboot/../../build
+    source $cwdboot/bootstrap-vars.sh
 
     threadcnt4946=0
     check_and_wait_if_threadpool_full() {
@@ -23,14 +23,6 @@ func_localize() {
     if [ ! "$bootstrap_done" = true ] ; then
         cd $builddir
         cmake ../
-
-        # CONFIG FOR TEST CASES IS HERE
-        experiment_outdir=$cwdboot/../../output/experiments
-        bootstrap_done=true
-        num_iterations=5
-        knum_iterations=10
-        kkagen_instances=150 # kernelization stats (stats-kernelization-kagen)
-        ################################
 
         while [[ $selected_build != "benchmark" && $selected_build != "benchmark-debug" ]]; do
             read -p "Select the build (benchmark or benchmark-debug): " selected_build
