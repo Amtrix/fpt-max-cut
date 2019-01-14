@@ -63,7 +63,7 @@ public:
 
 
 
-
+    bool use_signed_kernelization = true;
     void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}, const bool force_timestampless_kernelization = false) {
         // First transform graph into unweighted. /////////////
         auto t0 = GetCurrentTime();
@@ -77,7 +77,7 @@ public:
             is_all_finished = true;
             
             // Signed reductions.
-            if (input.cmdOptionExists("-do-signed-reductions")) {
+            if (use_signed_kernelization) {
                 kernelized.MakeSigned();
                 if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false))
                     is_all_finished = false;
@@ -141,6 +141,12 @@ public:
             inputFlagToWeightedIsSet = true;
         } else {
             inputFlagToWeightedIsSet = false;
+        }
+
+        if (input.cmdOptionExists("-do-signed-reduction")) {
+            use_signed_kernelization = true;
+        } else {
+            use_signed_kernelization = false;
         }
 
         vector<vector<double>> accum;
