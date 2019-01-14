@@ -11,8 +11,8 @@ message("Add KaGen")
 add_subdirectory(./test-generators/KaGen/)
 message("Include MQLIB includes")
 include_directories(. ./solvers/MQLib/include)
-include_directories(. /opt/localsolver_7_5/include)
 include_directories(. /software/localsolver/localsolver_8_0/include)
+include_directories(. /opt/localsolver_7_5/include)
 
 set (CMAKE_CXX_COMPILER /usr/bin/g++-7)
 set (CMAKE_CXX_FLAGS "-std=c++1z -msse4.2 -Wall -Wextra -O3 -g -fopenmp")
@@ -33,8 +33,9 @@ list(APPEND ALL_CPP_FILES
 )
 
 find_library(MQLIB NAMES "MQLib.a" PATHS ./solvers/MQLib/bin/)
+find_library(LOCALSOLVER localsolver PATHS /software/localsolver/localsolver_8_0/bin /opt/localsolver_7_5/bin)
 
-set(TARGET_LIBS Threads::Threads -lstdc++fs -llocalsolver ${MQLIB} generators)
+set(TARGET_LIBS Threads::Threads -lstdc++fs ${LOCALSOLVER} ${MQLIB} generators)
 
 set(LOCALSOLVER_LICENSE_EXISTS FALSE)
 if (EXISTS /opt/localsolver_7_5/license.dat OR EXISTS /software/localsolver/localsolver_8_0/license.dat)
