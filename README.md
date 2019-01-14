@@ -68,8 +68,8 @@ Flags for benchmark current kernelization performance:
     In seconds! Gives the allocated time the kernelization, solver, etc; instead of simply using 10x kernelization time *additionally* on solver time (10s if that value is less than 10s). is allowed to utilize in TOTAL *per* graph. Set -1 if you want to turn of solvers.
 
     -locsearch-iterations   [number]
-    -mqlib-iterations       [number]
-    -localsolver-iterations [number]
+    -mqlib-iterations       [number] // deprecated
+    -localsolver-iterations [number] // deprecated
     Indicates the number of times localsearch, mqlib, localsolver are to be executed.
 
 

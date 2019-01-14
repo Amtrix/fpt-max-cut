@@ -200,7 +200,7 @@ public:
             last_times_all = times_all;
 
             double k_change = kernelized.GetInflictedCutChangeToKernelized();
-            custom_assert(SolverEvaluation::biqmac_cut_size == SolverEvaluation::biqmac_cut_size_k + int(-k_change) || SolverEvaluation::biqmac_cut_size == -1 || SolverEvaluation::biqmac_cut_size_k == -1);
+            custom_assert(SolverEvaluation::biqmac_cut_size == SolverEvaluation::biqmac_cut_size_k || SolverEvaluation::biqmac_cut_size == -1 || SolverEvaluation::biqmac_cut_size_k == -1);
             
             OutputKernelization(input, main_graph.GetGraphNaming(),
                                 mixingid, iteration,
@@ -210,7 +210,11 @@ public:
                                 SolverEvaluation::mqlib_cut_size, SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
                                 SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
                                 SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
+
+                                SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
+                                SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
                                 SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
+                                
                                 EE, EE_k, SolverEvaluation::MAXCUT_best_size, kernelization_time);
             
             accum.push_back({(double)mixingid, (double)iteration,
@@ -220,6 +224,8 @@ public:
                                 (double)SolverEvaluation::mqlib_cut_size, (double)SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
                                 SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
                                 SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
+                                SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
+                                SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
                                 SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
                                 EE, EE_k, (double)SolverEvaluation::MAXCUT_best_size, kernelization_time});
             
@@ -242,7 +248,8 @@ public:
             avg.push_back(sum / accum.size());
         }
 
-        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15], avg[16], avg[17], avg[18], avg[19], avg[20], avg[21], avg[22], avg[23], avg[24], "-avg");
+        OutputKernelization(input, main_graph.GetGraphNaming(), avg[0], avg[1], avg[2], avg[3], avg[4], avg[5], avg[6], avg[7], avg[8], avg[9], avg[10], avg[11], avg[12], avg[13], avg[14], avg[15],
+            avg[16], avg[17], avg[18], avg[19], avg[20], avg[21], avg[22], avg[23], avg[24], avg[25], avg[26], avg[27], avg[28], "-avg");
     }
 
     void Evaluate(InputParser& input, const string data_filepath) {

@@ -68,6 +68,12 @@ void OutputKernelization(
                                 const double locsearch_avg_rate,
                                 const double locsearch_sddiff,
 
+                                const double mqlib_time,
+                                const double mqlib_time_k,
+
+                                const double localsolver_time,
+                                const double localsolver_time_k,
+
                                 const double biqmac_time,
                                 const double biqmac_time_k,
 

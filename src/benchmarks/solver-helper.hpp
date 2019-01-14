@@ -30,6 +30,8 @@ int local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_s
 
 int biqmac_cut_size = -1, biqmac_cut_size_k = -1;
 double biqmac_time = -1, biqmac_time_k = -1;
+double localsolver_time = -1, localsolver_time_k = -1;
+double mqlib_time = -1, mqlib_time_k = -1;
 
 int MAXCUT_best_size;
 
@@ -69,7 +71,10 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_size_best = -1;
 
     biqmac_cut_size = -1, biqmac_cut_size_k = -1;
+    
     biqmac_time = -1, biqmac_time_k = -1;
+    localsolver_time = -1, localsolver_time_k = -1;
+    mqlib_time = -1, mqlib_time_k = -1;
 
     MAXCUT_best_size = -1;
 
@@ -87,16 +92,6 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     if (input.cmdOptionExists("-locsearch-iterations")) {
         locsearch_iterations = stoi(input.getCmdOption("-locsearch-iterations"));
         cout << "Note: Local search iterations: " << locsearch_iterations << endl;
-    }
-    int mqlib_iterations = 1;
-    if (input.cmdOptionExists("-mqlib-iterations")) {
-        mqlib_iterations = stoi(input.getCmdOption("-mqlib-iterations"));
-        cout << "Note: MQLIB solver iterations: " << mqlib_iterations << endl;
-    }
-    int localsolver_iterations = 1;
-    if (input.cmdOptionExists("-localsolver-iterations")) {
-        localsolver_iterations = stoi(input.getCmdOption("-localsolver-iterations"));
-        cout << "Note: localsolver solver iterations: " << localsolver_iterations << endl;
     }
 
     if (use_solver_mask & Solvers::Localsearch) {
@@ -127,14 +122,16 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         OutputDebugLog("====> EVALUATE: MQLIB.");
     
         thread_mqlib = std::make_shared<std::thread>([&]{
-            for (int i = 0; i < mqlib_iterations; ++i) {
-                res_mqlib.push_back(F_mqlib());
-            }
+            auto t0_total = std::chrono::high_resolution_clock::now();
+            res_mqlib.push_back(F_mqlib());
+            auto t1_total = std::chrono::high_resolution_clock::now();
+            mqlib_time   = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
         });
         thread_mqlib_k = std::make_shared<std::thread>([&]{
-            for (int i = 0; i < mqlib_iterations; ++i) {
-                res_mqlib_k.push_back(F_mqlib_k());
-            }
+            auto t0_total = std::chrono::high_resolution_clock::now();
+            res_mqlib_k.push_back(F_mqlib_k());
+            auto t1_total = std::chrono::high_resolution_clock::now();
+            mqlib_time_k  = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
         });
     }
 
@@ -153,8 +150,6 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 
             biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
             biqmac_time = get<1>(res);
-
-            cout << "G: " << biqmac_cut_size << " " << biqmac_time << endl;
         });
 
         thread_biqmac_k = std::make_shared<std::thread>([&]{
@@ -162,15 +157,15 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
             auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
 
             biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
+            if (biqmac_cut_size_k != -1) biqmac_cut_size_k += (int)(-k_change);
             biqmac_time_k = get<1>(res);
-
-            cout << "Gk: " << biqmac_cut_size_k << " " << biqmac_time_k << endl;
         }); 
     }
 #endif
     
 
 #ifdef LOCALSOLVER_EXISTS
+    // We cannot do multithreading here, as one license = one thread.
     LocalSolverCallback localsolver_cb  (total_time_seconds, &input, G.GetGraphNaming(), mixingid, G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "localsolver");
     LocalSolverCallback localsolver_cb_k(total_time_seconds, &input, kernelized.GetGraphNaming(), mixingid, kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), already_spent_time_on_kernelization_seconds, -k_change, "localsolver-kernelized");
     auto F_localsolver   = TakeFirstFromPairFunction(std::bind(&MaxCutGraph::ComputeMaxCutWithLocalsolver, &G, total_time_seconds, &localsolver_cb));
@@ -180,21 +175,21 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         OutputDebugLog("====> EVALUATE: LocalSolver.");
 
         vector<double> res_localsolver, res_localsolver_k;
-        // std::thread thread_localsolver ([&]{
-            for (int i = 0; i < localsolver_iterations; ++i) {
-                res_localsolver.push_back(F_localsolver());
-            }
-        // });
-        // std::thread thread_localsolver_k ([&]{
-            for (int i = 0; i < localsolver_iterations; ++i) {
-                res_localsolver_k.push_back(F_localsolver_k());
-            }
-        // });
 
-        // thread_localsolver.join(); thread_localsolver_k.join();
+        auto t0_total = std::chrono::high_resolution_clock::now();
+        res_localsolver.push_back(F_localsolver());
+        auto t1_total = std::chrono::high_resolution_clock::now();
+        res_localsolver_k.push_back(F_localsolver_k());
+        auto t2_total = std::chrono::high_resolution_clock::now();
+
+        localsolver_time   = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
+        localsolver_time_k = std::chrono::duration_cast<std::chrono::microseconds> (t2_total - t1_total).count()/1000.;
 
         std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
             = ComputeAverageAndDeviation(res_localsolver, res_localsolver_k);
+        
+        cout << "LOCALSOLVER(G):  " << localsolver_cut_size   << " " << localsolver_time << endl;
+        cout << "LOCALSOLVER(Gk): " << localsolver_cut_size_k << " " << localsolver_time_k << endl;
     }
 #endif
 
@@ -203,15 +198,21 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 
         std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
             = ComputeAverageAndDeviation(res_mqlib, res_mqlib_k);
+        
+        cout << "MQLIB(G):  " << mqlib_cut_size   << " " << mqlib_time << endl;
+        cout << "MQLIB(Gk): " << mqlib_cut_size_k << " " << mqlib_time_k << endl;
     }
 
     if (thread_biqmac && thread_biqmac_k) {
         thread_biqmac->join(); thread_biqmac_k->join();
+
+        cout << "BIQMAC(G):  " << biqmac_cut_size << " " << biqmac_time << endl;
+        cout << "BIQMAC(Gk): " << biqmac_cut_size_k << " " << biqmac_time_k << endl;
     }
 
     MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size);
-    MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size_k + (int)(-k_change));
+    MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size_k);
 }
 
 } // SolverEvaluation
