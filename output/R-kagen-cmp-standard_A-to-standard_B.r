@@ -43,8 +43,8 @@ if (is.null(opt$loess)) {
 # Some variables that are used in various ways, to construct the plots
 types_to_test = c(0,1,2,3,4)
 res_folder=""
-col_vec = c("green3","red2","dodgerblue2","black", "purple")
-pnt_vec  = c(20,2,18,15,0)
+col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
+pnt_vec  = c(20,2,18,15,19)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 pnt_vec2 = c(pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]])
 columnsA  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT',
@@ -91,7 +91,7 @@ data_table$diff_v = data_table$ratio_v.mean - data_table_cmp$ratio_v.mean
 data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
 
 {
-    par(cex = 1.2)
+    par(cex = 1.1)
 
     # Here we choose the two comlumns, that we use for the plot
     y="diff_v"

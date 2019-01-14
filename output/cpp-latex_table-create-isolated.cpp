@@ -7,11 +7,11 @@ using namespace std;
 
 vector<string> paths = {
     "/kernelization/n2048/out",
-    "/kernelization/n2048/missing-r8-with-signed/out",
-    "/kernelization/n2048/missing-s2/out",
-    "/kernelization/n2048/missing-s3/out",
-    "/kernelization/n2048/missing-s5/out",
-    "/kernelization/n2048/missing-s6/out"
+    "/kernelization/n2048/missing-r8-with-signed/out", //                5+
+    "/kernelization/n2048/missing-s2/out",             // Reduction Rule 23 
+    "/kernelization/n2048/missing-s3/out",             //                25     (missing edge rule)
+    "/kernelization/n2048/missing-s5/out",             //                24
+  //  "/kernelization/n2048/missing-s6/out"
 };
 
 Table table;

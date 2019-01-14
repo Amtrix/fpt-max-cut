@@ -1289,7 +1289,7 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
     vector<vector<int>> ret;
     
     unordered_map<int, int> visited;
-    vector<int> current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.R8, false); // not all adjacent needed, see (1)
+    vector<int> current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.R8, true); // not all adjacent needed, see (1)
     if (!break_on_first)
         CURRENT_TIMESTAMPS.R8 = current_kernelization_time;
 

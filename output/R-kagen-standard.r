@@ -47,7 +47,7 @@ if (is.null(opt$loess)) {
 res_folder=""
 file=opt$file
 col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
-pnt_vec = c(9,18,17,15,0)
+pnt_vec = c(9,18,17,15,19)
 columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT',
               '#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD','#BIQMAC_T(G)', '#BIQMAC_T(Gk)',
               '#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
@@ -85,7 +85,7 @@ pdf(opt$out, width=10, height=5)
 #v_count <- data_table[,"X..V.G.."][1]
 
 {   
-    par(cex = 1.2)
+    par(cex = 1.1)
     #par(cex.main = 1.3)
     #par(cex.lab  = 1.3)
     #par(cex.axis = 1.3)

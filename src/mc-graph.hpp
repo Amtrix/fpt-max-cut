@@ -353,16 +353,7 @@ private:
         Both = 3
     };
 
-    void UpdateVertexTimestamp(int node, bool force = false, TimestampType type = TimestampType::DegreeDecrease) {
-        if (!force)
-            custom_assert(current_timestamp[node] != -1);
-
-        current_timestamp[node] = current_kernelization_time;
-        vertex_timetable_pq.push(make_pair(current_kernelization_time, make_pair(node,type)));
-
-        current_kernelization_time += 1;
-    }
-
+    
     template <class mark_type>
     void MarkDefinitelyNotInternal(const vector<int>& vertices, unordered_map<int, mark_type>& visi) const {
         for (auto root : vertices) { // with this, we exclude all external vertices in cliques.
@@ -378,18 +369,35 @@ private:
         }
     }
 
+    void UpdateVertexTimestamp(int node, bool force = false, TimestampType type = TimestampType::DegreeDecrease) {
+        if (!force)
+            custom_assert(current_timestamp[node] != -1);
+
+        current_timestamp[node] = current_kernelization_time;
+        vertex_timetable.push_back(make_pair(current_kernelization_time, make_pair(node,type)));
+
+        current_kernelization_time += 1;
+    }
+
     vector<int> GetVerticesAfterTimestamp(int timestamp, int include_neighbhors = 0) {
         vector<pair<int,pair<int,TimestampType>>> selected;
-        while (!vertex_timetable_pq.empty()) {
-            auto u = vertex_timetable_pq.top();
-            vertex_timetable_pq.pop();
+        /*while (!vertex_timetable.empty()) {
+            auto u = vertex_timetable.top();
+            vertex_timetable.pop();
             if (current_timestamp[u.second.first] != u.first) continue; // has been made invalid.
 
             if (u.first < timestamp) {
-                vertex_timetable_pq.push(u); // return the one we don't want.
+                vertex_timetable.push(u); // return the one we don't want.
                 break;
             }
             
+            selected.push_back(u);
+        }*/
+
+        for (int i = max(0, timestamp - 1); i < (int)vertex_timetable.size(); ++i) {
+            auto u = vertex_timetable[i];
+
+            if (current_timestamp[u.second.first] != u.first) continue; // has been made invalid.
             selected.push_back(u);
         }
         
@@ -412,10 +420,10 @@ private:
         for (auto it : visi)
             ret.push_back(it.first);
         
-        for (auto entry : selected) {
-            if (current_timestamp[entry.second.first] == entry.first)
-                vertex_timetable_pq.push(entry); // put back as it was not changed nor requested to be removed.
-        }
+        //for (auto entry : selected) {
+        //    if (current_timestamp[entry.second.first] == entry.first)
+        //        vertex_timetable.push(entry); // put back as it was not changed nor requested to be removed.
+        //}
 
         sort(ret.begin(), ret.end()); // insignificant, but allows us to check if result remains the same compared to checking all vertices -- UNDER CERTAIN CIRCUMSTANCES! (if the ignored ones do not influence the result at all!).
         return ret;
@@ -467,7 +475,7 @@ private:
     vector<int> computed_maxcut_coloring;
 
     // Following is used to track timestamps on vertices. REASON: We don't want to applicability checks on same components multiple times.
-    priority_queue<pair<int,pair<int,TimestampType>>> vertex_timetable_pq;
+    vector<pair<int,pair<int,TimestampType>>> vertex_timetable;
     vector<int> current_timestamp; // will hold the most recent timestamp for each vertex. Used to identify outdated values in pq!
     int current_kernelization_time = 1;
 

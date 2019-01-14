@@ -31,6 +31,12 @@ General flags:
     -no-biqmac
     Never execute BiqMac solver.
 
+    -no-localsolver
+    Never execute Localsolver
+
+    -do-signed-reduction
+    Utilize signed reductions.
+
     -do-mc-extension-algo
     If a clique forest should be computed an max-cut extension algorithm run. Only works for linear-kernel right now!
 

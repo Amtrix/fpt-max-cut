@@ -40,7 +40,7 @@ if (is.null(opt$loess)) {
 res_folder=""
 file=opt$file
 col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
-pnt_vec = c(9,18,17,15,0)
+pnt_vec = c(9,18,17,15,19)
 columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#markedcnt','#markedtime','#twowaytime','#markedcnteduc','#markedcnteductime', '#markedcntrand','#file')
 
 
@@ -71,10 +71,10 @@ pdf(opt$out, width=10, height=5)
 
 #v_count <- data_table[,"X..V.G.."][1]
 
-print(data_table)
+#print(data_table)
 
 {   
-    par(cex = 1.2)
+    par(cex = 1.1)
     # Here we choose the two comlumns, that we use for the plot
     y="ratio_e.mean"
     x="density.mean"

@@ -77,9 +77,11 @@ public:
             is_all_finished = true;
             
             // Signed reductions.
-           // kernelized.MakeSigned();
-          //  if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false))
-          //      is_all_finished = false;
+            if (input.cmdOptionExists("-do-signed-reductions")) {
+                kernelized.MakeSigned();
+                if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false))
+                    is_all_finished = false;
+            }
         
 
             // Unweighted reductions.

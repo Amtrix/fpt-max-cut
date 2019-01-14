@@ -44,14 +44,21 @@ col_vec = c("green3","red2","dodgerblue2","black", "purple", "green", "violet")
 pnt_vec  = c(19,4,18,15,0)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 pnt_vec2 = c(pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]])
-columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(G)+CUT','#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#locsearch(G)','#locsearch(Gk)+CUT','#locsearch.DIFF','#locsearch.DIFF.SD','#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file', 'kagentype')
+columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT',
+              '#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD','#BIQMAC_T(G)', '#BIQMAC_T(Gk)',
+              '#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file', 'kagentype')
 #columnsB  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(G)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(G)+CUT','#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#locsearch(G)','#locsearch(Gk)+CUT','#locsearch.DIFF','#locsearch.DIFF.SD','#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
 
 
 
 #Need readjustment for each case:
 x_start_legend <- 3
-nam_vec = c("Removed: Reduction Rule 2+","Removed: Reduction Rule 20","Removed: Reduction Rule 22","Removed: Reduction Rule 21","Removed: Reduction Rule 23")#, "original", "task a", "task b", "task c")
+nam_vec = c(
+    "Removed: Reduction Rule 5+",
+    "Removed: Reduction Rule 23",
+    "Removed: Reduction Rule 25",
+    "Removed: Reduction Rule 24")
+    #"Removed: Reduction Rule 23")#, "original", "task a", "task b", "task c")
 # r8, s2, s3, s5, s6
 file=paste("./experiments/kernelization/n2048/isolated-aggregate/isolated-rules-", opt$type, sep="")
                                                             
@@ -81,13 +88,15 @@ data_table <- res[[1]]
 
 data_table_list <- list()
 data_table_main <- dplyr::filter(data_table, X.sec == 0)
-for (i in 1:6) {
+for (i in 1:4) {
     data_table_list[[i]] <- dplyr::filter(data_table, X.sec == i)
     data_table_list[[i]]$diff_v = data_table_list[[i]]$ratio_v - data_table_main$ratio_v
     data_table_list[[i]]$diff_e = data_table_list[[i]]$ratio_e - data_table_main$ratio_e
+
+    print(paste(i,nrow(data_table_list[[i]])))
 }
 
-print(data_table_list[[1]])
+#print(data_table_list[[1]])
 
 # Open a PDF to store the plot into
 pdf(opt$out, width=10, height=5)
@@ -96,7 +105,7 @@ pdf(opt$out, width=10, height=5)
 #data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
 
 {
-    par(cex = 1.2)
+    par(cex = 1.1)
 
     # Here we choose the two comlumns, that we use for the plot
     y="diff_v"
@@ -105,16 +114,16 @@ pdf(opt$out, width=10, height=5)
     # Define some ranges for our plotting area
     xrange <- c(0,0)
     yrange <- c(0,0)
-    for (i in 1:5) {
+    for (i in 1:4) {
         xrange <- range(xrange, data_table_list[[i]][,x])
         yrange <- range(yrange, data_table_list[[i]][,y])
 
 
-        print(data_table_list[[i]][,y])
+        #print(data_table_list[[i]][,y])
     }
 
-    print("Y:")
-    print(yrange)
+   # print("Y:")
+   # print(yrange)
 
     yrange <- yrange * 1.1
     yrange[2] <- max(-yrange[1], yrange[2])
@@ -132,7 +141,7 @@ pdf(opt$out, width=10, height=5)
     title(main=expression("Absolute difference in efficiency: e"[absDiff]*" = e(G"[new]*") - e(G"[old]*")"))
 
     # Draws the 4 lines of measurements
-    for (dx in 0:4) {
+    for (dx in 0:3) {
        sub <- data_table_list[[dx + 1]]
        #points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
 

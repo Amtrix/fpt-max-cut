@@ -13,6 +13,7 @@ func_localize() {
 
     mkdir -p $experiment_outdir/solvers/real-world-small/
     $builddir/./$selected_build -action "kernelization" -iterations 1 -disk-suite real-world-small -live-maxcut-analysis -total-allowed-solver-time $allowed_total_time_seconds \
+                    -no-mqlib -no-localsolver -do-signed-reduction \
                     -benchmark-output $experiment_outdir/solvers/real-world-small/out > $experiment_outdir/solvers/real-world-small/out-exe
 }
 
