@@ -34,6 +34,7 @@ double localsolver_time = -1, localsolver_time_k = -1;
 double mqlib_time = -1, mqlib_time_k = -1;
 
 int MAXCUT_best_size;
+int tmp_MAXCUT_best_size;
 
 
 /** EXAMPLE OUTPUT:
@@ -77,6 +78,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     mqlib_time = -1, mqlib_time_k = -1;
 
     MAXCUT_best_size = -1;
+    tmp_MAXCUT_best_size = -1;
 
 
     int total_time_seconds = -1;
@@ -193,6 +195,20 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     }
 #endif
 
+    if (thread_biqmac && thread_biqmac_k) {
+        thread_biqmac->join(); thread_biqmac_k->join();
+
+        cout << "BIQMAC(G):  " << biqmac_cut_size << " " << biqmac_time << endl;
+        cout << "BIQMAC(Gk): " << biqmac_cut_size_k << " " << biqmac_time_k << endl;
+        
+        tmp_MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, SolverEvaluation::localsolver_cut_size_best);
+        tmp_MAXCUT_best_size = max(tmp_MAXCUT_best_size, biqmac_cut_size);
+        tmp_MAXCUT_best_size = max(tmp_MAXCUT_best_size, biqmac_cut_size_k);
+
+        mqlib_cb.SetTerminatingCutSize(tmp_MAXCUT_best_size);
+        mqlib_cb_k.SetTerminatingCutSize(tmp_MAXCUT_best_size);
+    }
+
     if (thread_mqlib && thread_mqlib_k) {
         thread_mqlib->join(); thread_mqlib_k->join();
 
@@ -203,16 +219,20 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         cout << "MQLIB(Gk): " << mqlib_cut_size_k << " " << mqlib_time_k << endl;
     }
 
-    if (thread_biqmac && thread_biqmac_k) {
-        thread_biqmac->join(); thread_biqmac_k->join();
-
-        cout << "BIQMAC(G):  " << biqmac_cut_size << " " << biqmac_time << endl;
-        cout << "BIQMAC(Gk): " << biqmac_cut_size_k << " " << biqmac_time_k << endl;
-    }
+    
 
     MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size);
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size_k);
+
+    if (input.cmdOptionExists("-exact-early-stop-v")) {
+        if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;
+        if (MAXCUT_best_size != mqlib_cut_size_k || mqlib_cb_k.HasExceededTimelimit()) mqlib_time_k = -1;
+        if (MAXCUT_best_size != localsolver_cut_size   || localsolver_cb.HasExceededTimelimit())   localsolver_time = -1;
+        if (MAXCUT_best_size != localsolver_cut_size_k || localsolver_cb_k.HasExceededTimelimit()) localsolver_time = -1;
+        if (MAXCUT_best_size != biqmac_cut_size)   biqmac_time   = -1;
+        if (MAXCUT_best_size != biqmac_cut_size_k) biqmac_time_k = -1;
+    }
 }
 
 } // SolverEvaluation

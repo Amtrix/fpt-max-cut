@@ -42,14 +42,23 @@ public:
                 cutadd(cutadd_),
                 sfxout(sfxout_)
         {
-
+            if (input_parser->cmdOptionExists("-exact-early-stop-v")) {
+                int v_limit = stoi(input_parser->getCmdOption("-exact-early-stop-v"));
+                if (v_limit < num_nodes)
+                    added_preprocess_time = 1e9;
+            }
         }
 
     bool Report(const MaxCutSimpleSolution& sol, bool /* newBest */, double runtime) {
         runtime += added_preprocess_time;
         OutputLiveMaxcut(*input_parser, graph_name, mixingid, num_nodes, num_edges, runtime, sol.get_weight() + cutadd, sfxout);
 
-        if (runtime > total_allowed_time)
+        if (runtime > total_allowed_time) {
+            timelimit_exceeded = true;
+            return false;
+        }
+        
+        if (sol.get_weight() + cutadd == terminating_cut_size)
             return false;
 
         return true;
@@ -57,6 +66,14 @@ public:
 
     bool Report(const MaxCutSimpleSolution& sol, bool newBest, double runtime, int /* iter */) {
         return Report(sol, newBest, runtime);
+    }
+
+    void SetTerminatingCutSize(int cutsz) {
+        terminating_cut_size = cutsz;
+    }
+
+    bool HasExceededTimelimit() {
+        return timelimit_exceeded;
     }
     
  private:
@@ -69,6 +86,8 @@ public:
     double added_preprocess_time;
     int cutadd;
     string sfxout;
+    int terminating_cut_size = -1;
+    bool timelimit_exceeded = false;
 };
 
 

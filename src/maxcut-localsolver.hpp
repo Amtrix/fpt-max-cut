@@ -27,7 +27,11 @@ public:
                 cutadd(cutadd_),
                 sfxout(sfxout_)
         {
-
+            if (input_parser->cmdOptionExists("-exact-early-stop-v")) {
+                int v_limit = stoi(input_parser->getCmdOption("-exact-early-stop-v"));
+                if (v_limit < num_nodes)
+                    added_preprocess_time = 1e9;
+            }
         }
 
     void callback(LocalSolver& ls, LSCallbackType /*type*/) {
@@ -40,8 +44,13 @@ public:
         //cout << " TICK: " << runtime << " " << obj.getValue() + cutadd << endl;
 
         if (runtime > total_allowed_time) {
+            timelimit_exceeded = true;
             ls.stop();
         }
+    }
+
+    bool HasExceededTimelimit() {
+        return timelimit_exceeded;
     }
 
 private:
@@ -54,6 +63,7 @@ private:
     double added_preprocess_time;
     int cutadd;
     string sfxout;
+    bool timelimit_exceeded = false;
 };
 
 
