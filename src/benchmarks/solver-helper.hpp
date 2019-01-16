@@ -146,7 +146,17 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     if (!input.cmdOptionExists("-no-biqmac") && (use_solver_mask & Solvers::BiqMac)) { // EVALUATE BIQMAC
         OutputDebugLog("====> EVALUATE: BiqMac.");
 
+        int v_limit = 1 << 30;
+        if (input_parser->cmdOptionExists("-exact-early-stop-v"))
+            v_limit = stoi(input_parser->getCmdOption("-exact-early-stop-v"));
+
         thread_biqmac = std::make_shared<std::thread>([&]{
+            if (v_limit < G.GetNumNodes()) {
+                biqmac_cut_size = -1;
+                biqmac_time = -1;
+                return;
+            }
+
             G.PrintGraph("out-tmp-graph-for-biqmac", true);
             auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
 
@@ -155,6 +165,12 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         });
 
         thread_biqmac_k = std::make_shared<std::thread>([&]{
+            if (v_limit < kernelized.GetNumNodes()) {
+                biqmac_cut_size_k = -1;
+                biqmac_time_k = -1;
+                return;
+            }
+
             kernelized.PrintGraph("out-tmp-graph-for-biqmac-kernelized", true);
             auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
 
@@ -224,6 +240,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size);
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size_k);
+    MAXCUT_best_size = max(MAXCUT_best_size, 0);
 
     if (input.cmdOptionExists("-exact-early-stop-v")) {
         if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;

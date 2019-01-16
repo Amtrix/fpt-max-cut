@@ -1,11 +1,19 @@
 #!/bin/bash
 
-if [ ! "$bootstrap_done" = true ] ; then
-    source ./bootstrap.sh
-fi
+func_localize() {
+    local cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
+    if [ ! "$bootstrap_done" = true ] ; then
+        source $cwd/bootstrap.sh
+    fi
 
-./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite biqmac-rudy -total-allowed-solver-time -1 -support-weighted-result \
-                  -benchmark-output ../data/output/experiments/kernelization/biqmac/out > ../data/output/experiments/kernelization/biqmac/out-exe
+    local num_iterations=1
 
-wait_and_reset_threadpool
+    $builddir/./$selected_build -action "kernelization" -iterations $num_iterations -disk-suite biqmac-rudy -total-allowed-solver-time -1 -support-weighted-result \
+                    -do-signed-reduction \
+                    -benchmark-output $experiment_outdir/kernelization/biqmac/out > $experiment_outdir/kernelization/biqmac/out-exe
+
+    wait_and_reset_threadpool
+}
+
+func_localize

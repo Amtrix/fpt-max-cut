@@ -102,11 +102,11 @@ void HandleLinearKernelEfficiency(Table table) {
 
 int main(int argc, char **argv){
     
-    ifstream in("experiments/linear-kernel/real-world-small/out");
+    ifstream in("previous/remote-history/most-recent/experiments/linear-kernel/real-world-small/out");
     Table table = ReadTable(in);
     
     PrintTable(table);
     cout << endl << endl << endl << endl;
 
-    HandleLinearKernel(table);
+    HandleLinearKernelEfficiency(table);
 }
