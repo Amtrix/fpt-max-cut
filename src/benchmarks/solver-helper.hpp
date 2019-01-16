@@ -151,7 +151,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
             v_limit = stoi(input.getCmdOption("-exact-early-stop-v"));
 
         thread_biqmac = std::make_shared<std::thread>([&]{
-            if (v_limit < G.GetNumNodes()) {
+            if (v_limit < G.GetRealNumNodes()) {
                 biqmac_cut_size = -1;
                 biqmac_time = -1;
                 return;
@@ -165,7 +165,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         });
 
         thread_biqmac_k = std::make_shared<std::thread>([&]{
-            if (v_limit < kernelized.GetNumNodes()) {
+            if (v_limit < kernelized.GetRealNumNodes()) {
                 biqmac_cut_size_k = -1;
                 biqmac_time_k = -1;
                 return;
