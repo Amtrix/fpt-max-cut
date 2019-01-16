@@ -147,8 +147,8 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         OutputDebugLog("====> EVALUATE: BiqMac.");
 
         int v_limit = 1 << 30;
-        if (input_parser->cmdOptionExists("-exact-early-stop-v"))
-            v_limit = stoi(input_parser->getCmdOption("-exact-early-stop-v"));
+        if (input.cmdOptionExists("-exact-early-stop-v"))
+            v_limit = stoi(input.getCmdOption("-exact-early-stop-v"));
 
         thread_biqmac = std::make_shared<std::thread>([&]{
             if (v_limit < G.GetNumNodes()) {
