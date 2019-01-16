@@ -43,7 +43,7 @@ public:
 
         //cout << " TICK: " << runtime << " " << obj.getValue() + cutadd << endl;
 
-        if (runtime > total_allowed_time) {
+        if (runtime * 1.01 > total_allowed_time) {
             timelimit_exceeded = true;
             ls.stop();
         }

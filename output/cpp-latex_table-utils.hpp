@@ -136,7 +136,7 @@ const int GetColumnIndex(const Table& table, const string colname) {
         if (table.first[i] == colname)
             return i;
     
-    throw std::logic_error("Requested column-name does not exist.");
+    throw std::logic_error("Requested column-name does not exist: " + colname);
     return -1;
 }
 
@@ -304,7 +304,7 @@ void CreateNewColumn(Table& table, string type, std::function<string(vector<stri
         if (dvalA.size() != dvalB.size()) throw std::logic_error("Columns can't have different sizes!");
 
         for (int i = 0; i < dvalA.size(); ++i) {
-            table.second[i].push_back(to_string(dvalB[i] / dvalA[i]));
+            table.second[i].push_back(to_string_with_precision(dvalB[i] / dvalA[i], 2));
         }
     } else if (type == "GRAPH_NAME") {
         vector<string> vals = GetColumnVals(table, "#file");
@@ -329,7 +329,7 @@ void CreateNewColumn(Table& table, string type, std::function<string(vector<stri
         for (int i = 0; i < table.second.size(); ++i) {
             double num_nodes = GetValInRow(table, table.second[i], "#num_nodes");
             double num_nodes_k = GetValInRow(table, table.second[i], "#num_nodes_k");
-            table.second[i].push_back(to_string(1 - (num_nodes_k / num_nodes)));
+            table.second[i].push_back(to_string_with_precision(1 - (num_nodes_k / num_nodes), 2));
         }
     } else {
         for (int i = 0; i < table.second.size(); ++i) {
@@ -357,4 +357,9 @@ void AppendTable(Table &destination, const Table& table) {
     for (int i = 0; i < table.second.size(); ++i) {
         destination.second.push_back(table.second[i]);
     }
+}
+
+void RenameColumn(Table &table, const string fromname, const string toname) {
+    int dx = GetColumnIndex(table, fromname);
+    table.first[dx] = toname;
 }
