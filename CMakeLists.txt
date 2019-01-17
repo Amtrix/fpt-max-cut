@@ -45,7 +45,7 @@ if (EXISTS /opt/localsolver_7_5/license.dat OR EXISTS /software/localsolver/loca
     set(LOCALSOLVER_LICENSE_EXISTS TRUE)
 endif()
 
-IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac/bab)
+IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac)
     message("BIQMAC is ADDED.")
     set(BIQMAC_EXISTS TRUE)
 endif()
@@ -65,7 +65,7 @@ macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
     endif()
 
     IF(${BIQMAC_EXISTS})
-        target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac/bab")
+        target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac")
         target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_EXISTS=1)
     endif()
 endmacro(add_binary_exec)
