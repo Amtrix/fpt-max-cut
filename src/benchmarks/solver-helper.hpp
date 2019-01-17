@@ -206,8 +206,8 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
             = ComputeAverageAndDeviation(res_localsolver, res_localsolver_k);
         
-        cout << "LOCALSOLVER(G):  " << localsolver_cut_size   << " " << localsolver_time << endl;
-        cout << "LOCALSOLVER(Gk): " << localsolver_cut_size_k << " " << localsolver_time_k << endl;
+        cout << "LOCALSOLVER(G):  " << localsolver_cut_size   << " " << localsolver_time << " (timelimit exceeded: " << localsolver_cb.HasExceededTimelimit() << ")" << endl;
+        cout << "LOCALSOLVER(Gk): " << localsolver_cut_size_k << " " << localsolver_time_k << " (timelimit exceeded: " << localsolver_cb_k.HasExceededTimelimit() << ")" << endl;
     }
 #endif
 
@@ -231,8 +231,8 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
             = ComputeAverageAndDeviation(res_mqlib, res_mqlib_k);
         
-        cout << "MQLIB(G):  " << mqlib_cut_size   << " " << mqlib_time << endl;
-        cout << "MQLIB(Gk): " << mqlib_cut_size_k << " " << mqlib_time_k << endl;
+        cout << "MQLIB(G):  " << mqlib_cut_size   << " " << mqlib_time << " (timelimit exceeded: " << mqlib_cb.HasExceededTimelimit() << ")" << endl;
+        cout << "MQLIB(Gk): " << mqlib_cut_size_k << " " << mqlib_time_k << " (timelimit exceeded: " << mqlib_cb_k.HasExceededTimelimit() << ")" << endl;
     }
 
     

@@ -30,7 +30,7 @@ public:
             if (input_parser->cmdOptionExists("-exact-early-stop-v")) {
                 int v_limit = stoi(input_parser->getCmdOption("-exact-early-stop-v"));
                 if (v_limit < num_nodes)
-                    added_preprocess_time = 1e9;
+                    added_preprocess_time = max(added_preprocess_time, total_allowed_time_ - 60*60);
             }
         }
 
