@@ -160,9 +160,6 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
             G.PrintGraph("out-tmp-graph-for-biqmac", true);
             auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
 
-            cout << "Output for BiqMac(G): " << endl;
-            cout << get<0>(res) << endl;
-
             biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
             biqmac_time = get<1>(res);
         });
@@ -176,9 +173,6 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 
             kernelized.PrintGraph("out-tmp-graph-for-biqmac-kernelized", true);
             auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
-
-            cout << "Output for BiqMac(Gk): " << endl;
-            cout << get<0>(res) << endl;
 
             biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
             if (biqmac_cut_size_k != -1) biqmac_cut_size_k += (int)(-k_change);
