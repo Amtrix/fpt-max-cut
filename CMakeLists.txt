@@ -38,8 +38,16 @@ find_library(LOCALSOLVER localsolver PATHS /software/localsolver/localsolver_8_0
 set(TARGET_LIBS Threads::Threads -lstdc++fs ${LOCALSOLVER} ${MQLIB} generators)
 
 set(LOCALSOLVER_LICENSE_EXISTS FALSE)
+set(BIQMAC_EXISTS FALSE)
+
 if (EXISTS /opt/localsolver_7_5/license.dat OR EXISTS /software/localsolver/localsolver_8_0/license.dat)
+    message("LOCALSOLVER is ADDED.")
     set(LOCALSOLVER_LICENSE_EXISTS TRUE)
+endif()
+
+IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac/bab)
+    message("BIQMAC is ADDED.")
+    set(BIQMAC_EXISTS TRUE)
 endif()
 
 message("Localsolver license exists flag: ${LOCALSOLVER_LICENSE_EXISTS}")
@@ -56,8 +64,8 @@ macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
         target_compile_definitions(${TARGETNAME} PRIVATE LOCALSOLVER_EXISTS=1)
     endif()
 
-    IF(EXISTS /mnt/d/master-thesis/BiqMac/bab)
-        target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_PATH="/mnt/d/master-thesis/BiqMac")
+    IF(${BIQMAC_EXISTS})
+        target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac/bab")
         target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_EXISTS=1)
     endif()
 endmacro(add_binary_exec)
