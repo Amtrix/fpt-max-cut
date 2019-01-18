@@ -30,7 +30,7 @@ int main(int argc, char **argv){
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     //srand((unsigned)time(0));
-    //ios_base::sync_with_stdio(false);
+    ios_base::sync_with_stdio(false);
 
     Color::Modifier green(Color::FG_GREEN);
     Color::Modifier red  (Color::FG_RED);

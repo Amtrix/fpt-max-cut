@@ -72,17 +72,11 @@ public:
         auto selected_kernelization_order = kernelization_order;
         if (provide_order) selected_kernelization_order = provided_kernelization_order;
 
+        //kernelized.MakeRandomVertexPermutation();
+
         bool is_all_finished = false;
         while (!is_all_finished) {
             is_all_finished = true;
-            
-            // Signed reductions.
-            if (use_signed_kernelization) {
-                kernelized.MakeSigned();
-                if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false))
-                    is_all_finished = false;
-            }
-        
 
             // Unweighted reductions.
             kernelized.MakeUnweighted();
@@ -91,7 +85,16 @@ public:
 
             if (KernelizeExec(kernelized, selected_kernelization_order, false))
                 is_all_finished = false;
+            
+            // Signed reductions.
+            if (use_signed_kernelization) {
+                kernelized.MakeSigned();
+                if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false))
+                    is_all_finished = false;
+            }
         }
+
+        kernelized.MakeUnweighted();
 
         auto t_end_fast = std::chrono::high_resolution_clock::now();
         double time_fast_kernelization = std::chrono::duration_cast<std::chrono::microseconds> (t_end_fast - t0).count()/1000.;
@@ -214,7 +217,7 @@ public:
                                 SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
                                 SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
                                 SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
-                                
+
                                 EE, EE_k, SolverEvaluation::MAXCUT_best_size, kernelization_time);
             
             accum.push_back({(double)mixingid, (double)iteration,

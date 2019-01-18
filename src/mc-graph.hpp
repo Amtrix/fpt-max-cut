@@ -319,6 +319,7 @@ public:
     /**
      * Misc.
      **/
+    void MakeRandomVertexPermutation();
     vector<vector<int>> GetCliquesWithAtLeastOneInternal() const;
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false) const;
     void PrintGraph(std::ostream& out, bool printweight = false) const;

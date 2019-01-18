@@ -29,6 +29,9 @@ const map<string, vector<string>> disk_suites = {
     {"real-world-small", {
         "../data/thesis-tests/real-world-small/"
     }},
+    {"real-world-small-all", {
+        "../data/thesis-tests/real-world-small-all/"
+    }},
     {"real-world-special", {
         "../data/thesis-tests/real-world-special/"
     }}

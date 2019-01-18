@@ -2251,11 +2251,15 @@ bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate, const b
     int res_weight = diff - same;
 
     int added_res_weight = res_weight;
+    int w3 = 0;
     if (AreAdjacent(a, c))
-        added_res_weight += GetEdgeWeight(make_pair(a, c));
+        w3 = GetEdgeWeight(make_pair(a, c));
+    added_res_weight += w3;
 
     if (make_signed && added_res_weight != 1 && added_res_weight != -1 && added_res_weight != 0)
         return false;
+    
+    //cout << "pack " << a << " - " << b << " - " << c << " with weights " << w1 << " " << w2 <<" : " << w3 << " to a edge with weight: " << added_res_weight << endl;
 
     RemoveNode(b);
     AddEdge(a, c, res_weight);
@@ -2732,6 +2736,35 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
     return make_pair(mcSol.get_weight(), mcSol.get_assignments());
+}
+
+void MaxCutGraph::MakeRandomVertexPermutation() {
+    srand((unsigned)time(0));
+    for (int i = 0; i < 1000; ++i) {
+        int a = rand()%num_nodes;
+        int b = rand()%num_nodes;
+
+        if (removed_node[a] || removed_node[b] || a == b) continue;
+
+        const vector<int> adjA = GetAdjacency(a);
+        const vector<int> adjB = GetAdjacency(b);
+        RemoveNode(a); RemoveNode(b);
+        ReAddNode(a); ReAddNode(b);
+
+        bool ab_edge = false;
+        for (auto w : adjA)
+            if (w != b)
+                AddEdge(b, w);
+            else
+                ab_edge = true;
+        
+        for (auto w : adjB)
+            if (w != a)
+                AddEdge(a, w);
+        
+        if (ab_edge)
+            AddEdge(a, b);
+    }
 }
 
 
