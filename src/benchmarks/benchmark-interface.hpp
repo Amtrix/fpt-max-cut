@@ -8,11 +8,11 @@ public:
         tot_used_rules.resize(20);
     }
 
-    inline void LogTimeEx(auto &tdiff, int id = -1) {
+    inline void LogTimeEx(unordered_map<int, double>& times_all, auto &tdiff, int id = -1) const {
         times_all[id] += tdiff;
     }
 
-    inline void LogTime(std::chrono::high_resolution_clock::time_point &t0, int id = -1) {
+    inline void LogTime(unordered_map<int, double>& times_all, std::chrono::high_resolution_clock::time_point &t0, int id = -1) const {
         auto t1 = std::chrono::high_resolution_clock::now();
         double tdiff = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
         times_all[id] += tdiff;
@@ -20,7 +20,7 @@ public:
     }
 
     inline std::chrono::high_resolution_clock::time_point GetCurrentTime() {
-        return std::chrono::high_resolution_clock::now();;
+        return std::chrono::high_resolution_clock::now();
     }
 
     // same for same prefix in prefix.x
@@ -60,5 +60,4 @@ public:
 protected:
     int mixingid_giver = 1;
     map<string,int> mixingid;
-    unordered_map<int, double> times_all;
 };

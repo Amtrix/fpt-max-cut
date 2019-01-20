@@ -141,7 +141,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     
     std::shared_ptr<std::thread> thread_biqmac, thread_biqmac_k;
 #ifdef BIQMAC_EXISTS
-    const string biqmac_dir = BIQMAC_PATH;
+    const string biqmac_binpath = BIQMAC_BINARY_PATH;
     const string project_build_dir = PROJECT_BUILD_DIR;
     if (!input.cmdOptionExists("-no-biqmac") && (use_solver_mask & Solvers::BiqMac)) { // EVALUATE BIQMAC
         OutputDebugLog("====> EVALUATE: BiqMac.");
@@ -158,7 +158,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
             }
 
             G.PrintGraph("out-tmp-graph-for-biqmac", true);
-            auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
+            auto res = exec_custom(biqmac_binpath, project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
 
             biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
             biqmac_time = get<1>(res);
@@ -172,7 +172,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
             }
 
             kernelized.PrintGraph("out-tmp-graph-for-biqmac-kernelized", true);
-            auto res = exec_custom(biqmac_dir + "/bab", project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
+            auto res = exec_custom(biqmac_binpath, project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
 
             biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
             if (biqmac_cut_size_k != -1) biqmac_cut_size_k += (int)(-k_change);
@@ -193,6 +193,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         OutputDebugLog("====> EVALUATE: LocalSolver.");
 
         vector<double> res_localsolver, res_localsolver_k;
+
 
         auto t0_total = std::chrono::high_resolution_clock::now();
         res_localsolver.push_back(F_localsolver());

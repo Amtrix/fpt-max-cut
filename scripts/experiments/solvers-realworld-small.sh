@@ -7,12 +7,14 @@ func_localize() {
         source $cwd/bootstrap.sh
     fi
 
+    echo "FULL CONCURRENCY POSSIBLE: " $config_use_full_concurrency
+
 
   #  allowed_total_time_seconds=2000
-    allowed_total_time_seconds=21600
+  #  allowed_total_time_seconds=21600
     #21600=6*60*60 = 6 hours
 
-  # allowed_total_time_seconds=-1
+   allowed_total_time_seconds=-1
 
     mkdir -p $experiment_outdir/solvers/real-world-small/
     $builddir/./$selected_build -action "kernelization" -iterations 1 -disk-suite real-world-small -total-allowed-solver-time $allowed_total_time_seconds \

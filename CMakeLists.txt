@@ -1,16 +1,36 @@
 cmake_minimum_required (VERSION 2.8)
 
-#### USER DEFINED ##############################################################
+include(JSONParser.cmake)
 
+#### USER DEFINED ##############################################################
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/build-config.json configJsonFile)
+sbeParseJson(configJson configJsonFile)
+
+foreach(var ${configJson})
+    message("${var} = ${${var}}")
+endforeach()
+
+set(LOCALSOLVER_ENABLED ${configJson.localsolver.enabled})
+set(LOCALSOLVER_USE_CONCURRENCY ${configJson.localsolver.use-parallelism})
+set(LOCALSOLVER_BIN_PATH ${configJson.localsolver.bin-path})
+set(BIQMAC_ENABLED ${configJson.biqmac.enabled})
+set(BIQMAC_BINARY_PATH ${configJson.biqmac.binary-file})
+set(BIQMAC_BINARY_PATH_EVAL ${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac/bab)
+
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${BIQMAC_BINARY_PATH})
+    set(BIQMAC_BINARY_PATH_EVAL ${CMAKE_CURRENT_SOURCE_DIR}/${BIQMAC_BINARY_PATH})
+endif()
+
+if (${LOCALSOLVER_USE_CONCURRENCY})
+    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/scripts/experiments/cmake.config.generated.sh "config_use_full_concurrency=true")
+endif()
+
+message("")
 
 #### BASIC SETTINGS ############################################################
 
-#set(CMAKE_BUILD_TYPE "Debug")
-
-message("Add KaGen")
 add_subdirectory(./test-generators/KaGen/)
-message("Include MQLIB includes")
-include_directories(. ./solvers/MQLib/include)
+include_directories(. ${CMAKE_CURRENT_SOURCE_DIR}/solvers/MQLib/include)
 include_directories(. /software/localsolver/localsolver_8_0/include)
 include_directories(. /opt/localsolver_7_5/include)
 
@@ -33,24 +53,9 @@ list(APPEND ALL_CPP_FILES
 )
 
 find_library(MQLIB NAMES "MQLib.a" PATHS ./solvers/MQLib/bin/)
-find_library(LOCALSOLVER localsolver PATHS /software/localsolver/localsolver_8_0/bin /opt/localsolver_7_5/bin)
+find_library(LOCALSOLVER localsolver PATHS /software/localsolver/localsolver_8_0/bin /opt/localsolver_7_5/bin ${LOCALSOLVER_BIN_PATH})
 
 set(TARGET_LIBS Threads::Threads -lstdc++fs ${LOCALSOLVER} ${MQLIB} generators)
-
-set(LOCALSOLVER_LICENSE_EXISTS FALSE)
-set(BIQMAC_EXISTS FALSE)
-
-if (EXISTS /opt/localsolver_7_5/license.dat OR EXISTS /software/localsolver/localsolver_8_0/license.dat)
-    message("LOCALSOLVER is ADDED.")
-    set(LOCALSOLVER_LICENSE_EXISTS TRUE)
-endif()
-
-IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac)
-    message("BIQMAC is ADDED.")
-    set(BIQMAC_EXISTS TRUE)
-endif()
-
-message("Localsolver license exists flag: ${LOCALSOLVER_LICENSE_EXISTS}")
 
 macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
     add_executable(${TARGETNAME} ${ENTRYCPP})
@@ -60,12 +65,16 @@ macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
 
     target_compile_definitions(${TARGETNAME} PRIVATE PROJECT_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 
-    if (${LOCALSOLVER_LICENSE_EXISTS})
+    if (${LOCALSOLVER_ENABLED})
         target_compile_definitions(${TARGETNAME} PRIVATE LOCALSOLVER_EXISTS=1)
-    endif()
 
-    IF(${BIQMAC_EXISTS})
-        target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac")
+        if (${LOCALSOLVER_USE_CONCURRENCY})
+            target_compile_definitions(${TARGETNAME} PRIVATE LOCALSOLVER_USE_CONCURRENCY=1)
+        endif()
+    endif()
+    
+    IF(${BIQMAC_ENABLED} AND EXISTS ${BIQMAC_BINARY_PATH_EVAL})
+        target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_BINARY_PATH="${BIQMAC_BINARY_PATH_EVAL}")
         target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_EXISTS=1)
     endif()
 endmacro(add_binary_exec)

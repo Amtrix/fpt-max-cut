@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <thread>
+#include <mutex>
 using namespace std;
 
 class Benchmark_Kernelization : public BenchmarkAction {
@@ -23,7 +24,10 @@ public:
 
 
 
-    bool KernelizeExec(MaxCutGraph &kernelized, const vector<RuleIds>& provided_kernelization_order, const bool reset_timestamps_each_time = false) {
+    bool KernelizeExec(MaxCutGraph &kernelized,
+                      const vector<RuleIds>& provided_kernelization_order,
+                      unordered_map<int, double>& times_all_components,
+                      const bool reset_timestamps_each_time = false) {
         cout << ("|V(kernel)| = " + to_string(kernelized.GetRealNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " ------------------------------------------- start!") << endl;
         cout << "Given list of kernelizations to execute" << endl;
         for (auto rule : provided_kernelization_order)
@@ -49,7 +53,7 @@ public:
                 }
                 cout << ("         ... executed applications " + to_string(cnt) + " times.") << endl;
                 cout << ("             cut_change =  " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
-                LogTime(t0, static_cast<int>(provided_kernelization_order[i]));
+                LogTime(times_all_components, t0, static_cast<int>(provided_kernelization_order[i]));
             }
 
             cout << ("|V(kernel)| = " + to_string(kernelized.GetRealNumNodes()) + "  |E(kernel)| = " + to_string(kernelized.GetRealNumEdges()) + " , cut_change = " + to_string(kernelized.GetInflictedCutChangeToKernelized())) << endl;
@@ -64,7 +68,11 @@ public:
 
 
     bool use_signed_kernelization = true;
-    void Kernelize(MaxCutGraph &kernelized, bool provide_order = false, const vector<RuleIds>& provided_kernelization_order = {}, const bool force_timestampless_kernelization = false) {
+    void Kernelize(MaxCutGraph &kernelized,
+                   unordered_map<int, double>& times_all_components,
+                   bool provide_order = false,
+                   const vector<RuleIds>& provided_kernelization_order = {},
+                   const bool force_timestampless_kernelization = false) {
         // First transform graph into unweighted. /////////////
         auto t0 = GetCurrentTime();
         //kernelized.MakeWeighted();
@@ -81,15 +89,15 @@ public:
             // Unweighted reductions.
             kernelized.MakeUnweighted();
             OutputDebugLog("Made unweighted");
-            LogTime(t0);
+            LogTime(times_all_components, t0);
 
-            if (KernelizeExec(kernelized, selected_kernelization_order, false))
+            if (KernelizeExec(kernelized, selected_kernelization_order, times_all_components, false))
                 is_all_finished = false;
             
             // Signed reductions.
             if (use_signed_kernelization) {
                 kernelized.MakeSigned();
-                if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, false))
+                if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, times_all_components, false))
                     is_all_finished = false;
             }
         }
@@ -102,16 +110,16 @@ public:
         OutputDebugLog("INITIAL -- FAST KERNELIZATION DONE! Time: " + to_string(time_fast_kernelization));
 
         if (force_timestampless_kernelization) {
-            KernelizeExec(kernelized, selected_kernelization_order, true);
+            KernelizeExec(kernelized, selected_kernelization_order, times_all_components, true);
         } else {
 #ifndef SKIP_FAST_KERNELIZATION_CHECK
-            custom_assert(KernelizeExec(kernelized, selected_kernelization_order, true) == false); // will only trigger if DEBUG defined, due to custom_assert definition.
+            custom_assert(KernelizeExec(kernelized, selected_kernelization_order, times_all_components, true) == false); // will only trigger if DEBUG defined, due to custom_assert definition.
 #else
-            KernelizeExec(kernelized, selected_kernelization_order, true);
+            KernelizeExec(kernelized, selected_kernelization_order, times_all_components, true);
 #endif
         }
 
-        KernelizeExec(kernelized, finishing_rules_order, true);
+        KernelizeExec(kernelized, finishing_rules_order, times_all_components, true);
 
         // Also kernelization here(!):
         t0 = GetCurrentTime();
@@ -122,7 +130,7 @@ public:
         } else {
             OutputDebugLog("To weighted conversation is skipped.");
         }
-        LogTime(t0);
+        LogTime(times_all_components, t0);
         ////////////////////////////////////////
     }
 
@@ -131,8 +139,14 @@ public:
 
 
     void Evaluate(InputParser &input, const MaxCutGraph &main_graph) {
-        GenerateMissingMixingId(main_graph);
+
+        mtx_mixingid_gen.lock();
+        {
+            GenerateMissingMixingId(main_graph);
+        }
+        mtx_mixingid_gen.unlock();
         int mixingid = GetMixingId(main_graph);
+        
         
 
         int num_iterations = 1;
@@ -158,8 +172,9 @@ public:
             MaxCutGraph kernelized = G;
 
             
+            unordered_map<int, double> times_all_components;
             auto t0_total = std::chrono::high_resolution_clock::now();
-            Kernelize(kernelized);
+            Kernelize(kernelized, times_all_components);
             // Calculating spent time. From here on onwards, only O(1) operations allowed!!!!!!!!!!!!!!!!!!!!!
             auto t1_total = std::chrono::high_resolution_clock::now();
             double kernelization_time = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
@@ -175,67 +190,78 @@ public:
             double EE = G.GetEdwardsErdosBound();
             double EE_k = kernelized.GetEdwardsErdosBound();
 
-            // Some output
-            cout << "VERIFY CUT VAL:  localsearch(" << SolverEvaluation::local_search_cut_size << ", " << SolverEvaluation::local_search_cut_size_k
-                 << ")   mqlib(" << SolverEvaluation::mqlib_cut_size << ", " << SolverEvaluation::mqlib_cut_size_k << ")" << endl;
-            cout << "              G: " << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
-            cout << "     kernelized: " << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
-
-            auto case_coverage_cnt = kernelized.GetUsageVector();
-            cout << "Spent time on kernelization[ms]: " << kernelization_time << endl;
-            cout << "Case coverage (=number of applications) = ";
-            for (unsigned int r = 0; r < case_coverage_cnt.size(); ++r)
-                cout << case_coverage_cnt[r] << " ";
-            cout << endl;
-
-
             // Aggregating usages.
-            cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
-            for (auto rule : kAllRuleIds) {
-                tot_case_coverage_cnt[rule] += kernelized.GetRuleUsage(rule);
-                tot_rule_checks_cnt[rule] += kernelized.GetRuleChecks(rule);
+            mtx_aggregation.lock();
+            {
 
-                int used_cnt = kernelized.GetRuleUsage(rule);
-                int check_cnt = kernelized.GetRuleChecks(rule);
-                double used_time = times_all[static_cast<int>(rule)] - last_times_all[static_cast<int>(rule)];
-                cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << check_cnt << setw(20) << used_time << setw(20) << (used_time/check_cnt) << endl;
+                // Some output
+                cout << "VERIFY CUT VAL:  localsearch(" << SolverEvaluation::local_search_cut_size << ", " << SolverEvaluation::local_search_cut_size_k
+                    << ")   mqlib(" << SolverEvaluation::mqlib_cut_size << ", " << SolverEvaluation::mqlib_cut_size_k << ")" << endl;
+                cout << "              G: " << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
+                cout << "     kernelized: " << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
+
+                auto case_coverage_cnt = kernelized.GetUsageVector();
+                cout << "Spent time on kernelization[ms]: " << kernelization_time << endl;
+                cout << "Case coverage (=number of applications) = ";
+                for (unsigned int r = 0; r < case_coverage_cnt.size(); ++r)
+                    cout << case_coverage_cnt[r] << " ";
+                cout << endl;
+
+
+            
+                cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
+                for (auto rule : kAllRuleIds) {
+                    double used_time = times_all_components[static_cast<int>(rule)];
+                    int used_cnt = kernelized.GetRuleUsage(rule);
+                    int check_cnt = kernelized.GetRuleChecks(rule);
+
+                    tot_case_coverage_cnt[rule] += used_cnt;
+                    tot_rule_checks_cnt[rule] += check_cnt;
+                    total_times[static_cast<int>(rule)] += used_time;
+
+                    
+                    //- last_times_all[static_cast<int>(rule)];
+                    cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << check_cnt << setw(20) << used_time << setw(20) << (used_time/check_cnt) << endl;
+                }
+                total_times[-1] += times_all_components[-1];
+                //last_times_all = times_all;
+
+                double k_change = kernelized.GetInflictedCutChangeToKernelized();
+                custom_assert(SolverEvaluation::biqmac_cut_size == SolverEvaluation::biqmac_cut_size_k || SolverEvaluation::biqmac_cut_size == -1 || SolverEvaluation::biqmac_cut_size_k == -1);
+                
+                OutputKernelization(input, main_graph.GetGraphNaming(),
+                                    mixingid, iteration,
+                                    G.GetRealNumNodes(), G.GetRealNumEdges(),
+                                    kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
+                                    -k_change,
+                                    SolverEvaluation::mqlib_cut_size, SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
+                                    SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
+                                    SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
+
+                                    SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
+                                    SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
+                                    SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
+
+                                    EE, EE_k, SolverEvaluation::MAXCUT_best_size, kernelization_time);
+                
+                accum.push_back({(double)mixingid, (double)iteration,
+                                    (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
+                                    (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
+                                    -k_change,
+                                    (double)SolverEvaluation::mqlib_cut_size, (double)SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
+                                    SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
+                                    SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
+                                    SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
+                                    SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
+                                    SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
+                                    EE, EE_k, (double)SolverEvaluation::MAXCUT_best_size, kernelization_time});
+                
+                if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
+                    G.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid), true);
+                    kernelized.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid) + "-kernelized", true);
+                }
             }
-            last_times_all = times_all;
-
-            double k_change = kernelized.GetInflictedCutChangeToKernelized();
-            custom_assert(SolverEvaluation::biqmac_cut_size == SolverEvaluation::biqmac_cut_size_k || SolverEvaluation::biqmac_cut_size == -1 || SolverEvaluation::biqmac_cut_size_k == -1);
-            
-            OutputKernelization(input, main_graph.GetGraphNaming(),
-                                mixingid, iteration,
-                                G.GetRealNumNodes(), G.GetRealNumEdges(),
-                                kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
-                                -k_change,
-                                SolverEvaluation::mqlib_cut_size, SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
-                                SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
-                                SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
-
-                                SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
-                                SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
-                                SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
-
-                                EE, EE_k, SolverEvaluation::MAXCUT_best_size, kernelization_time);
-            
-            accum.push_back({(double)mixingid, (double)iteration,
-                                (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
-                                (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
-                                -k_change,
-                                (double)SolverEvaluation::mqlib_cut_size, (double)SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
-                                SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
-                                SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
-                                SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
-                                SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
-                                SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
-                                EE, EE_k, (double)SolverEvaluation::MAXCUT_best_size, kernelization_time});
-            
-            if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
-                G.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid), true);
-                kernelized.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid) + "-kernelized", true);
-            }
+            mtx_aggregation.unlock();
         }
 
         custom_assert(accum.size() > 0);
@@ -273,15 +299,15 @@ public:
         for (auto rule : kAllRuleIds) {
             int used_cnt = tot_case_coverage_cnt[rule];
             int check_cnt = tot_rule_checks_cnt[rule];
-            double used_time = times_all[static_cast<int>(rule)];
+            double used_time = total_times[static_cast<int>(rule)];
             tot_time += used_time;
 
             cout << setw(20) << kRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
                  << setw(20) << (check_cnt / (double) num_iterations) << setw(20) << (used_time / (double) num_iterations)
                  << setw(20) << (used_time/check_cnt) << endl; // this last value does not need to be divided by numm_iterations!!!
         }
-        cout << "Time spent on other stuff: " << times_all[-1] << endl;
-        cout << "TOTAL time (all iterations included): " << tot_time + times_all[-1] << endl;
+        cout << "Time spent on other stuff: " << total_times[-1] << endl;
+        cout << "TOTAL time (all iterations included): " << tot_time + total_times[-1] << endl;
         cout << endl;
         cout << endl;
     }
@@ -308,8 +334,12 @@ public:
     // Rule10: The non-bridge case is trivially covered by S2. What about the bridge case? It seems to be bullshit to even consider that as a special case. Why do they differentiate bridge/non-bridge case in the paper? Doesn't seme to make sense.
 
 private:
+    std::mutex mtx_mixingid_gen;
+    std::mutex mtx_aggregation;
+
     unordered_map<RuleIds, int> tot_case_coverage_cnt;
     unordered_map<RuleIds, int> tot_rule_checks_cnt;
-    unordered_map<int,double> last_times_all;
+    unordered_map<int,double> total_times;
+
     bool inputFlagToWeightedIsSet = false;
 };

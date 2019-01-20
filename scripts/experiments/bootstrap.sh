@@ -24,6 +24,8 @@ func_localize() {
         cd $builddir
         cmake ../
 
+        source $cwdboot/cmake.config.generated.sh
+
         while [[ $selected_build != "benchmark" && $selected_build != "benchmark-debug" ]]; do
             read -p "Select the build (benchmark or benchmark-debug): " selected_build
         done

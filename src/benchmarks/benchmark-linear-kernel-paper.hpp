@@ -12,6 +12,7 @@
 #include <chrono>
 #include <sstream>
 #include <thread>
+#include <mutex>
 using namespace std;
 
 
@@ -55,16 +56,16 @@ public:
 
 
             ///////////// One-Way rules
+            unordered_map<int, double> times_all_components;
             auto t0 = std::chrono::high_resolution_clock::now();
             vector<pair<double,int>> times_within_call;
             while ((rule_taken = TryOneWayReduce(G_processing_oneway, change_tmp, times_within_call)) != -1) {
                 OutputDebugLog("RULE: " + to_string(rule_taken));
                 OutputDebugLog("-----------");
-                tot_used_rules[rule_taken]++;
                 curr_tot_used_rules[rule_taken]++;
 
                 for (auto time_entry : times_within_call)
-                    LogTimeEx(time_entry.first, time_entry.second);
+                    LogTimeEx(times_all_components, time_entry.first, time_entry.second);
                 times_within_call.clear();
             }
 
@@ -114,11 +115,10 @@ public:
             while ((rule_taken = ExhaustiveTwoWayReduce(G_processing_twoway, marked_vertex_set, times_within_call)) != -1) {
                 OutputDebugLog("2-way-RULE: " + to_string(rule_taken));
                 OutputDebugLog("-----------");
-                tot_used_rules[rule_taken]++;
                 curr_tot_used_rules[rule_taken]++;
 
                 for (auto time_entry : times_within_call)
-                    LogTimeEx(time_entry.first, time_entry.second);
+                    LogTimeEx(times_all_components, time_entry.first, time_entry.second);
                 times_within_call.clear();
             }
             auto tk1 = std::chrono::high_resolution_clock::now();
@@ -142,21 +142,25 @@ public:
             }
 
 
-            cout << "CUTS: " << mcpre << "(" << mcpre_time << ")  " << mcpost << "(" << mcpost_time << ")  " << endl;
-            cout << "All rules usage count: ";
-            for (int i = 0; i < 20; ++i) cout << curr_tot_used_rules[i] << " ";
-            cout << endl;
+            mtx_aggregation.lock();
+            {
+                cout << "CUTS: " << mcpre << "(" << mcpre_time << ")  " << mcpost << "(" << mcpost_time << ")  " << endl;
+                cout << "All rules usage count: ";
+                for (int i = 0; i < 20; ++i) cout << curr_tot_used_rules[i] << " ";
+                cout << endl;
+
+                for (int i = 0; i < 20; ++i) tot_used_rules[i] += curr_tot_used_rules[i];
+                for (int i = -1; i < 20; ++i) total_times[i] += times_all_components[i];
 
 
-            OutputLinearKernelAnalysis(input, G.GetGraphNaming(), BenchmarkAction::GetMixingId(G), iteration,
-                G.GetRealNumNodes(), G.GetRealNumEdges(), G_processing_twoway.GetRealNumNodes(), G_processing_twoway.GetRealNumEdges(),
-                s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc, oneway_time / 1000.0, twoway_time / 1000.0, oneway_reduc_time / 1000.0, adhoc_time / 1000.0,
-                mcpre, mcpre_time / 1000.0, mcpost, mcpost_time / 1000.0);
+                OutputLinearKernelAnalysis(input, G.GetGraphNaming(), BenchmarkAction::GetMixingId(G), iteration,
+                    G.GetRealNumNodes(), G.GetRealNumEdges(), G_processing_twoway.GetRealNumNodes(), G_processing_twoway.GetRealNumEdges(),
+                    s_size_oneway, s_size_oneway_with_reverse, s_size_adhoc, oneway_time / 1000.0, twoway_time / 1000.0, oneway_reduc_time / 1000.0, adhoc_time / 1000.0,
+                    mcpre, mcpre_time / 1000.0, mcpost, mcpost_time / 1000.0);
+            }
+            mtx_aggregation.unlock();
         }
 
-        
-
-        test_id++;
     }
 
     void PostProcess(InputParser& input) override {
@@ -171,13 +175,13 @@ public:
         double tot_time = 0;
         for (auto rule : kAllLinearKernelRuleIds) {
             int used_cnt = tot_used_rules[rule];
-            double used_time = times_all[rule];
+            double used_time = total_times[rule];
             tot_time += used_time;
             cout << setw(20) << kLinearKernelRuleNames.at(rule) << setw(20) << (used_cnt / (double) num_iterations)
                  << setw(20) << (used_time / (double) num_iterations) << setw(20) << (used_time/used_cnt) << endl; // this last value does not need to be divided by numm_iterations!!!
         }
-        cout << "Time spent on other stuff: " << times_all[-1] << endl;
-        cout << "TOTAL time (all iterations included): " << tot_time + times_all[-1] << endl;
+        cout << "Time spent on other stuff: " << total_times[-1] << endl;
+        cout << "TOTAL time (all iterations included): " << tot_time + total_times[-1] << endl;
         cout << endl;
         cout << endl;
 
@@ -192,6 +196,8 @@ public:
     }
 
 private:
+    std::mutex mtx_aggregation;
+
     vector<int> tot_used_rules;
-    int test_id = 1;
+    unordered_map<int,double> total_times;
 };

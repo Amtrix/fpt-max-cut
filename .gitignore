@@ -12,3 +12,7 @@ output/**/*
 !output/*.sh
 !output/*.r
 **/*.o
+
+build-config.json
+
+**/*config.generated.sh
