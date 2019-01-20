@@ -265,6 +265,10 @@ public:
     iterator begin() { return iterator(*this, 0); }
     iterator end() { return iterator(*this, all_sets_to_evaluate.size()); }
 
+    int GetNumberOfInstances() {
+        return all_sets_to_evaluate.size();
+    }
+
 private:
     vector<string> all_sets_to_evaluate;
     vector<KagenGraphCollectionDescriptor> all_kagen_sets_to_evaluate;

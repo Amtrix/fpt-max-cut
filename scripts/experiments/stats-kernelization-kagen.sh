@@ -10,8 +10,8 @@ func_localize() {
     declare -a arr=("512" "2048")
     # "8000")
 
-    #declare subtype=""
-    declare subtype="/missing-s3"
+    declare subtype=""
+    #declare subtype="/missing-s3"
 
     local knum_iterations=1
 

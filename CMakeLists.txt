@@ -77,6 +77,8 @@ macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
         target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_BINARY_PATH="${BIQMAC_BINARY_PATH_EVAL}")
         target_compile_definitions(${TARGETNAME} PRIVATE BIQMAC_EXISTS=1)
     endif()
+
+    target_compile_definitions(${TARGETNAME} PRIVATE BENCHMARK_NUMBER_OF_THREADS=1)
 endmacro(add_binary_exec)
 
 add_binary_exec(benchmark                            NDEBUG  executables/benchmark.cpp)

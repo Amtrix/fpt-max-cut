@@ -21,6 +21,7 @@ func_localize() {
                     -do-signed-reduction \
                     -support-weighted-result \
                     -exact-early-stop-v 700 \
+                    -number-of-threads 1 \
                     -benchmark-output $experiment_outdir/solvers/real-world-small/out > $experiment_outdir/solvers/real-world-small/out-exe
                                        # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -support-weighted-result \
 }

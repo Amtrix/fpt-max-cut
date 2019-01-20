@@ -85,6 +85,58 @@ int main(int argc, char **argv){
 
 
     if (benchmark_action) {
+        cout << BENCHMARK_NUMBER_OF_THREADS << endl;
+        int number_of_threads = (BENCHMARK_NUMBER_OF_THREADS);
+        const int number_of_instances = graph_db.GetNumberOfInstances();
+
+        if (input.cmdOptionExists("-number-of-threads")) {
+            number_of_threads = stoi(input.getCmdOption("-number-of-threads"));    
+        }
+
+        std::mutex mtx_aggregation;
+        vector<thread> threads(number_of_threads);
+        for (int threadid = 0; threadid < number_of_threads; ++threadid) {
+            threads[threadid] = std::thread(std::bind([&](int threadid){
+                int lo = (number_of_instances / number_of_threads) * threadid;
+                int hi = (number_of_instances / number_of_threads) * (threadid + 1);
+                if (threadid == number_of_threads - 1) hi = number_of_instances;
+
+                for (int i = lo; i < hi; ++i) {
+                    cout << "GET: " << i << endl;
+                    auto graph = graph_db.GetGraphById(i);
+                    cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
+                    cout << green << "   |V|:                           " << graph.GetRealNumNodes() << endl;
+                    cout << green << "   |E|:                           " << graph.GetRealNumEdges() << endl;
+                    cout << green << "   graph contains multiple edges: ";
+                    if (graph.info_mult_edge > 0) cout << red;
+                    cout << graph.info_mult_edge << defcol << endl;
+
+                    cout << green << "   graph contains self-loops: ";
+                    if (graph.info_self_loop_edge > 0) cout << red;
+                    cout << graph.info_self_loop_edge << defcol << endl;
+                    
+                    cout << green << "   Localsolver lib is provided: ";
+                    if (local_solver_exists) cout << "yes." << defcol << endl;
+                    else cout << red << "no." << defcol << endl;
+
+                    cout << green << "   Skip fast kernelization assertion check: ";
+                    if (!skip_fast_kernelization_check) cout << "no." << defcol << endl;
+                    else cout << red << "WARNING WARNING WARNING ------- this decision skips verification on performance ------- WARNING WARNING WARNING." << defcol << endl;
+                
+                    custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
+                    
+                    benchmark_action->Evaluate(input, graph);
+
+                    mtx_aggregation.lock();
+                    tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
+                    mtx_aggregation.unlock();
+                    cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;
+                }
+            }, threadid));
+        }
+        std::for_each(threads.begin(), threads.end(), [](std::thread& x){x.join();});
+
+        /*
         for (auto graph : graph_db) {
             cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
             cout << green << "   |V|:                           " << graph.GetRealNumNodes() << endl;
@@ -111,7 +163,7 @@ int main(int argc, char **argv){
             benchmark_action->Evaluate(input, graph);
             tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
             cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;
-        }
+        }*/
 
         benchmark_action->PostProcess(input);
     }

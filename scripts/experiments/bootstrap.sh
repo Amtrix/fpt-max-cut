@@ -31,7 +31,7 @@ func_localize() {
         done
 
         while ! [[ "$threads" =~ ^[0-9]+$ ]]; do
-            read -p "Number of threads to handle for script handling " threads
+            read -p "Number of threads for script handling " threads
         done
 
         make $selected_build
