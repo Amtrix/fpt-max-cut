@@ -14,7 +14,7 @@ func_localize() {
   #  allowed_total_time_seconds=21600
     #21600=6*60*60 = 6 hours
 
-   allowed_total_time_seconds=-1
+   allowed_total_time_seconds=5
 
     mkdir -p $experiment_outdir/solvers/real-world-small/
     $builddir/./$selected_build -action "kernelization" -iterations 1 -disk-suite real-world-small -total-allowed-solver-time $allowed_total_time_seconds \

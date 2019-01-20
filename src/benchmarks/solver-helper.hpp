@@ -182,6 +182,8 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
 #endif
     
 
+    std::shared_ptr<std::thread> thread_localsolver, thread_localsolver_k;
+    vector<double> res_localsolver, res_localsolver_k;
 #ifdef LOCALSOLVER_EXISTS
     // We cannot do multithreading here, as one license = one thread.
     LocalSolverCallback localsolver_cb  (total_time_seconds, &input, G.GetGraphNaming(), mixingid, G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "localsolver");
@@ -192,23 +194,24 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     if (!input.cmdOptionExists("-no-localsolver") && (use_solver_mask & Solvers::LocalSolver)) { // EVALUATE LOCALSOLVER
         OutputDebugLog("====> EVALUATE: LocalSolver.");
 
-        vector<double> res_localsolver, res_localsolver_k;
+        thread_localsolver = std::make_shared<std::thread>([&]{
+            auto t0_total = std::chrono::high_resolution_clock::now();
+            res_localsolver.push_back(F_localsolver());
+            auto t1_total = std::chrono::high_resolution_clock::now();
+            localsolver_time   = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
+        });
 
+#ifndef LOCALSOLVER_USE_CONCURRENCY
+        thread_localsolver->join();
+#endif
+        thread_localsolver_k = std::make_shared<std::thread>([&]{
+            auto t0_total = std::chrono::high_resolution_clock::now();
+            res_localsolver_k.push_back(F_localsolver_k());
+            auto t1_total = std::chrono::high_resolution_clock::now();
+            localsolver_time_k   = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
+        });
 
-        auto t0_total = std::chrono::high_resolution_clock::now();
-        res_localsolver.push_back(F_localsolver());
-        auto t1_total = std::chrono::high_resolution_clock::now();
-        res_localsolver_k.push_back(F_localsolver_k());
-        auto t2_total = std::chrono::high_resolution_clock::now();
-
-        localsolver_time   = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
-        localsolver_time_k = std::chrono::duration_cast<std::chrono::microseconds> (t2_total - t1_total).count()/1000.;
-
-        std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
-            = ComputeAverageAndDeviation(res_localsolver, res_localsolver_k);
         
-        cout << "LOCALSOLVER(G):  " << localsolver_cut_size   << " " << localsolver_time << " (timelimit exceeded: " << localsolver_cb.HasExceededTimelimit() << ")" << endl;
-        cout << "LOCALSOLVER(Gk): " << localsolver_cut_size_k << " " << localsolver_time_k << " (timelimit exceeded: " << localsolver_cb_k.HasExceededTimelimit() << ")" << endl;
     }
 #endif
 
@@ -226,9 +229,11 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         mqlib_cb_k.SetTerminatingCutSize(tmp_MAXCUT_best_size);
     }
 
+    for (auto entry : {thread_mqlib, thread_mqlib_k, thread_localsolver, thread_localsolver_k})
+        if (entry && entry->joinable())
+            entry->join();
+            
     if (thread_mqlib && thread_mqlib_k) {
-        thread_mqlib->join(); thread_mqlib_k->join();
-
         std::tie(mqlib_cut_size, mqlib_cut_size_k, mqlib_rate, mqlib_rate_sddiff, mqlib_cut_size_best)
             = ComputeAverageAndDeviation(res_mqlib, res_mqlib_k);
         
@@ -236,7 +241,13 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         cout << "MQLIB(Gk): " << mqlib_cut_size_k << " " << mqlib_time_k << " (timelimit exceeded: " << mqlib_cb_k.HasExceededTimelimit() << ")" << endl;
     }
 
-    
+    if (thread_localsolver && thread_localsolver_k) {
+        std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
+                = ComputeAverageAndDeviation(res_localsolver, res_localsolver_k);
+            
+        cout << "LOCALSOLVER(G):  " << localsolver_cut_size   << " " << localsolver_time << " (timelimit exceeded: " << localsolver_cb.HasExceededTimelimit() << ")" << endl;
+        cout << "LOCALSOLVER(Gk): " << localsolver_cut_size_k << " " << localsolver_time_k << " (timelimit exceeded: " << localsolver_cb_k.HasExceededTimelimit() << ")" << endl;
+    }
 
     MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size);

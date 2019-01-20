@@ -1,0 +1,11 @@
+{
+    "localsolver": {
+        "enabled": true,
+        "use-parallelism": false,
+        "bin-path": "/opt/localsolver_8_0/bin"
+    },
+    "biqmac": {
+        "enabled": true,
+        "binary-file": "./../BiqMac/bab"
+    }
+}
