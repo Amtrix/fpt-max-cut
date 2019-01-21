@@ -49,7 +49,8 @@ file=opt$file
 col_vec = c("darkorange","red2","dodgerblue2","black", "purple")
 pnt_vec = c(9,18,17,15,19)
 columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT',
-              '#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD','#BIQMAC_T(G)', '#BIQMAC_T(Gk)',
+              '#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD',
+              '#MQLIB_T(G)',               '#MQLIB_T(Gk)',            '#LOCSOLVER_T(G)'          , '#LOCSOLVER_T(Gk)', '#BIQMAC_T(G)', '#BIQMAC_T(Gk)',
               '#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
 kagen_nam_vec = c("BA","GNM","RGG2D","RGG3D","RHG")#, "original", "task a", "task b", "task c")
 
@@ -86,6 +87,8 @@ pdf(opt$out, width=10, height=5)
 
 {   
     par(cex = 1.1)
+    par(mgp=c(4,1,0))
+    par(mar=c(5,4.15,1,2)+0.1)
     #par(cex.main = 1.3)
     #par(cex.lab  = 1.3)
     #par(cex.axis = 1.3)
@@ -107,9 +110,9 @@ pdf(opt$out, width=10, height=5)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
-    title(xlab="Graph density: |E| / |V|"     , line=2.5)
-    title(ylab="e(G)", line=3.3)
-    title(main=bquote("Kernelization efficiency. Metric: e(G) = 1 - " ~ frac(group("|",V(G[ker]),"|"),group("|",V(G),"|"))))
+    title(xlab=expression("Graph Density: " ~ frac(group("|",E(G),"|"),group("|",V(G),"|")), line=2.3))
+    title(ylab="e(G)", line=3.2)
+   # title(main=bquote("Kernelization efficiency. Metric: e(G) = 1 - " ~ frac(group("|",V(G[ker]),"|"),group("|",V(G),"|"))))
 
     # Draws the 4 lines of measurements
     if (opt$type == "kagen") {

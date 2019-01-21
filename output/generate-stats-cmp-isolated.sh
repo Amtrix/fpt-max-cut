@@ -5,7 +5,7 @@ set -o xtrace
 func_localize() {
     local cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-    g++ $cwd/cpp-latex_table-create-isolated.cpp -o $cwd/cpp-latex_table-create-isolated.o
+    g++ $cwd/cpp-latex_table-create_isolated.cpp -o $cwd/cpp-latex_table-create_isolated.o
 
     declare -a types=("RHG" "RGG2D" "RGG3D" "GNM" "BA")
 

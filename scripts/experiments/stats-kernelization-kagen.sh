@@ -11,7 +11,7 @@ func_localize() {
     # "8000")
 
     declare subtype=""
-    #declare subtype="/missing-s3"
+    #declare subtype="/missing-r8-with-signed"
 
     local knum_iterations=1
 
@@ -20,6 +20,7 @@ func_localize() {
         experiment_outdir_fin=$experiment_outdir/kernelization/n"$i"$subtype
         mkdir -p $experiment_outdir/kernelization/n"$i"/$subtype
         $builddir/./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen $kkagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -total-allowed-solver-time -1 \
+                    -do-signed-reduction \
                     -benchmark-output $experiment_outdir_fin/out > $experiment_outdir_fin/out-exe &
 
         check_and_wait_if_threadpool_full
@@ -27,6 +28,7 @@ func_localize() {
         experiment_outdir_fin=$experiment_outdir/kernelization/n"$i"w$subtype
         mkdir -p $experiment_outdir_fin
         $builddir/./$selected_build -action "kernelization" -iterations $knum_iterations -sample-kagen $kkagen_instances -num-nodes $i -num-edges-lo 0 -num-edges-hi $((i*8)) -total-allowed-solver-time -1 -support-weighted-result \
+                    -do-signed-reduction \
                     -benchmark-output $experiment_outdir_fin/out > $experiment_outdir_fin/out-exe &
 
         check_and_wait_if_threadpool_full

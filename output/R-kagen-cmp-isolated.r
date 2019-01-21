@@ -106,6 +106,8 @@ pdf(opt$out, width=10, height=5)
 
 {
     par(cex = 1.1)
+    par(mgp=c(4,1,0))
+    par(mar=c(5,4.15,1,2)+0.1)
 
     # Here we choose the two comlumns, that we use for the plot
     y="diff_v"
@@ -136,9 +138,9 @@ pdf(opt$out, width=10, height=5)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
-    title(xlab="Graph density: |E| / |V|"     , line=2.3)
-    title(ylab=expression("e"[absDiff]*""), line=3.2)
-    title(main=expression("Absolute difference in efficiency: e"[absDiff]*" = e(G"[new]*") - e(G"[old]*")"))
+    title(xlab=expression("Graph Density: " ~ frac(group("|",E(G),"|"),group("|",V(G),"|")), line=2.3))
+    title(ylab=expression("e"[absDiff]*" = e(G"[new]*") - e(G"[old]*")"), line=3.2)
+  #  title(main=expression("Absolute difference in efficiency: e"[absDiff]*" = e(G"[new]*") - e(G"[old]*")"))
 
     # Draws the 4 lines of measurements
     for (dx in 0:3) {

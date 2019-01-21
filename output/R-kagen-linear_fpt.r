@@ -75,6 +75,8 @@ pdf(opt$out, width=10, height=5)
 
 {   
     par(cex = 1.1)
+    par(mgp=c(4,1,0))
+    par(mar=c(5,4.15,1,2)+0.1)
     # Here we choose the two comlumns, that we use for the plot
     y="ratio_e.mean"
     x="density.mean"
@@ -91,9 +93,9 @@ pdf(opt$out, width=10, height=5)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
-    title(xlab="Graph density: |E| / |V|"     , line=2.3)
-    title(ylab="", line=2.3)
-    title(main=bquote("Kernelization efficiency for KaGen graph instances; metric: e(G) = 1 - " ~ frac(group("|",V(G[ker]),"|"),group("|",V(G),"|"))))
+    title(xlab=expression("Graph Density: " ~ frac(group("|",E(G),"|"),group("|",V(G),"|")), line=2.3))
+    title(ylab=expression("e"(G)*""), line=3.2)
+    #title(main=bquote("Kernelization Efficiency For KaGen Graph Instances. Metric: e(G) = 1 - " ~ frac(group("|",V(G[ker]),"|"),group("|",V(G),"|"))))
 
     # Draws the 4 lines of measurements
     for (dx in c(1,2,3,4,5)) {

@@ -48,7 +48,8 @@ pnt_vec  = c(20,2,18,15,19)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 pnt_vec2 = c(pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]])
 columnsA  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT',
-              '#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD','#BIQMAC_T(G)', '#BIQMAC_T(Gk)',
+              '#LOCSOLVER.DIFF','#LOCSOLVER.DIFF.SD','#LOCSEARCH(G)','#LOCSEARCH(Gk)+CUT','#LOCSEARCH.DIFF','#LOCSEARCH.DIFF.SD',
+              '#MQLIB_T(G)',               '#MQLIB_T(Gk)',            '#LOCSOLVER_T(G)'          , '#LOCSOLVER_T(Gk)', '#BIQMAC_T(G)', '#BIQMAC_T(Gk)',
               '#EE(G)','#EE(Gk)','#MAXCUT.BEST','#ABOVE_EE_PARAM_LOWB', '#ktime', '#file')
 columnsB  <- columnsA
 
@@ -92,6 +93,8 @@ data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
 
 {
     par(cex = 1.1)
+    par(mgp=c(4,1,0))
+    par(mar=c(5,4.15,1,2)+0.1)
 
     # Here we choose the two comlumns, that we use for the plot
     y="diff_v"
@@ -110,9 +113,9 @@ data_table$diff_e = data_table$ratio_e.mean - data_table_cmp$ratio_e.mean
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
-    title(xlab="Graph density: |E| / |V|"     , line=2.3)
-    title(ylab=expression("e"[absDiff]*""), line=3.2)
-    title(main=expression("Absolute difference in efficiency: e"[absDiff]*" = e(G"[newWeighted]*") - e(G"[new]*")"))
+    title(xlab=expression("Graph Density: " ~ frac(group("|",E(G),"|"),group("|",V(G),"|")), line=2.3))
+    title(ylab=expression("e"[absDiff]*" = e(G"[new]*") - e(G"[old]*")"), line=3.2)
+    #title(main=expression("Absolute difference in efficiency: e"[absDiff]*" = e(G"[newWeighted]*") - e(G"[new]*")"))
 
     # Draws the 4 lines of measurements
     for (dx in types_to_test) {
