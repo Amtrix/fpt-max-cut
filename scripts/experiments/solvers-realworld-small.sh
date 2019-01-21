@@ -11,8 +11,8 @@ func_localize() {
 
 
   #  allowed_total_time_seconds=2000
-  #  allowed_total_time_seconds=21600
-    21600=6*60*60 = 6 hours
+    allowed_total_time_seconds=21600
+   # 21600=6*60*60 = 6 hours
 
  # allowed_total_time_seconds=5
 
