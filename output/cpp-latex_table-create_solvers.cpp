@@ -74,8 +74,8 @@ int main(int argc, char **argv){
         return to_string_with_precision(loct_k/1000.0, 2) + scnd;
     });
 
-    vector<bool> remove_decimals = { false,       false,          true,         false      ,  false,                false,                false,             false};
-    vector<string> interesting = {"GRAPH_NAME", "GRAPH_DENSITY",  "#num_nodes", "VEFFICIENCY", "speedup_localsolver", "speedup_localsolver_k", "biqmac_localsolver", "biqmac_localsolver_k"};
+    vector<bool> remove_decimals = { false,          true,        false    ,       false      ,  false,                false,                false,             false};
+    vector<string> interesting = {"GRAPH_NAME"  ,  "#num_nodes", "GRAPH_DENSITY" ,"VEFFICIENCY", "speedup_localsolver", "speedup_localsolver_k", "biqmac_localsolver", "biqmac_localsolver_k"};
 
     table = GetColumnSubsetTable(table, interesting);
 

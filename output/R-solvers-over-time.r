@@ -119,7 +119,9 @@ for (i in 0:(length(datasets)-1)) {
 
 {
     pdf(opt$out, width=10, height=5)
-    par(cex = 1.2)
+    par(cex = 1.1)
+    par(mgp=c(4,1,0))
+    par(mar=c(5,4.15,1,2)+0.1)
 
     y="rmaxcutsz"
     x="timex"
@@ -132,9 +134,9 @@ for (i in 0:(length(datasets)-1)) {
     plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
-    title(xlab="Time in seconds"     , line=2.3)
-    title(ylab="Solution size (% of max found)", line=3.3)
-    title(main=expression("Solution size over time by Localsolver: initial vs. kernelized graph"))
+    title(xlab="Time in Seconds"     , line=2.3)
+    title(ylab="Solution Size (% of max found)", line=3.3)
+  #  title(main=expression("Solution size over time by Localsolver: initial vs. kernelized graph"))
 
     c_legend_names <- c()
     for (i in 0:(length(datasets)-1)) {

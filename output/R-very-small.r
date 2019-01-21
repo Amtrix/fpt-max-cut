@@ -65,7 +65,9 @@ print(subset(data_table, V==2))
 
 # Open a PDF to store the plot into
 pdf(opt$out, width=10, height=5)
-par(cex = 1.2)
+par(cex = 1.1)
+    par(mgp=c(4,1,0))
+    par(mar=c(5,4.15,1,2)+0.1)
 
 caption <- "Kernelization coverage - isomorphisms removed"
 if (opt$mode == "iso-kept")
@@ -95,9 +97,9 @@ for (entry in list(
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
 
     # Label titles for both axes
-    title(xlab="Number of external vertices in subgraph"     , line=2.3)
-    title(ylab="", line=3.3)
-    title(main=entry[2])
+    title(xlab="Number of External Vertices in Subgraph"     , line=2.3)
+    title(ylab="Total Average Coverage Per Class", line=3.3)
+    #title(main=entry[2])
 
     # Draws the 4 lines of measurements
     for (dx in 2:(length(nam_vec)+1)) {

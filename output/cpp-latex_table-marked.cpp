@@ -63,8 +63,6 @@ void HandleLinearKernelEfficiency(Table table) {
         return to_string_with_precision(marked_cnt / num_nodes, 2);
     });
 
-    table = Aggregate(table, "#sec");
-    table = SortMethodA(table);
 
     CreateNewColumn(table, "custom_S_part_nice", [&](vector<string> row) {
         string spart = GetStrInRow(table, row, "custom_S_part");
@@ -82,6 +80,11 @@ void HandleLinearKernelEfficiency(Table table) {
         string B = GetStrInRow(table, row, "twoway_time");
         return to_string_with_precision(stod(A) + stod(B), 2);
     });
+
+    table = Aggregate(table, "#sec");
+    table = SortMethodA(table);
+
+    
 
     vector<bool> remove_decimals = { false,       true,          true,      false,            false,               false,          false,    false};
     vector<string> interesting = {"GRAPH_NAME", "#num_nodes", "#num_edges", "GRAPH_DENSITY", "custom_Sx_part_nice", "VEFFICIENCY", "Tker",  "mcpost_time"};
