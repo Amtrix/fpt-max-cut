@@ -48,12 +48,12 @@ int main(int argc, char **argv){
         double loct_k = GetValInRow(table, row, "#LOCSOLVER_T(Gk)");
         
         
-        if (loct < 0 && loct_k < 0) return string("-");
+        if (loct < 0 && loct_k < 0) return string("- & -");
 
         string scnd = " [" + to_string_with_precision(loct/loct_k, 2) + "]";
         if (loct < 0 && loct_k >= 0) scnd = " [$" + string("\\infty") + "$]";
         
-        return to_string_with_precision(loct_k/1000.0, 2) + scnd;
+        return to_string_with_precision(loct_k/1000.0, 2) + " & " + scnd;
     });
     CreateNewColumn(table, "biqmac_localsolver", [&](vector<string> row) { 
         double loct = GetValInRow(table, row, "#BIQMAC_T(G)");
@@ -66,12 +66,12 @@ int main(int argc, char **argv){
         double loct_k = GetValInRow(table, row, "#BIQMAC_T(Gk)");
         
         
-        if (loct < 0 && loct_k < 0) return string("-");
+        if (loct < 0 && loct_k < 0) return string("- & -");
 
         string scnd = " [" + to_string_with_precision(loct/loct_k, 2) + "]";
         if (loct < 0 && loct_k >= 0) scnd = " [$" + string("\\infty") + "$]";
         
-        return to_string_with_precision(loct_k/1000.0, 2) + scnd;
+        return to_string_with_precision(loct_k/1000.0, 2) + " & " + scnd;
     });
 
     vector<bool> remove_decimals = { false,          true,        false    ,       false      ,  false,                false,                false,             false};
