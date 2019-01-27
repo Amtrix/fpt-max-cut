@@ -50,13 +50,15 @@ const map<RuleIds, string> kRuleNames = {
     {RuleIds::RuleS6,          "RuleS6"},
     {RuleIds::Rule8Signed,     "Rule8Signed"},
     {RuleIds::Rule8SpecialCase,"Rule8SpecialCase"},
-    {RuleIds::SpecialRule2Signed, "SpecialRule2Signed"}
+    {RuleIds::RuleS2SpecialCase, "RuleS2SpecialCase"},
+    {RuleIds::SpecialRule2Signed, "SpecialRule2Signed"},
+    {RuleIds::MegaRule,        "MegaRule"}
 };
 
 const vector<RuleIds> kAllRuleIds = {
     RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
     RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
-    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed, RuleIds::Rule8SpecialCase
+    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed, RuleIds::Rule8SpecialCase, RuleIds::RuleS2SpecialCase, RuleIds::MegaRule
 };
 
 struct trie_node_r8 {
@@ -202,8 +204,9 @@ MaxCutGraph::MaxCutGraph(const vector<tuple<int,int,int>> &elist, int n) {
 
     SetNumNodes(num_nodes_calc);
 
-    for (auto e : elist)
+    for (auto e : elist) {
         AddEdge(get<0>(e), get<1>(e), get<2>(e));
+    }
 }
 
 MaxCutGraph::MaxCutGraph(const vector<pair<int,int>> &elist, int n) {
@@ -259,7 +262,7 @@ void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
     UpdateVertexTimestamp(a, false, TimestampType::DegreeIncrease);
     UpdateVertexTimestamp(b, false, TimestampType::DegreeIncrease);
 
-    if(edge_exists_lookup[keyAB]) {
+    if(MapEqualCheck(edge_exists_lookup, keyAB, true)) {
         //OutputDebugLog("Warning: Multiple edges added between: " + to_string(a) + " and " + to_string(b) + ". Weight has been increased.");
         info_mult_edge++;
 
@@ -465,7 +468,8 @@ vector<tuple<int,int,int>> MaxCutGraph::GetAllExistingEdgesWithWeights() const {
     return ret;
 }
 
-bool MaxCutGraph::IsClique(const vector<int>& vertex_set) const {
+
+bool MaxCutGraph::IsClique(const vector<int>& vertex_set, const int verify_weight) const {
     for (unsigned int i = 0; i < vertex_set.size(); ++i)
         if (Degree(vertex_set[i]) + 1 < (int)vertex_set.size()) return false;
 
@@ -474,9 +478,13 @@ bool MaxCutGraph::IsClique(const vector<int>& vertex_set) const {
             auto edge_key = MakeEdgeKey(vertex_set[i], vertex_set[j]);
             if (!MapEqualCheck(edge_exists_lookup, edge_key, true))
                 return false;
+            if (verify_weight != 0 && !MapEqualCheck(edge_weight, edge_key, verify_weight))
+                return false;
         }
     return true;
 }
+
+
 
 double MaxCutGraph::GetEdwardsErdosBound() const {
     auto ccomponents = GetAllConnectedComponents();
@@ -1281,6 +1289,138 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
     return max_clique;
 }
 
+void MaxCutGraph::ApplyMegaRuleCandidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
+    vector<int> currentv = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.MRULE, true);
+    if (!break_on_first)
+        CURRENT_TIMESTAMPS.MRULE = current_kernelization_time;
+    
+    auto cmp = [&](int a, int b) {
+        return Degree(a) > Degree(b);
+    };
+
+    auto getr8key = [&](const int root) {
+        vector<int> key;
+        key.push_back(root);
+
+        const auto& adj = GetAdjacency(root);
+        for (auto adj_node : adj) {
+            int w = GetEdgeWeight(make_pair(root, adj_node));
+            custom_assert(w == 1 || w == -1);
+            if (w == 1 ) key.push_back(adj_node);
+            if (w == -1) key.push_back(-adj_node);
+        }
+        
+        sort(key.begin(), key.end());
+        return key;
+    };
+
+    sort(currentv.begin(), currentv.end(), cmp);
+
+    trie_r8 partitions;
+    for (auto root : currentv) {
+        const auto key = getr8key(root);
+        partitions.Insert(key, root);
+    }
+
+    unordered_map<int, int> visited;
+    for (auto root : currentv) {
+        if (visited[root] == 1) continue;
+        if (KeyExists(root, preset_is_external)) continue;
+
+        const auto key = getr8key(root); // O(Ng(root))
+        const auto X = partitions.Retrieve(key); // O(Ng(root))
+        const auto NG = SetSubstract(key, X); // O(Ng(root))
+
+        for (auto x : X) visited[x] = 1; // O(Ng(root)), guarantees only that vertices in X are not visited again, not Ng(root)!! Still, an edge is visited at most twice.
+            
+        unsigned int szX = X.size();
+        unsigned int szNG = NG.size();
+        unsigned int subgraphsz = szX + szNG;
+        if (szX + (subgraphsz%2) < szNG) continue; // Nothing can be done in this instance! All internal vertices are mandatory for balancing.
+        
+        bool is_1clique_X  = IsClique(X, 1);
+        bool is_1clique_NG = IsClique(NG, 1);
+        bool is_signed     = !key.empty() && key[0] < 0;
+        rules_usage_count[RuleIds::MegaRule]++;
+
+
+        // Reduction Rule: S3
+        // - is_1clique_X = possibly changes(!)
+        if (!is_signed && !is_1clique_X && is_1clique_NG && X.size() >= 2 && (subgraphsz % 2 == 0 || X.size() > 2)) {
+            int cnt_missing = 0;
+            int sel_x1 = -1, sel_x2 = -1;
+            for (auto x1 : X)
+                for (auto x2 : X)
+                    if (!AreAdjacent(x1, x2))
+                        cnt_missing++, sel_x1 = x1, sel_x2 = x2;
+            
+            cnt_missing /= 2;
+            if (cnt_missing == 1) {
+                AddEdge(sel_x1, sel_x2);
+                is_1clique_X = true;
+            }
+        }
+        
+
+        // Reduction Rule: S2
+        // - no need to keep track of local variables as this conditions exits.
+        if (!is_signed && is_1clique_X && is_1clique_NG && szX + (subgraphsz%2) >= szNG) {
+            ApplyS2Candidate(X[0]);
+            rules_usage_count[RuleIds::RuleS2]++;
+            continue; // This rule removed everything. No need to continue anything.
+        }
+
+        // Reduction Rule: R8
+        // - is_1clique_X  = same
+        // - is_1clique_NG = same
+        // - szX           = szX - 2
+        // - subgraphsz    = subgraphsz - 2
+        unsigned int dx = 0;
+        while (is_1clique_X && szX > NG.size() && szX > 1) {
+            szX -= 2;
+            subgraphsz -= 2;
+
+            unsigned int frem = dx;
+            unsigned int srem = dx + 1;
+            dx += 2;
+
+            int rem_node1 = X[frem], rem_node2 = X[srem];
+            custom_assert(GetAdjacency(rem_node1).size() == GetAdjacency(rem_node2).size());
+
+            const auto adj = GetAdjacency(rem_node1);
+            int cnt_minus_edges = 0;
+            for (auto w : adj)
+                cnt_minus_edges += GetEdgeWeight(make_pair(rem_node1,w)) == -1;
+
+            inflicted_cut_change_to_kernelized -= adj.size() - cnt_minus_edges * 2; // times 2 as two nodes are removed (with same adjacency!).
+            
+            RemoveNode(rem_node1);
+            RemoveNode(rem_node2);
+            rules_vrem[RuleIds::Rule8] += 2;
+            rules_usage_count[RuleIds::Rule8]++;
+        }
+
+        // Reduction Rule: Sharing A Clique
+        // - is_1clique_X  = same
+        // - is_1clique_NG = same
+        // - szX           = szX - 1
+        // - subgraphsz    = subgraphsz - 1
+        if (!is_signed && is_1clique_X && szX == NG.size() && szX >= 1) {
+            unsigned int dx = 0;
+            while (MapEqualCheck(removed_node, X[dx], true)) dx++;
+            if (dx == X.size()) throw std::logic_error("Couldn't find a viable x in X for shared clique rule.");
+
+            RemoveNode(X[dx]);
+            inflicted_cut_change_to_kernelized -= szX;
+            szX--;
+            subgraphsz--;
+
+            rules_vrem[RuleIds::Rule8] ++;
+            rules_usage_count[RuleIds::Rule8SpecialCase]++;
+        }
+    }
+}
+
 // Right now: not O(|V| + |E|) because of sorting. Only because of that. To achieve full linear time, use counting sort.
 // This rule in itself is ORDER INDEPENDENT!!!!
 // BUTTTTT
@@ -1288,7 +1428,7 @@ vector<int> MaxCutGraph::GetAClique(const int min_size, const int runs, const bo
 vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
     vector<vector<int>> ret;
     
-    unordered_map<int, int> visited;
+    
     vector<int> current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.R8, true); // not all adjacent needed, see (1)
     if (!break_on_first)
         CURRENT_TIMESTAMPS.R8 = current_kernelization_time;
@@ -1311,29 +1451,15 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
         return key;
     };
 
-    
-    const int sz_fix = (int)current_v.size();
-    for (int i = 0; i < sz_fix; ++i) {             // (1) ........... kind of an insignificant speed up
-        int root = current_v[i];
 
-        const auto& adj = GetAdjacency(root);
-        for (auto w : adj) {
-            if ((int)adj.size() == Degree(w))
-                current_v.push_back(w); // it does not matter if we have a vertex multiple times -- visited will take care of that.
-        }
-    }
 
-  //  int preset_inv = -1;
     trie_r8 partitions;
     for (auto root : current_v) {
-        if (visited[root] || KeyExists(root, preset_is_external)) continue;
-        visited[root] = 1;
-
         vector<int> key = getr8key(root);
-        sort(key.begin(), key.end());
         partitions.Insert(key, root);
     }
 
+    unordered_map<int, int> visited;
     for (auto root : current_v) {
         if (visited[root] == 2) continue;
         if (KeyExists(root, preset_is_external)) continue;
@@ -1342,12 +1468,11 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
         const auto X = partitions.Retrieve(key); // O(Ng(root))
         const auto NG = SetSubstract(key, X); // O(Ng(root))
 
-        bool ok = true;
         for (auto x : X) { // O(Ng(root)), guarantees only that vertices in X are not visited again, not Ng(root)!! Still, an edge is visited at most twice.
             visited[x] = 2;
         }
 
-        if (ok && X.size() >= NG.size() && X.size() > 1 && IsClique(X)) {
+        if (X.size() >= NG.size() && X.size() > 1 && IsClique(X, 1)) {
             ret.push_back(X);
 
             if (break_on_first)
@@ -1382,10 +1507,7 @@ bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
             cnt_minus_edges += GetEdgeWeight(make_pair(rem_node1,w)) == -1;
 
         inflicted_cut_change_to_kernelized -= adj.size() - cnt_minus_edges * 2; // times 2 as two nodes are removed (with same adjacency!).
-        
 
-
-        
         RemoveNode(rem_node1);
         RemoveNode(rem_node2);
         rules_vrem[RuleIds::Rule8] += 2;
@@ -1395,11 +1517,11 @@ bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     if (szX == (int)NG.size() && szX >= 1) {
         inflicted_cut_change_to_kernelized -= szX;
         szX--;
-        RemoveNode(clique[dx]);
-        ret = true;
-
+        RemoveNode(clique[0]);
+        
         rules_vrem[RuleIds::Rule8] ++;
         rules_usage_count[RuleIds::Rule8SpecialCase]++;
+        ret = true;
     }
     
     return ret;
@@ -1814,7 +1936,7 @@ bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>
 
     for (auto node : clique) { // rem_nodes works? NOT for now. Dont confuse this!
         for (auto node2 : clique) {
-            if (edge_exists_lookup[MakeEdgeKey(node, node2)]) {
+            if (MapEqualCheck(edge_exists_lookup, MakeEdgeKey(node,node2), true)) {
                 RemoveEdgesBetween(node, node2);
             }
         }
@@ -2033,14 +2155,14 @@ vector<tuple<int,int,int,int>> MaxCutGraph::GetS5Candidates(const bool break_on_
     for (auto a : current_v) {
         if (MapEqualCheck(removed_node, a, true)) continue;
 
-        const auto a_adj = GetAdjacency(a);
+        const auto& a_adj = GetAdjacency(a);
         if (a_adj.size() != 2 || KeyExists(a, preset_is_external)) continue;
 
         int b = a_adj[0], ex_L = a_adj[1];
         if (Degree(b) != 2 ||  KeyExists(b, preset_is_external)) swap(b, ex_L);
         if (Degree(b) != 2 ||  KeyExists(b, preset_is_external)) continue;
 
-        const auto b_adj = GetAdjacency(b);
+        const auto& b_adj = GetAdjacency(b);
         int ex_R = b_adj[0];
         if (ex_R == a) ex_R = b_adj[1];
 
@@ -2337,6 +2459,10 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
     auto t0_total = std::chrono::high_resolution_clock::now();
     int rules_usage_count_earlier = rules_usage_count[rule_id];
     switch(rule_id) {
+        case RuleIds::MegaRule: {
+            ApplyMegaRuleCandidates(false);
+            break;
+        }
         case RuleIds::RuleS2: { // preset_ext_supp=TRUE
             auto candidates = GetS2Candidates(true, false, preset_is_external);
             for (auto candidate : candidates)
@@ -2452,6 +2578,10 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
 
             break;
         }
+
+        case RuleIds::Rule8SpecialCase:
+        case RuleIds::RuleS2SpecialCase:
+            break;
     }
 
     auto t1_total = std::chrono::high_resolution_clock::now();

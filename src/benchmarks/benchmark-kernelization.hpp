@@ -313,9 +313,11 @@ public:
     }
 
     const vector<RuleIds> kernelization_order = {
-          RuleIds::RuleS2, RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3/*
-
+          RuleIds::RuleS2, RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3
+          
+          /*
                     ON REMOVED RULES(!!!!):
+                    RuleIds::RuleS2, RuleIds::Rule8, DUE TO INCLUSION IN "MEGA"
                          EXCLUDED DUE TO INCLUSION:       RuleIds::Rule9 (S2), RuleIds::Rule9X (S2), RuleIds::Rule10AST (S5)
                          EXCLUDED (see below reasons):    RuleIds::Rule10
                          VERY LITTLE USAGE: RuleIds::RuleS4   (argue in thesis though why you left it out (if you do it))

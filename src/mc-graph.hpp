@@ -20,7 +20,7 @@ enum class RuleIds : int {
     RevSpecialRule1,
     RevSpecialRule2,
     SpecialRule2Signed,
-    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed, Rule8SpecialCase
+    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed, Rule8SpecialCase, RuleS2SpecialCase, MegaRule
 };
 
 extern const map<RuleIds, string> kRuleDescriptions;
@@ -153,16 +153,17 @@ public:
     int GetRealNumEdges() const { return GetAllExistingEdges().size(); }
     vector<int> GetAllExistingNodes() const;
     const vector<int>& GetAdjacency(int node) const { return g_adj_list.at(node); }
+    int GetEdgeWeight(const int edgekey) const { return edge_weight.at(edgekey); }
     int GetEdgeWeight(const pair<int,int> &e) const { return edge_weight.at(MakeEdgeKey(e)); }
     bool AreAdjacent(int n1, int n2) const { return MapEqualCheck(edge_exists_lookup, MakeEdgeKey(n1,n2), true); }
-    int Degree(int node) const { return GetAdjacency(node).size(); }
+    int Degree(int node) const { return g_adj_list.at(node).size(); }
     vector<int> GetConnectedComponentOf(int node, vector<bool>& visited) const;
     vector<int> GetConnectedComponentOf(int node) const;
     vector<vector<int>> GetAllConnectedComponents() const;
     bool DoesDisconnect(const vector<int>& selection_rem) const;
     vector<pair<int,int>> GetAllExistingEdges() const;
     vector<tuple<int,int,int>> GetAllExistingEdgesWithWeights() const;
-    bool IsClique(const vector<int>& vertex_set) const;
+    bool IsClique(const vector<int>& vertex_set, const int verify_weight = 0) const;
     double GetEdwardsErdosBound() const;
     int CountExternalVertices(const vector<int> &vertex_set) const; // G[vertex_set] considered.
     string GetGraphNaming() const;
@@ -237,6 +238,8 @@ public:
     // Returns a vector of X that satisfy rule 8 from https://arxiv.org/abs/1212.6848  
     vector<vector<int>> GetR8Candidates(const bool break_on_first = false, const unordered_map<int,bool>& preset_is_external = {});
     bool ApplyR8Candidate(const vector<int> &clique);
+
+    void ApplyMegaRuleCandidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external = {});
 
     // Returns a vector of (x,(pair1, pair2)) where x is the shared vertex of triangles (x,pair1.first,pair1.second),
     // (x,pair2.first,pair2.second).
@@ -345,11 +348,13 @@ public:
     struct {
         int S2 = 0;
         int R8 = 0;
+        int MRULE = 0;
     } CURRENT_TIMESTAMPS;
 
     void ResetTimestamps() {
         CURRENT_TIMESTAMPS.S2 = 0;
         CURRENT_TIMESTAMPS.R8 = 0;
+        CURRENT_TIMESTAMPS.MRULE = 0;
 
         auto current_v = GetAllExistingNodes();
         for (auto node : current_v)

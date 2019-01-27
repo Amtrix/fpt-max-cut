@@ -95,4 +95,5 @@ add_binary_exec(find-kernelization-general-debug     DEBUG   executables/find-ke
 add_binary_exec(find-kernelization-weighted          NDEBUG  executables/find-kernelization-weighted.cpp)
 add_binary_exec(lower-bound-num-of-class-computation NDEBUG  executables/lower-bound-num-of-class-computation.cpp)
 add_binary_exec(remove-double-edges                  NDEBUG  executables/remove-double-edges.cpp)
-add_binary_exec(playground                           DEBUG  executables/playground.cpp)
+add_binary_exec(playground                           DEBUG   executables/playground.cpp)
+add_binary_exec(find-kernelization-grid              NDEBUG  executables/find-kernelization-grid.cpp)

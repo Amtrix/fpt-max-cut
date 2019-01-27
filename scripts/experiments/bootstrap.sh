@@ -30,11 +30,13 @@ func_localize() {
             read -p "Select the build (benchmark or benchmark-debug): " selected_build
         done
 
+        make $selected_build
+
         while ! [[ "$threads" =~ ^[0-9]+$ ]]; do
             read -p "Number of threads for script handling " threads
         done
 
-        make $selected_build
+        
     else
         echo "Bootstrap called twice!"
     fi
