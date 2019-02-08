@@ -163,14 +163,12 @@ MaxCutGraph::MaxCutGraph(const string path) {
                     graph_is_supported = false;
                     return;
                 }
-                int w = stoi(wstr);
-                if (w == 100000 && TRANSFORM_SPLITTER)
-                    w = num_edges;
+                EdgeWeight w = stoll(wstr);
                 AddEdge(a, b, w, false);
             }
         } else {
             int num_nodes_calc = 0;
-            vector<tuple<int,int,int>> elist;
+            vector<tuple<int,int,EdgeWeight>> elist;
             bool skipfirst = true;
             while (in.eof() == false) {
                 if (!skipfirst)
@@ -186,7 +184,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
                     graph_is_supported = false;
                     return;
                 }
-                int w = stoi(wstr);
+                EdgeWeight w = stoll(wstr);
                 num_nodes_calc = max(num_nodes_calc, max(a + 1, b + 1));
                 elist.push_back(make_tuple(a, b, w));
             }
@@ -229,7 +227,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
 
             for (unsigned int j = 0; j < sparams.size(); j += 1 + is_weighted_instance) {
                 int dest = stoi(sparams[j]) - 1;
-                int weight = is_weighted_instance ? stoi(sparams[j + 1]) : 1;
+                EdgeWeight weight = is_weighted_instance ? stoll(sparams[j + 1]) : 1;
                 AddEdge(i, dest, weight, false);
             }
         }
@@ -238,7 +236,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
     OutputDebugLog("Reading from file done.");
 }
 
-MaxCutGraph::MaxCutGraph(const vector<tuple<int,int,int>> &elist, int n) {
+MaxCutGraph::MaxCutGraph(const vector<tuple<int,int,EdgeWeight>> &elist, int n) {
     int num_nodes_calc = n;
     
     for (auto e : elist) {
@@ -302,7 +300,9 @@ void MaxCutGraph::SetNumNodes(int _num_nodes) {
         UpdateVertexTimestamp(i, false, TimestampType::Both);
 }
 
-void MaxCutGraph::AddEdge(int a, int b, int weight, bool inc_weight_on_double) {
+void MaxCutGraph::AddEdge(int a, int b, EdgeWeight weight, bool inc_weight_on_double) {
+    if (weight > SCALED_FROM) { is_scaled = true; }
+    
     auto keyAB = MakeEdgeKey(a,b), keyBA = MakeEdgeKey(b,a);
     UpdateVertexTimestamp(a, false, TimestampType::DegreeIncrease);
     UpdateVertexTimestamp(b, false, TimestampType::DegreeIncrease);
@@ -503,8 +503,8 @@ vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() const {
     return ret;
 }
 
-vector<tuple<int,int,int>> MaxCutGraph::GetAllExistingEdgesWithWeights() const {
-    vector<tuple<int,int,int>> ret;
+vector<tuple<int,int,EdgeWeight>> MaxCutGraph::GetAllExistingEdgesWithWeights() const {
+    vector<tuple<int,int,EdgeWeight>> ret;
     const auto& elist = GetAllExistingEdges();
 
     for (auto e : elist)
@@ -514,7 +514,7 @@ vector<tuple<int,int,int>> MaxCutGraph::GetAllExistingEdgesWithWeights() const {
 }
 
 
-bool MaxCutGraph::IsClique(const vector<int>& vertex_set, const int verify_weight) const {
+bool MaxCutGraph::IsClique(const vector<int>& vertex_set, const EdgeWeight verify_weight) const {
     for (unsigned int i = 0; i < vertex_set.size(); ++i)
         if (Degree(vertex_set[i]) + 1 < (int)vertex_set.size()) return false;
 
@@ -1170,11 +1170,11 @@ vector<int> MaxCutGraph::Algorithm3MarkedComputation(const vector<int> initial) 
     return S;
 }
 
-tuple<int, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const vector<int>& S_color) {
+tuple<EdgeWeight, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const vector<int>& S_color) {
     vector<int> weight[2] = {vector<int>(num_nodes, 0), vector<int>(num_nodes, 0)};
     unordered_map<int,int> S_to_color;
 
-    int p = 0;
+    EdgeWeight p = 0;
     for (unsigned int i = 0; i < S.size(); ++i)
         for (unsigned int j = i + 1; j < S.size(); ++j)
             if (AreAdjacent(S[i], S[j]))
@@ -1249,7 +1249,7 @@ tuple<int, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const
     for (unsigned int i = 0; i < S.size(); ++i)
         computed_maxcut_coloring_tmp[S[i]] = S_color[i];
 
-    int sol = 0;
+    EdgeWeight sol = 0;
     auto bicomponents = G_minus_S.GetBiconnectedComponents();
     for (auto component : bicomponents) {
         custom_assert(component.size() == 1);
@@ -1280,8 +1280,8 @@ tuple<int, vector<int>> MaxCutGraph::MaxCutExtension(const vector<int>& S, const
     return make_tuple(sol + p, computed_maxcut_coloring_tmp);
 }
 
-int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S, const int break_after_time_sec) {
-    int mx_sol = 0;
+EdgeWeight MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S, const int break_after_time_sec) {
+    EdgeWeight mx_sol = 0;
     auto t0 = std::chrono::high_resolution_clock::now();
     for (int mask = 0; mask < (1 << S.size()); ++mask) {
         auto t1 = std::chrono::high_resolution_clock::now();
@@ -1299,12 +1299,12 @@ int MaxCutGraph::ComputeOptimalColoringBruteforce(const vector<int>& S, const in
     return mx_sol;
 }
 
-tuple<int,double> MaxCutGraph::GetMaxCutWithMarkedVertexSet(const int limit_S, const int limit_time_sec) {
+tuple<EdgeWeight,double> MaxCutGraph::GetMaxCutWithMarkedVertexSet(const int limit_S, const int limit_time_sec) {
     const auto marked_vertex_set = GetMarkedVertexSet();
     if ((int)marked_vertex_set.size() > limit_S) return make_tuple(-1, -1000);
 
     auto t0 = std::chrono::high_resolution_clock::now();
-    int sz = ComputeOptimalColoringBruteforce(marked_vertex_set, limit_time_sec);
+    EdgeWeight sz = ComputeOptimalColoringBruteforce(marked_vertex_set, limit_time_sec);
     auto t1 = std::chrono::high_resolution_clock::now();
     double T = std::chrono::duration_cast<std::chrono::microseconds> (t1 - t0).count()/1000.;
 
@@ -2880,12 +2880,12 @@ string MaxCutGraph::PrintDegrees(const unordered_map<int,bool>& preset_is_extern
     return ret;
 }
 
-int MaxCutGraph::GetCutSize(const vector<int> &grouping) const {
-    int ret = 0;
+EdgeWeight MaxCutGraph::GetCutSize(const vector<int> &grouping) const {
+    EdgeWeight ret = 0;
     for (int i = 0; i < num_nodes; ++i) {
         if (MapEqualCheck(removed_node, i, true)) continue;
 
-        int adj0 = 0, adj1 = 0;
+        EdgeWeight adj0 = 0, adj1 = 0;
         auto adj = GetAdjacency(i);
         for (auto x : adj) {
             if (MapEqualCheck(removed_node, x, true) || i >= x) continue;
@@ -2903,7 +2903,7 @@ int MaxCutGraph::GetCutSize(const vector<int> &grouping) const {
 }
 
 // http://pages.cs.wisc.edu/~shuchi/courses/880-S07/scribe-notes/lecture07.pdf
-pair<int, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> pregroup) const {
+pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> pregroup) const {
     custom_assert((int)pregroup.size() == num_nodes || pregroup.empty());
     
     vector<int> grouping(num_nodes, -1);
@@ -2919,7 +2919,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> preg
         for (int i = 0; i < num_nodes; ++i) {
             if (MapEqualCheck(removed_node, i, true)) continue;
 
-            int adj0 = 0, adj1 = 0;
+            EdgeWeight adj0 = 0, adj1 = 0;
             auto adj = GetAdjacency(i);
             for (auto x : adj) {
                 if (MapEqualCheck(removed_node, x, true)) continue;
@@ -2945,7 +2945,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<int> preg
 }
 
 // https://github.com/MQLib/MQLib
-pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec_time, Burer2002Callback* callback) const {
+pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec_time, Burer2002Callback* callback) const {
     std::vector<Instance::InstanceTuple> edgeList;
     for (int i = 0; i < num_nodes; ++i) {
         if (MapEqualCheck(removed_node, i, true)) continue;
@@ -2955,7 +2955,9 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec
             if (MapEqualCheck(removed_node, w, true) || i >= w) continue;
             auto edge_key = MakeEdgeKey(w, i);
             custom_assert(MapEqualCheck(edge_exists_lookup, edge_key, true));
-            edgeList.push_back(Instance::InstanceTuple(std::make_pair(i+1, w+1), edge_weight.at(edge_key)));
+
+            EdgeWeight weight = edge_weight.at(edge_key);
+            edgeList.push_back(Instance::InstanceTuple(std::make_pair(i+1, w+1), !is_scaled ? weight : (weight / (double)(SCALED_FROM))));
         }
     }
 
@@ -2963,7 +2965,7 @@ pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec
     Burer2002 heur(mi, max_exec_time, false, callback);
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
-    return make_pair(mcSol.get_weight(), mcSol.get_assignments());
+    return make_pair(!is_scaled ? mcSol.get_weight() : mcSol.get_weight() * SCALED_FROM, mcSol.get_assignments());
 }
 
 void MaxCutGraph::MakeRandomVertexPermutation() {
@@ -3030,7 +3032,7 @@ vector<vector<int>> MaxCutGraph::GetCliquesWithAtLeastOneInternal() const {
 
 
 #ifdef LOCALSOLVER_EXISTS
-    pair<int, vector<int>> MaxCutGraph::ComputeMaxCutWithLocalsolver(const int max_exec_time, LocalSolverCallback* callback) const {
+    pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeMaxCutWithLocalsolver(const int max_exec_time, LocalSolverCallback* callback) const {
         MaxcutLocalsolver solver;
         auto elist = GetAllExistingEdgesWithWeights();
         for (auto& e : elist) {

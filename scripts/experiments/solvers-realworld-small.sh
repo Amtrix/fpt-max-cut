@@ -17,10 +17,11 @@ func_localize() {
   allowed_total_time_seconds=120
 
     mkdir -p $experiment_outdir/solvers/real-world-small/
-    $builddir/./$selected_build -action "kernelization" -iterations 1 -disk-suite real-world-small -total-allowed-solver-time $allowed_total_time_seconds \
+    $builddir/./$selected_build -action "kernelization" -iterations 1 -fdir /mnt/e/master-thesis/mqlib-data/thesis-tests/imgseg-x100 -total-allowed-solver-time $allowed_total_time_seconds \
                     -do-signed-reduction \
                     -do-weighted-reduction \
                     -support-weighted-result \
+                    -dont-unweighted-reduction \
                     -exact-early-stop-v 700 \
                     -number-of-threads 1 \
                     -locsearch-iterations 100 \

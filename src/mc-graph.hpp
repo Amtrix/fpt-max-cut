@@ -3,6 +3,7 @@
 #define LIMIT_NUM_NODES 500000
 #define LIMIT_ABS_WEIGHT 1000000001
 #define TRANSFORM_SPLITTER false
+#define SCALED_FROM 100000LL
 
 #include "input-parser.hpp"
 #include "./src/output-filter.hpp"
@@ -17,6 +18,8 @@
 #include <heuristics/qubo/glover1998a.h>
 #include <heuristics/maxcut/burer2002.h>
 using namespace std;
+
+typedef long long EdgeWeight;
 
 enum class RuleIds : int {
     SpecialRule1,
@@ -113,7 +116,7 @@ public:
 
     // Create graph based on list of edges.
     MaxCutGraph(const vector<pair<int,int>> &elist, int n = 0);
-    MaxCutGraph(const vector<tuple<int,int,int>> &elist, int n = 0);
+    MaxCutGraph(const vector<tuple<int,int,EdgeWeight>> &elist, int n = 0);
 
     // Creates induced subgraph.
     MaxCutGraph(const MaxCutGraph& source, const vector<int>& subset);
@@ -128,7 +131,7 @@ public:
      **/
     // Adds an edge between a and b with a weight.
     void SetNumNodes(int _num_nodes);
-    void AddEdge(int a, int b, int weight = 1, bool inc_weight_on_double = true);
+    void AddEdge(int a, int b, EdgeWeight weight = 1, bool inc_weight_on_double = true);
     void RemoveNode(int node);
     // Does not add the previously removed edges from the RemoveNode function!
     void ReAddNode(int node);
@@ -153,8 +156,8 @@ public:
     int GetRealNumEdges() const { return GetAllExistingEdges().size(); }
     vector<int> GetAllExistingNodes() const;
     const vector<int>& GetAdjacency(int node) const { return g_adj_list.at(node); }
-    int GetEdgeWeight(const int edgekey) const { return edge_weight.at(edgekey); }
-    int GetEdgeWeight(const pair<int,int> &e) const { return edge_weight.at(MakeEdgeKey(e)); }
+    EdgeWeight GetEdgeWeight(const int edgekey) const { return edge_weight.at(edgekey); }
+    EdgeWeight GetEdgeWeight(const pair<int,int> &e) const { return edge_weight.at(MakeEdgeKey(e)); }
     bool AreAdjacent(int n1, int n2) const { return MapEqualCheck(edge_exists_lookup, MakeEdgeKey(n1,n2), true); }
     int Degree(int node) const { return g_adj_list.at(node).size(); }
     vector<int> GetConnectedComponentOf(int node, vector<bool>& visited) const;
@@ -162,8 +165,8 @@ public:
     vector<vector<int>> GetAllConnectedComponents() const;
     bool DoesDisconnect(const vector<int>& selection_rem) const;
     vector<pair<int,int>> GetAllExistingEdges() const;
-    vector<tuple<int,int,int>> GetAllExistingEdgesWithWeights() const;
-    bool IsClique(const vector<int>& vertex_set, const int verify_weight = 0) const;
+    vector<tuple<int,int,EdgeWeight>> GetAllExistingEdgesWithWeights() const;
+    bool IsClique(const vector<int>& vertex_set, const EdgeWeight verify_weight = 0) const;
     double GetEdwardsErdosBound() const;
     int CountExternalVertices(const vector<int> &vertex_set) const; // G[vertex_set] considered.
     string GetGraphNaming() const;
@@ -226,10 +229,10 @@ public:
      * Brute force max cut computations (optimal) on S + extension to G - S (clique forest)
      **/
     // Makes assumption(!) that S is subset of G. We can't check this, as this is time-critical.
-    tuple<int, vector<int>> MaxCutExtension(const vector<int>& S, const vector<int>& S_color);
+    tuple<EdgeWeight, vector<int>> MaxCutExtension(const vector<int>& S, const vector<int>& S_color);
     // Bruteforces coloring of S and does MaxCutExtension to induce a maxcut result for remainder of graph.
-    int ComputeOptimalColoringBruteforce(const vector<int>& S, const int break_after_time_sec = 1);
-    tuple<int,double> GetMaxCutWithMarkedVertexSet(const int limit_S, const int limit_time_sec);
+    EdgeWeight ComputeOptimalColoringBruteforce(const vector<int>& S, const int break_after_time_sec = 1);
+    tuple<EdgeWeight,double> GetMaxCutWithMarkedVertexSet(const int limit_S, const int limit_time_sec);
 
 
     /**
@@ -317,9 +320,9 @@ public:
      *  Heuristic Max-Cut computations
      **/
     // Pregroup[i] in {-1,0,1}. -1 = no predefined group, 0/1 group 0 or 1.
-    pair<int, vector<int>> ComputeLocalSearchCut(const vector<int> pregroup = {}) const;
+    pair<EdgeWeight, vector<int>> ComputeLocalSearchCut(const vector<int> pregroup = {}) const;
     // max_exec_time in seconds.
-    pair<int, vector<int>> ComputeMaxCutWithMQLib(const double max_exec_time = 0.2, Burer2002Callback* callback = nullptr) const;
+    pair<EdgeWeight, vector<int>> ComputeMaxCutWithMQLib(const double max_exec_time = 0.2, Burer2002Callback* callback = nullptr) const;
 
 
 
@@ -339,7 +342,7 @@ public:
     double GetRuleSpentTime(RuleIds rule) const;
     vector<int> GetUsageVector() const;
     // Get cut size according to 0/1 coloring of nodes. grouping is a 0-1 vector. Vertex x is colored by grouping[x]. 
-    int GetCutSize(const vector<int> &grouping) const;
+    EdgeWeight GetCutSize(const vector<int> &grouping) const;
     double GetInflictedCutChangeToKernelized() const {
         if (fabs(inflicted_cut_change_to_kernelized) < 1e-9) return -1e-18;
         return inflicted_cut_change_to_kernelized;
@@ -369,7 +372,7 @@ public:
 
 
 #ifdef LOCALSOLVER_EXISTS
-    pair<int, vector<int>> ComputeMaxCutWithLocalsolver(const int max_exec_time = 1, LocalSolverCallback* callback = nullptr) const;
+    pair<EdgeWeight, vector<int>> ComputeMaxCutWithLocalsolver(const int max_exec_time = 1, LocalSolverCallback* callback = nullptr) const;
 #endif
 
 private:
@@ -489,7 +492,7 @@ private:
 
     map<pair<int,int>, bool> is_bridge_between;
 
-    unordered_map<long long, int> edge_weight;
+    unordered_map<long long, EdgeWeight> edge_weight;
     unordered_map<long long, bool> edge_exists_lookup;
     vector<vector<int>> g_adj_list;
     vector<vector<int>> biconnected_components;
@@ -520,5 +523,6 @@ private:
     string graph_naming;
     int mixing_id = -1;
 
+    bool is_scaled = false;
     bool graph_is_supported = true;
 };

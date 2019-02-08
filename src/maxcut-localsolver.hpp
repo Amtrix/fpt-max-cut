@@ -94,7 +94,7 @@ public:
     LSExpression cutWeight;
 
     // Reads instance data. Takes 1-indexed vertices!
-    void readInstance(const int num_nodes, const vector<tuple<int,int,int>>& edges){
+    void readInstance(const int num_nodes, const vector<tuple<int,int,long long>>& edges){
         n = num_nodes;
         m = edges.size();
 
@@ -159,7 +159,7 @@ public:
             outfile << i+1 << " " << x[i].getValue() << endl;
     }
 
-    int getCutSize() {
+    long long getCutSize() {
         return cutWeight.getValue();
     }
 

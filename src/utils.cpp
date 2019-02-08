@@ -128,7 +128,7 @@ vector<pair<unsigned long long,unsigned long long>> RemoveAnyMultipleEdgesAndSel
     return ret;
 }
 
-std::function<int(void)> TakeFirstFromPairFunction(std::function<pair<int,vector<int>>(void)> func, int addval) {
+std::function<long long(void)> TakeFirstFromPairFunction(std::function<pair<long long,vector<int>>(void)> func, long long addval) {
     return [func,addval]() {
         return func().first  + addval;
     };
@@ -139,7 +139,7 @@ std::function<int(void)> TakeFirstFromPairFunction(std::function<pair<int,vector
 //  Average(B)
 //  Average(1 - B/A)
 //  Deviation of above.
-tuple<double, double, double, double, int> ComputeAverageAndDeviation(vector<double> Ares, vector<double> Bres) {
+tuple<double, double, double, double, long long> ComputeAverageAndDeviation(vector<double> Ares, vector<double> Bres) {
    // vector<double> Ares, Bres;
     assert(Ares.size() == Bres.size());
     double mxval = 0;
@@ -161,7 +161,7 @@ tuple<double, double, double, double, int> ComputeAverageAndDeviation(vector<dou
     return make_tuple(Aavg, Bavg, RATEavg, SDres, mxval);
 }
 
-tuple<double, double, double, double, int> ComputeAverageAndDeviation(std::function<int(void)> Agen, std::function<int(void)> Bgen, int iter) {
+tuple<double, double, double, double, long long> ComputeAverageAndDeviation(std::function<long long(void)> Agen, std::function<long long(void)> Bgen, int iter) {
     vector<double> A,B;
     while (iter--) {
         A.push_back(Agen());

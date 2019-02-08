@@ -199,14 +199,14 @@ void OutputKernelization(
 
                                 const double EE,
                                 const double EE_k,
-                                const int MAXCUT_best,
+                                const double MAXCUT_best,
                                 const double ktime,
                                 const string subtyping_output) {
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output") + subtyping_output;
         ofstream out(output_path, fstream::app);
         
-        print_row(out, kernelizationDescriptor, "ddddddffffffffffffffffffffffdffs", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, (1 - (num_nodes_k / (double)num_nodes)) * 100, k,
+        print_row(out, kernelizationDescriptor, "ddddddfffffffffffffffffffffffffs", sec, it, num_nodes, num_edges, num_nodes_k, num_edges_k, (1 - (num_nodes_k / (double)num_nodes)) * 100, k,
             mqlib_sol, mqlib_sol_k, mqlib_avg_rate, mqlib_sddiff,
             localsolver_cut_size, localsolver_cut_size_k, localsolver_avg_rate, localsolver_sddiff,
             locsearch, locsearch_k, locsearch_avg_rate, locsearch_sddiff,

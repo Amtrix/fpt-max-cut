@@ -26,15 +26,15 @@ enum Solvers {
 double local_search_cut_size = -1, local_search_cut_size_k = -1, local_search_rate = 0, local_search_rate_sddiff = 0;
 double mqlib_cut_size = -1, mqlib_cut_size_k = -1, mqlib_rate = 0, mqlib_rate_sddiff = 0;
 double localsolver_cut_size = -1, localsolver_cut_size_k = -1, localsolver_rate = 0, localsolver_rate_sddiff = 0;
-int local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_size_best = -1;
+EdgeWeight local_search_cut_size_best = -1, mqlib_cut_size_best = -1, localsolver_cut_size_best = -1;
 
-int biqmac_cut_size = -1, biqmac_cut_size_k = -1;
+EdgeWeight biqmac_cut_size = -1, biqmac_cut_size_k = -1;
 double biqmac_time = -1, biqmac_time_k = -1;
 double localsolver_time = -1, localsolver_time_k = -1;
 double mqlib_time = -1, mqlib_time_k = -1;
 
-int MAXCUT_best_size;
-int tmp_MAXCUT_best_size;
+EdgeWeight MAXCUT_best_size;
+EdgeWeight tmp_MAXCUT_best_size;
 
 
 /** EXAMPLE OUTPUT:
@@ -254,7 +254,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size);
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size_k);
-    MAXCUT_best_size = max(MAXCUT_best_size, 0);
+    MAXCUT_best_size = max(MAXCUT_best_size, 0LL);
 
     if (input.cmdOptionExists("-exact-early-stop-v")) {
         if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;

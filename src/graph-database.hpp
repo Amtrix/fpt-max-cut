@@ -193,8 +193,8 @@ public:
             GenerateParams();
         }
 
-        const vector<tuple<int,int,int>> GenerateEdgeList() const {
-            vector<tuple<int,int,int>> ret;
+        const vector<tuple<int,int,EdgeWeight>> GenerateEdgeList() const {
+            vector<tuple<int,int,EdgeWeight>> ret;
             KaGen gen(0, 1);
 
             OutputDebugLog("Generating graph: " + kKagenNaming.at(graph_type) + "(iparam: " + to_string(iparam) + ", rparam: " + to_string(rparam) + ", seed: " + to_string(sel_seed));

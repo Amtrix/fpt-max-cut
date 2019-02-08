@@ -79,7 +79,7 @@ void OutputKernelization(
 
                                 const double EE,
                                 const double EE_k,
-                                const int MAXCUT_best,
+                                const double MAXCUT_best,
                                 const double ktime,
                                 const string subtyping_output = "");
 
