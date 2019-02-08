@@ -244,9 +244,11 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     if (thread_localsolver && thread_localsolver_k) {
         std::tie(localsolver_cut_size, localsolver_cut_size_k, localsolver_rate, localsolver_rate_sddiff, localsolver_cut_size_best)
                 = ComputeAverageAndDeviation(res_localsolver, res_localsolver_k);
-            
+
+#ifdef LOCALSOLVER_EXISTS
         cout << "LOCALSOLVER(G):  " << localsolver_cut_size   << " " << localsolver_time << " (timelimit exceeded: " << localsolver_cb.HasExceededTimelimit() << ")" << endl;
         cout << "LOCALSOLVER(Gk): " << localsolver_cut_size_k << " " << localsolver_time_k << " (timelimit exceeded: " << localsolver_cb_k.HasExceededTimelimit() << ")" << endl;
+#endif
     }
 
     MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, max(SolverEvaluation::mqlib_cut_size_best, SolverEvaluation::localsolver_cut_size_best));

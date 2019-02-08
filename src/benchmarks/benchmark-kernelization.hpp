@@ -68,6 +68,8 @@ public:
 
 
     bool use_signed_kernelization = true;
+    bool use_weighted_kernelization = false;
+    bool use_unweighted_kernelization = true;
     void Kernelize(MaxCutGraph &kernelized,
                    unordered_map<int, double>& times_all_components,
                    bool provide_order = false,
@@ -80,29 +82,45 @@ public:
         auto selected_kernelization_order = kernelization_order;
         if (provide_order) selected_kernelization_order = provided_kernelization_order;
 
-        //kernelized.MakeRandomVertexPermutation();
+        if (use_unweighted_kernelization) { // default is true
+            cout << "Perform unweighted kernelization." << endl;
+            bool is_all_finished = false;
+            while (!is_all_finished) {
+                is_all_finished = true;
 
-        bool is_all_finished = false;
-        while (!is_all_finished) {
-            is_all_finished = true;
+                // Unweighted reductions.
+                kernelized.MakeUnweighted();
+                OutputDebugLog("Made unweighted");
+                LogTime(times_all_components, t0);
 
-            // Unweighted reductions.
+                if (KernelizeExec(kernelized, selected_kernelization_order, times_all_components, false))
+                    is_all_finished = false;
+                
+                // Signed reductions.
+                if (use_signed_kernelization) { // default is false
+                    kernelized.MakeSigned();
+                    if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, times_all_components, false))
+                        is_all_finished = false;
+                }
+
+                kernelized.MakeWeighted();
+            }
+
             kernelized.MakeUnweighted();
-            OutputDebugLog("Made unweighted");
-            LogTime(times_all_components, t0);
+        }
 
-            if (KernelizeExec(kernelized, selected_kernelization_order, times_all_components, false))
-                is_all_finished = false;
-            
-            // Signed reductions.
-            if (use_signed_kernelization) {
-                kernelized.MakeSigned();
-                if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, times_all_components, false))
+        if (use_weighted_kernelization) { // default is false
+            cout << "Perform weighted kernelization." << endl;
+            bool is_all_finished = false;
+            kernelized.MakeWeighted();
+
+            while (!is_all_finished) {
+                is_all_finished = true;
+                LogTime(times_all_components, t0);
+                if (KernelizeExec(kernelized, {RuleIds::RuleS2Weighted, RuleIds::RuleWeightedTriag}, times_all_components, false))
                     is_all_finished = false;
             }
         }
-
-        kernelized.MakeUnweighted();
 
         auto t_end_fast = std::chrono::high_resolution_clock::now();
         double time_fast_kernelization = std::chrono::duration_cast<std::chrono::microseconds> (t_end_fast - t0).count()/1000.;
@@ -123,7 +141,7 @@ public:
 
         // Also kernelization here(!):
         t0 = GetCurrentTime();
-        if (kMakeWeightedAtEnd || inputFlagToWeightedIsSet) {
+        if (kMakeWeightedAtEnd/* || inputFlagToWeightedIsSet*/) {
             OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetRealNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
             kernelized.MakeWeighted();
             OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetRealNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
@@ -154,16 +172,28 @@ public:
             num_iterations = stoi(input.getCmdOption("-iterations"));
         }
 
-        if (input.cmdOptionExists("-support-weighted-result")) {
-            inputFlagToWeightedIsSet = true;
-        } else {
-            inputFlagToWeightedIsSet = false;
-        }
+        //if (input.cmdOptionExists("-support-weighted-result")) {
+        //    inputFlagToWeightedIsSet = true;
+        //} else {
+       //     inputFlagToWeightedIsSet = false;
+       // }
 
         if (input.cmdOptionExists("-do-signed-reduction")) {
             use_signed_kernelization = true;
         } else {
             use_signed_kernelization = false;
+        }
+
+        if (input.cmdOptionExists("-do-weighted-reduction")) {
+            use_weighted_kernelization = true;
+        } else {
+            use_weighted_kernelization = false;
+        }
+
+        if (input.cmdOptionExists("-dont-unweighted-reduction")) {
+            use_unweighted_kernelization = false;
+        } else {
+            use_unweighted_kernelization = true;
         }
 
         vector<vector<double>> accum;

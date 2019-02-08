@@ -37,6 +37,12 @@ const map<string, vector<string>> disk_suites = {
     }},
     {"real-world-small-hard", {
         "../data/thesis-tests/real-world-small-hard/"
+    }},
+    {"mqlib-graphs", {
+        string(MQLIB_DATAPATH) + "/all/"
+    }},
+    {"vlsi-graphs", {
+        string(MQLIB_DATAPATH) + "/vlsi/"
     }}
 };
 
@@ -271,6 +277,8 @@ public:
     int GetNumberOfInstances() {
         return all_sets_to_evaluate.size();
     }
+
+    const vector<string> GetAllFiles();
 
 private:
     vector<string> all_sets_to_evaluate;

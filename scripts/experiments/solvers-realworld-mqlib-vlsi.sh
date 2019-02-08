@@ -11,20 +11,19 @@ func_localize() {
 
 
   #  allowed_total_time_seconds=2000
-    allowed_total_time_seconds=21600
+    allowed_total_time_seconds=-1
    # 21600=6*60*60 = 6 hours
 
-  allowed_total_time_seconds=120
+ # allowed_total_time_seconds=5
 
-    mkdir -p $experiment_outdir/solvers/real-world-small/
-    $builddir/./$selected_build -action "kernelization" -iterations 1 -disk-suite real-world-small -total-allowed-solver-time $allowed_total_time_seconds \
+    mkdir -p $experiment_outdir/solvers/vlsi-graphs/
+    $builddir/./$selected_build -action "kernelization" -iterations 1 -disk-suite vlsi-graphs -total-allowed-solver-time $allowed_total_time_seconds \
                     -do-signed-reduction \
-                    -do-weighted-reduction \
                     -support-weighted-result \
                     -exact-early-stop-v 700 \
                     -number-of-threads 1 \
-                    -locsearch-iterations 100 \
-                    -benchmark-output $experiment_outdir/solvers/real-world-small/out > $experiment_outdir/solvers/real-world-small/out-exe
+                    -locsearch-iterations 10 \
+                    -benchmark-output $experiment_outdir/solvers/vlsi-graphs/out > $experiment_outdir/solvers/vlsi-graphs/out-exe
                                        # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -support-weighted-result \
 }
 

@@ -80,6 +80,39 @@ int main(int argc, char **argv){
         benchmark_action.reset(new Benchmark_LinearKernelPaper());
     } else if (action == "graph-sampling-kernelization") {
 
+    } else if (action == "make-unweighted") {
+        auto files = GetAllDatasets(input.getCmdOption("-f"));
+        for (auto file : files) {
+            ifstream in(file.c_str());
+            ofstream out((file + ".out").c_str());
+            while (in.eof() == false) {
+                string strline;
+                auto elems = ReadLine(in, &strline);
+                if (elems.size() != 3) out << strline << endl;
+                else out << elems[0] << " " << elems[1] << endl;
+            }
+            in.close();
+            out.close();
+        }
+    } else if (action == "scale-weights") {
+        auto files = GetAllDatasets(input.getCmdOption("-f"));
+        for (auto file : files) {
+            ifstream in(file.c_str());
+            ofstream out((file + ".out").c_str());
+            vector<tuple<int,int,double>> edges;
+            while (in.eof() == false) {
+                string strline;
+                auto elems = ReadLine(in, &strline);
+                if (elems.size() != 3 || !isdigit(strline[0])) out << strline << endl;
+                else edges.push_back(make_tuple(stoi(elems[0]), stoi(elems[1]), stod(elems[2])));
+            }
+
+            for (auto edge : edges)
+                out << (get<0>(edge)) << " " << (get<1>(edge)) << " " << int(get<2>(edge)*100) << endl;
+
+            in.close();
+            out.close();
+        }
     }
     else throw std::logic_error("Action flag not defined.");
 
@@ -102,34 +135,38 @@ int main(int argc, char **argv){
                 if (threadid == number_of_threads - 1) hi = number_of_instances;
 
                 for (int i = lo; i < hi; ++i) {
-                    cout << "GET: " << i << endl;
                     auto graph = graph_db.GetGraphById(i);
-                    cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
-                    cout << green << "   |V|:                           " << graph.GetRealNumNodes() << endl;
-                    cout << green << "   |E|:                           " << graph.GetRealNumEdges() << endl;
-                    cout << green << "   graph contains multiple edges: ";
-                    if (graph.info_mult_edge > 0) cout << red;
-                    cout << graph.info_mult_edge << defcol << endl;
 
-                    cout << green << "   graph contains self-loops: ";
-                    if (graph.info_self_loop_edge > 0) cout << red;
-                    cout << graph.info_self_loop_edge << defcol << endl;
+                    if (graph.GraphIsValid()) {
+                        cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
+                        cout << green << "   |V|:                           " << graph.GetRealNumNodes() << endl;
+                        cout << green << "   |E|:                           " << graph.GetRealNumEdges() << endl;
+                        cout << green << "   graph contains multiple edges: ";
+                        if (graph.info_mult_edge > 0) cout << red;
+                        cout << graph.info_mult_edge << defcol << endl;
+
+                        cout << green << "   graph contains self-loops: ";
+                        if (graph.info_self_loop_edge > 0) cout << red;
+                        cout << graph.info_self_loop_edge << defcol << endl;
+                        
+                        cout << green << "   Localsolver lib is provided: ";
+                        if (local_solver_exists) cout << "yes." << defcol << endl;
+                        else cout << red << "no." << defcol << endl;
+
+                        cout << green << "   Skip fast kernelization assertion check: ";
+                        if (!skip_fast_kernelization_check) cout << "no." << defcol << endl;
+                        else cout << red << "WARNING WARNING WARNING ------- this decision skips verification on performance ------- WARNING WARNING WARNING." << defcol << endl;
                     
-                    cout << green << "   Localsolver lib is provided: ";
-                    if (local_solver_exists) cout << "yes." << defcol << endl;
-                    else cout << red << "no." << defcol << endl;
+                        custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
+                        
+                        benchmark_action->Evaluate(input, graph);
 
-                    cout << green << "   Skip fast kernelization assertion check: ";
-                    if (!skip_fast_kernelization_check) cout << "no." << defcol << endl;
-                    else cout << red << "WARNING WARNING WARNING ------- this decision skips verification on performance ------- WARNING WARNING WARNING." << defcol << endl;
-                
-                    custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
-                    
-                    benchmark_action->Evaluate(input, graph);
-
-                    mtx_aggregation.lock();
-                    tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
-                    mtx_aggregation.unlock();
+                        mtx_aggregation.lock();
+                        tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
+                        mtx_aggregation.unlock();
+                    } else {
+                        cout << "not supported." << endl;
+                    }
                     cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;
                 }
             }, threadid));

@@ -16,6 +16,7 @@ set(LOCALSOLVER_BIN_PATH ${configJson.localsolver.bin-path})
 set(BIQMAC_ENABLED ${configJson.biqmac.enabled})
 set(BIQMAC_BINARY_PATH ${configJson.biqmac.binary-file})
 set(BIQMAC_BINARY_PATH_EVAL ${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac/bab)
+set(MQLIB_DATA ${configJson.mqlib-set})
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${BIQMAC_BINARY_PATH})
     set(BIQMAC_BINARY_PATH_EVAL ${CMAKE_CURRENT_SOURCE_DIR}/${BIQMAC_BINARY_PATH})
@@ -79,6 +80,7 @@ macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
     endif()
 
     target_compile_definitions(${TARGETNAME} PRIVATE BENCHMARK_NUMBER_OF_THREADS=1)
+    target_compile_definitions(${TARGETNAME} PRIVATE MQLIB_DATAPATH="${MQLIB_DATA}")
 endmacro(add_binary_exec)
 
 add_binary_exec(benchmark                            NDEBUG  executables/benchmark.cpp)

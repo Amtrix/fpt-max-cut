@@ -44,6 +44,8 @@ const map<RuleIds, string> kRuleNames = {
     {RuleIds::Rule10,          "Rule10"},
     {RuleIds::Rule10AST,       "Rule10AST"},
     {RuleIds::RuleS2,          "RuleS2"},
+    {RuleIds::RuleS2Weighted,  "RuleS2Weighted"},
+    {RuleIds::RuleWeightedTriag,"RuleWeightedTriag"},
     {RuleIds::RuleS3,          "RuleS3"},
     {RuleIds::RuleS4,          "RuleS4"},
     {RuleIds::RuleS5,          "RuleS5"},
@@ -58,7 +60,7 @@ const map<RuleIds, string> kRuleNames = {
 const vector<RuleIds> kAllRuleIds = {
     RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
     RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
-    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed, RuleIds::Rule8SpecialCase, RuleIds::RuleS2SpecialCase, RuleIds::MegaRule
+    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed, RuleIds::Rule8SpecialCase, RuleIds::RuleS2SpecialCase, RuleIds::MegaRule, RuleIds::RuleS2Weighted, RuleIds::RuleWeightedTriag
 };
 
 struct trie_node_r8 {
@@ -92,6 +94,23 @@ struct trie_r8 {
     trie_node_r8 root;
 };
 
+bool EdgeWeightIsValid(string val) {
+    unsigned int dx = 0;
+    while (dx < val.size() && val[dx] == ' ') dx++;
+    if (dx == val.size()) return false;
+    if (val[dx] == '-') dx++;
+    if (dx == val.size()) return false;
+    while (dx < val.size()) {
+        if (val[dx] == '.') return false;
+        if (val[dx] == ' ') break;
+        if (isdigit(val[dx]) == false) return false;
+        dx++;
+    }
+    int v = stoi(val);
+    if (abs(v) > LIMIT_ABS_WEIGHT) return false;
+    return true;
+}
+
 MaxCutGraph::MaxCutGraph() {
 
 }
@@ -123,7 +142,12 @@ MaxCutGraph::MaxCutGraph(const string path) {
     // we take last two entries as dimacs prefixes each line with type of line
     if (!treat_as_adj_list_file) {
         if (sparams[0] != "#edge-list-0" && !treat_as_edges_file) {
-            SetNumNodes(stoi(sparams[0 + (sparams[0]=="p")]));
+            const int num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
+            if (num_nodes > LIMIT_NUM_NODES) {
+                graph_is_supported = false;
+                return;
+            }
+            SetNumNodes(num_nodes);
 
             int num_edges = stoi(sparams.back());
 
@@ -134,7 +158,14 @@ MaxCutGraph::MaxCutGraph(const string path) {
                 int offset = sparams[0]=="e";
                 int a = stoi(sparams[0 + offset]) - 1;
                 int b = stoi(sparams[1 + offset]) - 1;
-                int w = 2 + offset < (int)sparams.size() && sparams[2 + offset].size() > 0 ? stoi(sparams[2 + offset]) : 1;
+                string wstr = 2 + offset < (int)sparams.size() && sparams[2 + offset].size() > 0 ? sparams[2 + offset] : "1";
+                if (!EdgeWeightIsValid(wstr)) {
+                    graph_is_supported = false;
+                    return;
+                }
+                int w = stoi(wstr);
+                if (w == 100000 && TRANSFORM_SPLITTER)
+                    w = num_edges;
                 AddEdge(a, b, w, false);
             }
         } else {
@@ -150,11 +181,20 @@ MaxCutGraph::MaxCutGraph(const string path) {
 
                 int a = stoi(sparams[0]);
                 int b = stoi(sparams[1]);
-                int w = 2 < sparams.size() && sparams[2].size() > 0 ? stoi(sparams[2]) : 1;
+                string wstr = 2 < sparams.size() && sparams[2].size() > 0 ? sparams[2] : "1";
+                if (!EdgeWeightIsValid(wstr)) {
+                    graph_is_supported = false;
+                    return;
+                }
+                int w = stoi(wstr);
                 num_nodes_calc = max(num_nodes_calc, max(a + 1, b + 1));
                 elist.push_back(make_tuple(a, b, w));
             }
             
+            if (num_nodes_calc > LIMIT_NUM_NODES) {
+                graph_is_supported = false;
+                return;
+            }
             SetNumNodes(num_nodes_calc);
 
             for (auto e : elist)
@@ -164,7 +204,12 @@ MaxCutGraph::MaxCutGraph(const string path) {
         const bool is_weighted_instance = sparams.size() >= 3 && stoi(sparams[2]); 
         OutputDebugLog("Adjacency list. Is weighted: " + to_string(is_weighted_instance));
 
-        SetNumNodes(stoi(sparams[0]));
+        const int num_nodes = stoi(sparams[0]);
+        if (num_nodes > LIMIT_NUM_NODES) {
+            graph_is_supported = false;
+            return;
+        }
+        SetNumNodes(num_nodes);
 
         if (is_weighted_instance && stoi(sparams[2]) != 1) {
             OutputDebugLog("UNSUPPORTED FORMAT. Skipping.");
@@ -1514,10 +1559,12 @@ bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
         ret = true;
     }
 
+
     if (szX == (int)NG.size() && szX >= 1) {
         inflicted_cut_change_to_kernelized -= szX;
         szX--;
-        RemoveNode(clique[0]);
+        RemoveNode(clique[dx]);
+        dx++;
         
         rules_vrem[RuleIds::Rule8] ++;
         rules_usage_count[RuleIds::Rule8SpecialCase]++;
@@ -1824,6 +1871,10 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
         const auto adj_root = GetAdjacency(root);
         vector<int> curr_clique = SetUnion(adj_root, {root});
 
+        int clique_weight = 0;
+        if (adj_root.empty() == false)
+            clique_weight = GetEdgeWeight(make_pair(root, adj_root[0]));
+
         // With the following section we want to make sure that two cliques in the result do not intersect.   (1)
         // Since the application of one might invalidate the applicability of the other.
         // This is checked by visited[node] == 2 (which identifies vertices in a clique)
@@ -1831,7 +1882,7 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
         for (auto node : curr_clique)
             if (visited[node] == 2) intersect = true;
         
-        if (!IsClique(curr_clique)) { // NOT an internal vertex.
+        if (!IsClique(curr_clique, clique_weight)) { // NOT an internal vertex.
             // this may only possibly change if an edge in curr_clique is added or a vertex is removed.
             // the edge case justifies calling GetVerticesAfterTimestamp with neighbhors retrieval.
             continue;
@@ -1907,7 +1958,10 @@ bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>
         if (add <= 0) break;
         add_tot += add;
     }
-    inflicted_cut_change_to_kernelized -= add_tot;
+    int clique_weight = 1;
+    if (clique.size() >= 2) clique_weight = GetEdgeWeight(make_pair(clique[0], clique[1]));
+    if (clique_weight < 0) return false; // not supported.
+    inflicted_cut_change_to_kernelized -= clique_weight * add_tot;
     
     // Apply changes to graph:
     vector<int> rem_nodes;
@@ -2452,6 +2506,35 @@ bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
     return true;
 }
 
+vector<int> MaxCutGraph::GetWeightedTriagCandidates() {
+    vector<int> ret;
+    auto currentv = GetAllExistingNodes();
+    for (auto root : currentv) {
+        const auto& adj = GetAdjacency(root);
+        if (adj.size() != 2) continue;
+        ret.push_back(root);
+    }
+    return ret;
+}
+
+bool MaxCutGraph::ApplyWeightedTriagCandidate(const int root) {
+    const auto& adj = GetAdjacency(root);
+    if (adj.size() != 2) return false;
+
+    const int A = adj[0], B = adj[1];
+    int w1 = GetEdgeWeight(make_pair(root, A));
+    int w2 = GetEdgeWeight(make_pair(root, B));
+    int w3 = AreAdjacent(A, B) ? GetEdgeWeight(make_pair(A, B)) : 0;
+    if (w1 < 0 || w2 < 0 || w3 < 0) return false;
+
+    inflicted_cut_change_to_kernelized -= (w1 + w2);
+    RemoveNode(root);
+    RemoveEdgesBetween(A, B);
+    AddEdge(A, B, max(w1, w2) + w3 - (w1 + w2));
+
+    return true;
+}
+
 bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_map<int,bool> &preset_is_external) {
     rules_check_count[rule_id]++;
 
@@ -2470,8 +2553,23 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
 
             break;
         }
+        case RuleIds::RuleS2Weighted: {
+            auto candidates = GetS2Candidates(true, false, preset_is_external);
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyS2Candidate(candidate, preset_is_external);
+
+            break;
+        }
+        case RuleIds::RuleWeightedTriag: {
+            auto candidates = GetWeightedTriagCandidates();
+            for (auto candidate : candidates)
+                rules_usage_count[rule_id] += ApplyWeightedTriagCandidate(candidate);
+
+            break;
+        }
         case RuleIds::Rule8: { // preset_ext_supp=TRUE
             auto candidates = GetR8Candidates(false, preset_is_external);
+            cout << "C: " << candidates.size() << endl;
             for (auto candidate : candidates)
                 rules_usage_count[rule_id] += ApplyR8Candidate(candidate);
 

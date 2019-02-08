@@ -1,5 +1,9 @@
 #pragma once
 
+#define LIMIT_NUM_NODES 500000
+#define LIMIT_ABS_WEIGHT 1000000001
+#define TRANSFORM_SPLITTER false
+
 #include "input-parser.hpp"
 #include "./src/output-filter.hpp"
 #include "utils.hpp"
@@ -20,7 +24,8 @@ enum class RuleIds : int {
     RevSpecialRule1,
     RevSpecialRule2,
     SpecialRule2Signed,
-    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed, Rule8SpecialCase, RuleS2SpecialCase, MegaRule
+    Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed, Rule8SpecialCase, RuleS2SpecialCase, MegaRule,
+    RuleS2Weighted, RuleWeightedTriag
 };
 
 extern const map<RuleIds, string> kRuleDescriptions;
@@ -89,11 +94,6 @@ public:
     int terminating_cut_size = -1;
     bool timelimit_exceeded = false;
 };
-
-
-#ifdef LOCALSOLVER_EXISTS
-
-#endif
 
 // Definition articulation node:
 // Its removal parts the graph in at least two non-empty graphs.
@@ -277,6 +277,10 @@ public:
     bool ApplyS6Candidate(const pair<int,int> &candidate, const unordered_map<int,bool>& preset_is_external = {});
 
 
+    vector<int> GetWeightedTriagCandidates();
+    bool ApplyWeightedTriagCandidate(const int root);
+
+
     /**
      *  Special kernelization rules: weighted <-> unweighted
      **/
@@ -322,6 +326,7 @@ public:
     /**
      * Misc.
      **/
+    bool GraphIsValid() const { return graph_is_supported == true; }
     void MakeRandomVertexPermutation();
     vector<vector<int>> GetCliquesWithAtLeastOneInternal() const;
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false) const;
@@ -514,4 +519,6 @@ private:
 
     string graph_naming;
     int mixing_id = -1;
+
+    bool graph_is_supported = true;
 };

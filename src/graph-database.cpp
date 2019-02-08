@@ -44,16 +44,24 @@ GraphDatabase::GraphDatabase(InputParser& input) {
     } else if (input.cmdOptionExists("-f")) {
         const string data_filepath = input.getCmdOption("-f");
         all_sets_to_evaluate.push_back(data_filepath);
-    } else if (input.cmdOptionExists("-disk-suite")) {
-        string suitekey = input.getCmdOption("-disk-suite");
+    } else if (input.cmdOptionExists("-fdir") || input.cmdOptionExists("-disk-suite")) {
+        vector<string> dirs;
 
-        if (!KeyExists(suitekey, disk_suites)) {
-            cerr << "Suite not found." << endl;
-            exit(0);
+        if (input.cmdOptionExists("-disk-suite")) {
+            string suitekey = input.getCmdOption("-disk-suite");
+
+            if (!KeyExists(suitekey, disk_suites)) {
+                cerr << "Suite not found." << endl;
+                exit(0);
+            }
+
+            dirs = disk_suites.at(suitekey);
+        } else {
+            dirs.push_back(input.getCmdOption("-fdir"));
         }
 
-        auto suite = disk_suites.at(suitekey);
-        for (auto path : suite) {
+
+        for (auto path : dirs) {
             cout << "Checking: " << path << endl;
             auto sets = GetAllDatasets(path);
             for (unsigned int i = 0; i < sets.size(); ++i)

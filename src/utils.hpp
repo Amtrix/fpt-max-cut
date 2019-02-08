@@ -71,7 +71,7 @@ tuple<double, double, double, double, int> ComputeAverageAndDeviation(std::funct
 // ignores README.md !
 vector<string> GetAllDatasets(const string path);
 
-const vector<string> ReadLine(std::istream& in);
+const vector<string> ReadLine(std::istream& in, string *read_line = nullptr);
 
 template <class Type>
 string SerializeVector(vector<Type> vec) {
