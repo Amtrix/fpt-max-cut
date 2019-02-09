@@ -22,7 +22,7 @@ func_localize() {
                     -do-weighted-reduction \
                     -support-weighted-result \
                     -dont-unweighted-reduction \
-                    -number-of-threads 1 \
+                    -number-of-threads 10 \
                     -locsearch-iterations 100 \
                     -exact-early-stop \
                     -benchmark-output $experiment_outdir/solvers/real-world-small/out > $experiment_outdir/solvers/real-world-small/out-exe
