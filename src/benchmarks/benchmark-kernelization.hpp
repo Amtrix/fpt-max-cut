@@ -211,9 +211,8 @@ public:
 
 
             // Compute solver results.
-            int sub_on_kernelized_runtime = 0;
-            sub_on_kernelized_runtime = round(kernelization_time / 1000.0);            
-            SolverEvaluation::Evaluate(mixingid, input, sub_on_kernelized_runtime, G, kernelized);
+            SolverEvaluation eval;
+            eval.Evaluate(mixingid, input, kernelization_time, G, kernelized);
             
 
             // Some variables.
@@ -225,8 +224,8 @@ public:
             {
 
                 // Some output
-                cout << "VERIFY CUT VAL:  localsearch(" << SolverEvaluation::local_search_cut_size << ", " << SolverEvaluation::local_search_cut_size_k
-                    << ")   mqlib(" << SolverEvaluation::mqlib_cut_size << ", " << SolverEvaluation::mqlib_cut_size_k << ")" << endl;
+                cout << "VERIFY CUT VAL:  localsearch(" << eval.local_search_cut_size << ", " << eval.local_search_cut_size_k
+                    << ")   mqlib(" << eval.mqlib_cut_size << ", " << eval.mqlib_cut_size_k << ")" << endl;
                 cout << "              G: " << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
                 cout << "     kernelized: " << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
 
@@ -257,34 +256,34 @@ public:
                 //last_times_all = times_all;
 
                 double k_change = kernelized.GetInflictedCutChangeToKernelized();
-                custom_assert(SolverEvaluation::biqmac_cut_size == SolverEvaluation::biqmac_cut_size_k || SolverEvaluation::biqmac_cut_size == -1 || SolverEvaluation::biqmac_cut_size_k == -1);
+                custom_assert(eval.biqmac_cut_size == eval.biqmac_cut_size_k || eval.biqmac_cut_size == -1 || eval.biqmac_cut_size_k == -1);
                 
                 OutputKernelization(input, main_graph.GetGraphNaming(),
                                     mixingid, iteration,
                                     G.GetRealNumNodes(), G.GetRealNumEdges(),
                                     kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                     -k_change,
-                                    SolverEvaluation::mqlib_cut_size, SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
-                                    SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
-                                    SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
+                                    eval.mqlib_cut_size, eval.mqlib_cut_size_k, eval.mqlib_rate, eval.mqlib_rate_sddiff,
+                                    eval.localsolver_cut_size, eval.localsolver_cut_size_k, eval.localsolver_rate, eval.localsolver_rate_sddiff,
+                                    eval.local_search_cut_size, eval.local_search_cut_size_k, eval.local_search_rate, eval.local_search_rate_sddiff,
 
-                                    SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
-                                    SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
-                                    SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
+                                    eval.mqlib_time, eval.mqlib_time_k, 
+                                    eval.localsolver_time, eval.localsolver_time_k, 
+                                    eval.biqmac_time, eval.biqmac_time_k, 
 
-                                    EE, EE_k, SolverEvaluation::MAXCUT_best_size, kernelization_time);
+                                    EE, EE_k, eval.MAXCUT_best_size, kernelization_time);
                 
                 accum.push_back({(double)mixingid, (double)iteration,
                                     (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                     (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                     -k_change,
-                                    (double)SolverEvaluation::mqlib_cut_size, (double)SolverEvaluation::mqlib_cut_size_k, SolverEvaluation::mqlib_rate, SolverEvaluation::mqlib_rate_sddiff,
-                                    SolverEvaluation::localsolver_cut_size, SolverEvaluation::localsolver_cut_size_k, SolverEvaluation::localsolver_rate, SolverEvaluation::localsolver_rate_sddiff,
-                                    SolverEvaluation::local_search_cut_size, SolverEvaluation::local_search_cut_size_k, SolverEvaluation::local_search_rate, SolverEvaluation::local_search_rate_sddiff,
-                                    SolverEvaluation::mqlib_time, SolverEvaluation::mqlib_time_k, 
-                                    SolverEvaluation::localsolver_time, SolverEvaluation::localsolver_time_k, 
-                                    SolverEvaluation::biqmac_time, SolverEvaluation::biqmac_time_k, 
-                                    EE, EE_k, (double)SolverEvaluation::MAXCUT_best_size, kernelization_time});
+                                    (double)eval.mqlib_cut_size, (double)eval.mqlib_cut_size_k, eval.mqlib_rate, eval.mqlib_rate_sddiff,
+                                    eval.localsolver_cut_size, eval.localsolver_cut_size_k, eval.localsolver_rate, eval.localsolver_rate_sddiff,
+                                    eval.local_search_cut_size, eval.local_search_cut_size_k, eval.local_search_rate, eval.local_search_rate_sddiff,
+                                    eval.mqlib_time, eval.mqlib_time_k, 
+                                    eval.localsolver_time, eval.localsolver_time_k, 
+                                    eval.biqmac_time, eval.biqmac_time_k, 
+                                    EE, EE_k, (double)eval.MAXCUT_best_size, kernelization_time});
                 
                 if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
                     G.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid), true);
