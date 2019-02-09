@@ -96,6 +96,16 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
         cout << "Note: Local search iterations: " << locsearch_iterations << endl;
     }
 
+    bool should_exit_G = false, should_exit_kernelized = false;
+    if (ShouldExitEarly(&input, &G)) {
+        cout << "Should exit early G: true." << endl;
+        should_exit_G = true;
+    }
+    if (ShouldExitEarly(&input, &kernelized)) {
+        cout << "Should exit early kernelized: true." << endl;
+        should_exit_kernelized = true;
+    }
+
     if (use_solver_mask & Solvers::Localsearch) {
         vector<int> tmp_def_param_trash;
         std::tie(local_search_cut_size, local_search_cut_size_k, local_search_rate, local_search_rate_sddiff, local_search_cut_size_best)
@@ -145,37 +155,41 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     const string project_build_dir = PROJECT_BUILD_DIR;
     if (!input.cmdOptionExists("-no-biqmac") && (use_solver_mask & Solvers::BiqMac)) { // EVALUATE BIQMAC
         OutputDebugLog("====> EVALUATE: BiqMac.");
+        const long long scale = SCALED_FROM != -1 ? (SCALED_FROM) : 1;
 
-        int v_limit = 1 << 30;
-        if (input.cmdOptionExists("-exact-early-stop-v"))
-            v_limit = stoi(input.getCmdOption("-exact-early-stop-v"));
 
         thread_biqmac = std::make_shared<std::thread>([&]{
-            if (v_limit < G.GetRealNumNodes()) {
+            if (should_exit_G) {
                 biqmac_cut_size = -1;
                 biqmac_time = -1;
                 return;
             }
 
-            G.PrintGraph("out-tmp-graph-for-biqmac", true);
-            auto res = exec_custom(biqmac_binpath, project_build_dir + "/out-tmp-graph-for-biqmac", total_time_seconds);
+            std::ostringstream threadid;
+            threadid << std::this_thread::get_id();
+            const string filename = "out-tmp-graph-for-biqmac-t" + string(threadid.str());
+            G.PrintGraph(filename, true, scale);
+            auto res = exec_custom(biqmac_binpath, project_build_dir + "/" + filename, total_time_seconds);
 
-            biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
+            biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res)) * scale;
             biqmac_time = get<1>(res);
         });
 
         thread_biqmac_k = std::make_shared<std::thread>([&]{
-            if (v_limit < kernelized.GetRealNumNodes()) {
+            if (should_exit_kernelized) {
                 biqmac_cut_size_k = -1;
                 biqmac_time_k = -1;
                 return;
             }
 
-            kernelized.PrintGraph("out-tmp-graph-for-biqmac-kernelized", true);
-            auto res = exec_custom(biqmac_binpath, project_build_dir + "/out-tmp-graph-for-biqmac-kernelized", total_time_seconds - already_spent_time_on_kernelization_seconds);
+            std::ostringstream threadid;
+            threadid << std::this_thread::get_id();
+            const string filename = "out-tmp-graph-for-biqmac-kernelized-t" + string(threadid.str());
+            kernelized.PrintGraph(filename, true, scale);
+            auto res = exec_custom(biqmac_binpath, project_build_dir + "/" + filename, total_time_seconds - already_spent_time_on_kernelization_seconds);
 
-            biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
-            if (biqmac_cut_size_k != -1) biqmac_cut_size_k += (int)(-k_change);
+            biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res)) * scale;
+            if (biqmac_cut_size_k != -1) biqmac_cut_size_k += (EdgeWeight)(-k_change);
             biqmac_time_k = get<1>(res);
         }); 
     }
@@ -256,7 +270,7 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size_k);
     MAXCUT_best_size = max(MAXCUT_best_size, 0LL);
 
-    if (input.cmdOptionExists("-exact-early-stop-v")) {
+    if (input.cmdOptionExists("-exact-early-stop-v") || input.cmdOptionExists("-exact-early-stop-ratio")) {
         if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;
         if (MAXCUT_best_size != mqlib_cut_size_k || mqlib_cb_k.HasExceededTimelimit()) mqlib_time_k = -1;
 #ifdef LOCALSOLVER_EXISTS

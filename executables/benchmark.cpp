@@ -108,7 +108,7 @@ int main(int argc, char **argv){
             }
 
             for (auto edge : edges)
-                out << (get<0>(edge)) << " " << (get<1>(edge)) << " " << (long long)(get<2>(edge)*10000000000LL) << endl;
+                out << (get<0>(edge)) << " " << (get<1>(edge)) << " " << (long long)(get<2>(edge)*100000LL) << endl;
 
             in.close();
             out.close();

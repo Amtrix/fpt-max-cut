@@ -7,6 +7,7 @@
 #include <queue>
 #include <thread>
 #include <mutex>
+#include <iomanip>
 
 #include "mc-graph.hpp"
 #include <heuristics/qubo/glover1998a.h>
@@ -106,9 +107,22 @@ bool EdgeWeightIsValid(string val) {
         if (isdigit(val[dx]) == false) return false;
         dx++;
     }
-    int v = stoi(val);
-    if (abs(v) > LIMIT_ABS_WEIGHT) return false;
+    EdgeWeight v = stoll(val);
+    if ((LIMIT_ABS_WEIGHT) != -1 && abs(v) > LIMIT_ABS_WEIGHT) return false;
     return true;
+}
+
+bool ShouldExitEarly(InputParser *input_parser, const int num_nodes, const int num_edges) {
+    bool condition_v_given = input_parser->cmdOptionExists("-exact-early-stop-v");
+    bool condition_ratio_given = input_parser->cmdOptionExists("-exact-early-stop-ratio");
+    long long v_limit = !condition_v_given ? (1LL << 60) : stoi(input_parser->getCmdOption("-exact-early-stop-v"));
+    double ratio_limit = !condition_ratio_given ? 0 : stod(input_parser->getCmdOption("-exact-early-stop-ratio"));
+
+    return (num_nodes > v_limit) && (num_nodes * ratio_limit < num_edges);
+}
+
+bool ShouldExitEarly(InputParser *input_parser, const MaxCutGraph *G) {
+    return ShouldExitEarly(input_parser, G->GetRealNumNodes(), G->GetRealNumEdges());
 }
 
 MaxCutGraph::MaxCutGraph() {
@@ -143,11 +157,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
     if (!treat_as_adj_list_file) {
         if (sparams[0] != "#edge-list-0" && !treat_as_edges_file) {
             const int num_nodes = stoi(sparams[0 + (sparams[0]=="p")]);
-            if (num_nodes > LIMIT_NUM_NODES) {
-                graph_is_supported = false;
-                return;
-            }
-            SetNumNodes(num_nodes);
+            if (!SetNumNodes(num_nodes)) return;
 
             int num_edges = stoi(sparams.back());
 
@@ -189,11 +199,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
                 elist.push_back(make_tuple(a, b, w));
             }
             
-            if (num_nodes_calc > LIMIT_NUM_NODES) {
-                graph_is_supported = false;
-                return;
-            }
-            SetNumNodes(num_nodes_calc);
+            if (!SetNumNodes(num_nodes_calc)) return;
 
             for (auto e : elist)
                 AddEdge(get<0>(e), get<1>(e), get<2>(e), false);
@@ -203,11 +209,7 @@ MaxCutGraph::MaxCutGraph(const string path) {
         OutputDebugLog("Adjacency list. Is weighted: " + to_string(is_weighted_instance));
 
         const int num_nodes = stoi(sparams[0]);
-        if (num_nodes > LIMIT_NUM_NODES) {
-            graph_is_supported = false;
-            return;
-        }
-        SetNumNodes(num_nodes);
+        if (!SetNumNodes(num_nodes)) return;
 
         if (is_weighted_instance && stoi(sparams[2]) != 1) {
             OutputDebugLog("UNSUPPORTED FORMAT. Skipping.");
@@ -290,7 +292,7 @@ void MaxCutGraph::ResetComputedTopology() {
     bridges_computed = false;
 }
 
-void MaxCutGraph::SetNumNodes(int _num_nodes) {
+bool MaxCutGraph::SetNumNodes(int _num_nodes) {
     int prev_num_nodes = num_nodes;
     num_nodes = _num_nodes;
     g_adj_list.resize(num_nodes);
@@ -298,6 +300,13 @@ void MaxCutGraph::SetNumNodes(int _num_nodes) {
 
     for (int i = prev_num_nodes; i < num_nodes; ++i)
         UpdateVertexTimestamp(i, false, TimestampType::Both);
+    
+    if (LIMIT_NUM_NODES != -1 && _num_nodes > LIMIT_NUM_NODES) {
+        graph_is_supported = false;
+        return false;
+    }
+
+    return true;
 }
 
 void MaxCutGraph::AddEdge(int a, int b, EdgeWeight weight, bool inc_weight_on_double) {
@@ -1952,13 +1961,13 @@ bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>
     clique = SetUnion(clique, {root});
 
     int n = clique.size();
-    int add_tot = 0;
+    EdgeWeight add_tot = 0;
     for (int i = 1; i <= n; ++i) {
-        int add = (n - i) - (i - 1);
+        EdgeWeight add = (n - i) - (i - 1);
         if (add <= 0) break;
         add_tot += add;
     }
-    int clique_weight = 1;
+    EdgeWeight clique_weight = 1;
     if (clique.size() >= 2) clique_weight = GetEdgeWeight(make_pair(clique[0], clique[1]));
     if (clique_weight < 0) return false; // not supported.
     inflicted_cut_change_to_kernelized -= clique_weight * add_tot;
@@ -2420,14 +2429,14 @@ bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate, const b
         return false;
 
     int a = get<0>(candidate), b = get<1>(candidate), c = get<2>(candidate);
-    int w1 = edge_weight.at(MakeEdgeKey(a,b)), w2 = edge_weight.at(MakeEdgeKey(b,c));
+    EdgeWeight w1 = edge_weight.at(MakeEdgeKey(a,b)), w2 = edge_weight.at(MakeEdgeKey(b,c));
 
-    int same = max(0, w1 + w2);
-    int diff = max(w1, w2);
-    int res_weight = diff - same;
+    EdgeWeight same = max(0LL, w1 + w2);
+    EdgeWeight diff = max(w1, w2);
+    EdgeWeight res_weight = diff - same;
 
-    int added_res_weight = res_weight;
-    int w3 = 0;
+    EdgeWeight added_res_weight = res_weight;
+    EdgeWeight w3 = 0;
     if (AreAdjacent(a, c))
         w3 = GetEdgeWeight(make_pair(a, c));
     added_res_weight += w3;
@@ -2450,7 +2459,7 @@ vector<pair<int,int>> MaxCutGraph::GetRevSpecialRule1Candidates() const {
 
     auto elist = GetAllExistingEdges();
     for (auto e : elist) {
-        int w = edge_weight.at(MakeEdgeKey(e));
+        EdgeWeight w = edge_weight.at(MakeEdgeKey(e));
         if (w > 1) ret.push_back(e);
     }
 
@@ -2462,7 +2471,7 @@ vector<pair<int,int>> MaxCutGraph::GetRevSpecialRule2Candidates() const {
 
     auto elist = GetAllExistingEdges();
     for (auto e : elist) {
-        int w = edge_weight.at(MakeEdgeKey(e));
+        EdgeWeight w = edge_weight.at(MakeEdgeKey(e));
         if (w < 0) ret.push_back(e);
     }
 
@@ -2471,7 +2480,7 @@ vector<pair<int,int>> MaxCutGraph::GetRevSpecialRule2Candidates() const {
 
 bool MaxCutGraph::ApplyRevSpecialRule1(const pair<int,int> &candidate) {
     int a = candidate.first, b = candidate.second;
-    int w = edge_weight.at(MakeEdgeKey(candidate));
+    EdgeWeight w = edge_weight.at(MakeEdgeKey(candidate));
 
     custom_assert(w > 1);
 
@@ -2491,7 +2500,7 @@ bool MaxCutGraph::ApplyRevSpecialRule1(const pair<int,int> &candidate) {
 
 bool MaxCutGraph::ApplyRevSpecialRule2(const pair<int,int> &candidate) {
     int a = candidate.first, b = candidate.second;
-    int w = edge_weight.at(MakeEdgeKey(candidate));
+    EdgeWeight w = edge_weight.at(MakeEdgeKey(candidate));
 
     custom_assert(w < 0);
 
@@ -2522,9 +2531,9 @@ bool MaxCutGraph::ApplyWeightedTriagCandidate(const int root) {
     if (adj.size() != 2) return false;
 
     const int A = adj[0], B = adj[1];
-    int w1 = GetEdgeWeight(make_pair(root, A));
-    int w2 = GetEdgeWeight(make_pair(root, B));
-    int w3 = AreAdjacent(A, B) ? GetEdgeWeight(make_pair(A, B)) : 0;
+    EdgeWeight w1 = GetEdgeWeight(make_pair(root, A));
+    EdgeWeight w2 = GetEdgeWeight(make_pair(root, B));
+    EdgeWeight w3 = AreAdjacent(A, B) ? GetEdgeWeight(make_pair(A, B)) : 0;
     if (w1 < 0 || w2 < 0 || w3 < 0) return false;
 
     inflicted_cut_change_to_kernelized -= (w1 + w2);
@@ -2755,7 +2764,7 @@ void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered
     }
 }
 
-void MaxCutGraph::PrintGraph(std::ostream& out, bool printweight) const {
+void MaxCutGraph::PrintGraph(std::ostream& out, bool printweight, EdgeWeight divide_weights) const {
     auto currentv = GetAllExistingNodes();
     out << currentv.size() << " " << GetRealNumEdges() << endl;
 
@@ -2773,17 +2782,18 @@ void MaxCutGraph::PrintGraph(std::ostream& out, bool printweight) const {
             if (mapping_nodes[v] < mapping_nodes[w]) {
                 out << mapping_nodes[v] << " " << mapping_nodes[w];
                 
-                int weight = GetEdgeWeight(make_pair(v,w));
-                if (printweight) out << " " << weight << endl;
+                EdgeWeight weight = GetEdgeWeight(make_pair(v,w));
+                if (printweight && (!divide_weights || divide_weights == 1)) out << " " << weight << endl;
+                else if (printweight) out << " " << std::setprecision(13) << (weight / (double) divide_weights) << endl;
                 else out << endl;
             }
         }
     }
 }
 
-void MaxCutGraph::PrintGraph(const std::string path, bool printweight) const {
+void MaxCutGraph::PrintGraph(const std::string path, bool printweight, EdgeWeight divide_weights) const {
     ofstream out(path.c_str());
-    PrintGraph(out, printweight);
+    PrintGraph(out, printweight, divide_weights);
     out.close();
 }
 

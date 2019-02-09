@@ -1,9 +1,9 @@
 #pragma once
 
-#define LIMIT_NUM_NODES 500000
-#define LIMIT_ABS_WEIGHT 1000000001
+#define LIMIT_NUM_NODES -1LL
+#define LIMIT_ABS_WEIGHT -1LL
 #define TRANSFORM_SPLITTER false
-#define SCALED_FROM 100000LL
+#define SCALED_FROM 1000000LL
 
 #include "input-parser.hpp"
 #include "./src/output-filter.hpp"
@@ -21,6 +21,8 @@ using namespace std;
 
 typedef long long EdgeWeight;
 
+class MaxCutGraph;
+
 enum class RuleIds : int {
     SpecialRule1,
     SpecialRule2,
@@ -37,6 +39,9 @@ extern const map<RuleIds, string> kRuleNames;
 
 extern const vector<RuleIds> kAllRuleIds;
 
+bool ShouldExitEarly(InputParser *input, const int num_nodes, const int num_edges);
+bool ShouldExitEarly(InputParser *input, const MaxCutGraph *G);
+
 class Burer2002Callback : public MaxCutCallback {
 public:
     Burer2002Callback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, int cutadd_, string sfxout_) :
@@ -50,11 +55,8 @@ public:
                 cutadd(cutadd_),
                 sfxout(sfxout_)
         {
-            if (input_parser->cmdOptionExists("-exact-early-stop-v")) {
-                int v_limit = stoi(input_parser->getCmdOption("-exact-early-stop-v"));
-                if (v_limit < num_nodes)
-                    added_preprocess_time = 1e9;
-            }
+            if (ShouldExitEarly(input_parser, num_nodes, num_edges))
+                added_preprocess_time = 1e9;
         }
 
     bool Report(const MaxCutSimpleSolution& sol, bool /* newBest */, double runtime) {
@@ -106,7 +108,7 @@ public:
 // All node indices are 0-based.
 class MaxCutGraph {
 public:
-    
+
     MaxCutGraph();
 
     MaxCutGraph(int n);
@@ -130,7 +132,7 @@ public:
      * all modifications should happen with these functions.
      **/
     // Adds an edge between a and b with a weight.
-    void SetNumNodes(int _num_nodes);
+    bool SetNumNodes(int _num_nodes);
     void AddEdge(int a, int b, EdgeWeight weight = 1, bool inc_weight_on_double = true);
     void RemoveNode(int node);
     // Does not add the previously removed edges from the RemoveNode function!
@@ -333,8 +335,8 @@ public:
     void MakeRandomVertexPermutation();
     vector<vector<int>> GetCliquesWithAtLeastOneInternal() const;
     vector<int> GetAClique(const int min_size, const int max_runs, const bool make_maximum = false) const;
-    void PrintGraph(std::ostream& out, bool printweight = false) const;
-    void PrintGraph(const std::string path, bool printweight = false) const;
+    void PrintGraph(std::ostream& out, bool printweight = false, EdgeWeight divide_weights = 0) const;
+    void PrintGraph(const std::string path, bool printweight = false, EdgeWeight divide_weights = 0) const;
     string PrintDegrees(const unordered_map<int,bool>& preset_is_external = {}) const;
     void PrintReductionsUsage() const;
     int GetRuleUsage(RuleIds rule) const;

@@ -4,6 +4,7 @@ func_localize() {
     set -o xtrace
     local cwdboot="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
     builddir=$cwdboot/../../build
+    thesis_tests=$cwdboot/../../data/thesis-tests
 
     # CONFIG FOR TEST CASES IS HERE
     experiment_outdir=$cwdboot/../../output/experiments

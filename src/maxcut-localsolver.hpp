@@ -7,11 +7,12 @@
 #include <fstream>
 #include <vector>
 #include "localsolver.h"
-#include "../../src/utils.hpp"
-#include "../../src/mc-graph.hpp"
+#include "./utils.hpp"
 
 using namespace localsolver;
 using namespace std;
+
+bool ShouldExitEarly(InputParser *input, const int num_nodes, const int num_edges);
 
 
 class LocalSolverCallback : public LSCallback {
@@ -27,11 +28,8 @@ public:
                 cutadd(cutadd_),
                 sfxout(sfxout_)
         {
-            if (input_parser->cmdOptionExists("-exact-early-stop-v")) {
-                int v_limit = stoi(input_parser->getCmdOption("-exact-early-stop-v"));
-                if (v_limit < num_nodes)
-                    added_preprocess_time = max(added_preprocess_time, total_allowed_time_ - 60*60);
-            }
+            if (ShouldExitEarly(input_parser, num_nodes, num_edges))
+                added_preprocess_time = max(added_preprocess_time, total_allowed_time_ - 60*60);
         }
 
     void callback(LocalSolver& ls, LSCallbackType /*type*/) {
