@@ -82,47 +82,52 @@ public:
         auto selected_kernelization_order = kernelization_order;
         if (provide_order) selected_kernelization_order = provided_kernelization_order;
 
-        // Unweighted Reductions.
-        if (use_unweighted_kernelization) { // default is true
-            cout << "Perform unweighted kernelization." << endl;
-            kernelized.MakeUnweighted();
-            OutputDebugLog("Made Unweighted.");
+        bool total_finish = false;
+        while (!total_finish) {
+            total_finish = true;
 
-            bool is_all_finished = false;
-            while (!is_all_finished) {
-                is_all_finished = true;
-                LogTime(times_all_components, t0);
-                if (KernelizeExec(kernelized, selected_kernelization_order, times_all_components, false))
-                    is_all_finished = false;
+            // Unweighted Reductions.
+            if (use_unweighted_kernelization) { // default is true
+                cout << "Perform unweighted kernelization." << endl;
+                kernelized.MakeUnweighted();
+                OutputDebugLog("Made Unweighted.");
+
+                bool is_all_finished = false;
+                while (!is_all_finished) {
+                    is_all_finished = true;
+                    LogTime(times_all_components, t0);
+                    if (KernelizeExec(kernelized, selected_kernelization_order, times_all_components, false))
+                        is_all_finished = false, total_finish = false;
+                }
             }
-        }
 
-        // Signed Reductions.
-        if (use_signed_kernelization) { // default is false
-            cout << "Perform signed kernelization." << endl;
-            kernelized.MakeSigned();
-            OutputDebugLog("Made Signed.");
+            // Signed Reductions.
+            if (use_signed_kernelization) { // default is false
+                cout << "Perform signed kernelization." << endl;
+                kernelized.MakeSigned();
+                OutputDebugLog("Made Signed.");
 
-            bool is_all_finished = false;
-            while (!is_all_finished) {
-                is_all_finished = true;
-                if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, times_all_components, false))
-                    is_all_finished = false;
+                bool is_all_finished = false;
+                while (!is_all_finished) {
+                    is_all_finished = true;
+                    if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, times_all_components, false))
+                        is_all_finished = false, total_finish = false;
+                }
             }
-        }
 
-        // Weighted Reductions.
-        if (use_weighted_kernelization) { // default is false
-            cout << "Perform weighted kernelization." << endl;
-            bool is_all_finished = false;
-            kernelized.MakeWeighted();
-            OutputDebugLog("Made Weighted.");
+            // Weighted Reductions.
+            if (use_weighted_kernelization) { // default is false
+                cout << "Perform weighted kernelization." << endl;
+                bool is_all_finished = false;
+                kernelized.MakeWeighted();
+                OutputDebugLog("Made Weighted.");
 
-            while (!is_all_finished) {
-                is_all_finished = true;
-                LogTime(times_all_components, t0);
-                if (KernelizeExec(kernelized, {RuleIds::RuleS2Weighted, RuleIds::RuleWeightedTriag}, times_all_components, false))
-                    is_all_finished = false;
+                while (!is_all_finished) {
+                    is_all_finished = true;
+                    LogTime(times_all_components, t0);
+                    if (KernelizeExec(kernelized, {RuleIds::RuleS2Weighted, RuleIds::RuleWeightedTriag}, times_all_components, false))
+                        is_all_finished = false, total_finish = false;
+                }
             }
         }
 
@@ -147,8 +152,10 @@ public:
             OutputDebugLog("Made Unweighted.");
             KernelizeExec(kernelized, finishing_rules_order, times_all_components, true);
         }
+        ////////////////////////
 
-        // Also kernelization here(!):
+        // GRAPH IS UNWEIGHTED AT THIS POINT IF UNWEIGHTED KERNELIZATION IS USED!
+        // THAT IS WHY ONE NEEDS TO POSSIBLY USE -force-weighted-result.
         t0 = GetCurrentTime();
         if (kMakeWeightedAtEnd || inputFlagToWeightedIsSet) {
             OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetRealNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
@@ -188,7 +195,7 @@ public:
         }
 
         if (input.cmdOptionExists("-do-signed-reduction")) {
-            use_signed_kernelization = true;
+            use_signed_kernelization = main_graph.IsScaled() == false;
         } else {
             use_signed_kernelization = false;
         }
@@ -202,7 +209,7 @@ public:
         if (input.cmdOptionExists("-dont-unweighted-reduction")) {
             use_unweighted_kernelization = false;
         } else {
-            use_unweighted_kernelization = true;
+            use_unweighted_kernelization = main_graph.IsScaled() == false;
         }
 
         vector<vector<double>> accum;

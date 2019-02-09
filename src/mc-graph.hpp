@@ -3,7 +3,7 @@
 #define LIMIT_NUM_NODES -1LL
 #define LIMIT_ABS_WEIGHT -1LL
 #define TRANSFORM_SPLITTER false
-#define SCALED_FROM 1000000LL
+#define SCALED_FROM 10000LL
 
 #include "input-parser.hpp"
 #include "./src/output-filter.hpp"
@@ -331,6 +331,7 @@ public:
     /**
      * Misc.
      **/
+    bool IsScaled() const { return is_scaled; }
     bool GraphIsValid() const { return graph_is_supported == true; }
     void MakeRandomVertexPermutation();
     vector<vector<int>> GetCliquesWithAtLeastOneInternal() const;

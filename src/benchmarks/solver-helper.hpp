@@ -13,8 +13,6 @@
 #include <thread>
 using namespace std;
 
-//namespace SolverEvaluation {
-
 enum Solvers {
     LocalSolver = 1,
     BiqMac = 2,
@@ -22,9 +20,6 @@ enum Solvers {
     MqLib = 8,
     All = (1 << 20) - 1
 };
-
-
-
 
 /** EXAMPLE OUTPUT:
 
@@ -156,7 +151,7 @@ struct SolverEvaluation {
 
         
         std::shared_ptr<std::thread> thread_biqmac, thread_biqmac_k;
-    #ifdef BIQMAC_EXISTS
+#ifdef BIQMAC_EXISTS
         const string biqmac_binpath = BIQMAC_BINARY_PATH;
         const string project_build_dir = PROJECT_BUILD_DIR;
         if (!input.cmdOptionExists("-no-biqmac") && (use_solver_mask & Solvers::BiqMac)) { // EVALUATE BIQMAC
@@ -202,12 +197,12 @@ struct SolverEvaluation {
                 if (biqmac_time_k >= 0) biqmac_time_k += already_spent_time_on_kernelization_seconds_ms;
             }); 
         }
-    #endif
+#endif
         
 
         std::shared_ptr<std::thread> thread_localsolver, thread_localsolver_k;
         vector<double> res_localsolver, res_localsolver_k;
-    #ifdef LOCALSOLVER_EXISTS
+#ifdef LOCALSOLVER_EXISTS
         // We cannot do multithreading here, as one license = one thread.
         LocalSolverCallback localsolver_cb  (total_time_seconds, &input, G.GetGraphNaming(), mixingid, G.GetRealNumNodes(), G.GetRealNumEdges(), 0, 0, "localsolver");
         LocalSolverCallback localsolver_cb_k(total_time_seconds, &input, kernelized.GetGraphNaming(), mixingid, kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(), already_spent_time_on_kernelization_seconds_sec, -k_change, "localsolver-kernelized");
@@ -224,9 +219,9 @@ struct SolverEvaluation {
                 localsolver_time   = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
             });
 
-    #ifndef LOCALSOLVER_USE_CONCURRENCY
+#ifndef LOCALSOLVER_USE_CONCURRENCY
             thread_localsolver->join();
-    #endif
+#endif
             thread_localsolver_k = std::make_shared<std::thread>([&]{
                 auto t0_total = std::chrono::high_resolution_clock::now();
                 res_localsolver_k.push_back(F_localsolver_k());
@@ -237,7 +232,7 @@ struct SolverEvaluation {
 
             
         }
-    #endif
+#endif
 
         if (thread_biqmac && thread_biqmac_k) {
             thread_biqmac->join(); thread_biqmac_k->join();
@@ -285,14 +280,12 @@ struct SolverEvaluation {
         if (input.cmdOptionExists("-exact-early-stop-v") || input.cmdOptionExists("-exact-early-stop-ratio")) {
             //if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;
             //if (MAXCUT_best_size != mqlib_cut_size_k || mqlib_cb_k.HasExceededTimelimit()) mqlib_time_k = -1;
-    #ifdef LOCALSOLVER_EXISTS
+#ifdef LOCALSOLVER_EXISTS
             if (localsolver_time   > total_time_seconds * 1000 || localsolver_cb.HasExceededTimelimit())   localsolver_time = -1;
             if (localsolver_time_k > total_time_seconds * 1000 || localsolver_cb_k.HasExceededTimelimit()) localsolver_time_k = -1;
-    #endif
+#endif
             //if (MAXCUT_best_size != biqmac_cut_size)   biqmac_time   = -1;
             //if (MAXCUT_best_size != biqmac_cut_size_k) biqmac_time_k = -1;
         }
     }
 };
-
-//} // SolverEvaluation
