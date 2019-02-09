@@ -24,6 +24,7 @@ func_localize() {
                     -dont-unweighted-reduction \
                     -number-of-threads 10 \
                     -locsearch-iterations 100 \
+                    -no-localsolver \
                     -exact-early-stop \
                     -benchmark-output $experiment_outdir/solvers/real-world-small/out > $experiment_outdir/solvers/real-world-small/out-exe
                                        # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -support-weighted-result \
