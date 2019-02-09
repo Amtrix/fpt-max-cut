@@ -82,37 +82,41 @@ public:
         auto selected_kernelization_order = kernelization_order;
         if (provide_order) selected_kernelization_order = provided_kernelization_order;
 
+        // Unweighted Reductions.
         if (use_unweighted_kernelization) { // default is true
             cout << "Perform unweighted kernelization." << endl;
+            kernelized.MakeUnweighted();
+            OutputDebugLog("Made Unweighted.");
+
             bool is_all_finished = false;
             while (!is_all_finished) {
                 is_all_finished = true;
-
-                // Unweighted reductions.
-                kernelized.MakeUnweighted();
-                OutputDebugLog("Made unweighted");
                 LogTime(times_all_components, t0);
-
                 if (KernelizeExec(kernelized, selected_kernelization_order, times_all_components, false))
                     is_all_finished = false;
-                
-                // Signed reductions.
-                if (use_signed_kernelization) { // default is false
-                    kernelized.MakeSigned();
-                    if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, times_all_components, false))
-                        is_all_finished = false;
-                }
-
-                kernelized.MakeWeighted();
             }
-
-            kernelized.MakeUnweighted();
         }
 
+        // Signed Reductions.
+        if (use_signed_kernelization) { // default is false
+            cout << "Perform signed kernelization." << endl;
+            kernelized.MakeSigned();
+            OutputDebugLog("Made Signed.");
+
+            bool is_all_finished = false;
+            while (!is_all_finished) {
+                is_all_finished = true;
+                if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, times_all_components, false))
+                    is_all_finished = false;
+            }
+        }
+
+        // Weighted Reductions.
         if (use_weighted_kernelization) { // default is false
             cout << "Perform weighted kernelization." << endl;
             bool is_all_finished = false;
             kernelized.MakeWeighted();
+            OutputDebugLog("Made Weighted.");
 
             while (!is_all_finished) {
                 is_all_finished = true;
@@ -127,21 +131,26 @@ public:
         (void) time_fast_kernelization;
         OutputDebugLog("INITIAL -- FAST KERNELIZATION DONE! Time: " + to_string(time_fast_kernelization));
 
-        if (force_timestampless_kernelization) {
-            KernelizeExec(kernelized, selected_kernelization_order, times_all_components, true);
-        } else {
-#ifndef SKIP_FAST_KERNELIZATION_CHECK
-            custom_assert(KernelizeExec(kernelized, selected_kernelization_order, times_all_components, true) == false); // will only trigger if DEBUG defined, due to custom_assert definition.
-#else
-            KernelizeExec(kernelized, selected_kernelization_order, times_all_components, true);
-#endif
+        // Section containing basically some checks and extended functionalities. Not relevant for correctness.
+        {
+            if (force_timestampless_kernelization) {
+                KernelizeExec(kernelized, selected_kernelization_order, times_all_components, true);
+            } else {
+                custom_assert(KernelizeExec(kernelized, selected_kernelization_order, times_all_components, true) == false); // will only trigger if DEBUG defined, due to custom_assert definition.
+            }
         }
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        KernelizeExec(kernelized, finishing_rules_order, times_all_components, true);
+        // Finishers.
+        if (use_unweighted_kernelization) { // default is true
+            kernelized.MakeUnweighted();
+            OutputDebugLog("Made Unweighted.");
+            KernelizeExec(kernelized, finishing_rules_order, times_all_components, true);
+        }
 
         // Also kernelization here(!):
         t0 = GetCurrentTime();
-        if (kMakeWeightedAtEnd/* || inputFlagToWeightedIsSet*/) {
+        if (kMakeWeightedAtEnd || inputFlagToWeightedIsSet) {
             OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetRealNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
             kernelized.MakeWeighted();
             OutputDebugLog("Unweithed to weighted kernelization: Done. |V| = " + to_string(kernelized.GetRealNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));
@@ -172,11 +181,11 @@ public:
             num_iterations = stoi(input.getCmdOption("-iterations"));
         }
 
-        //if (input.cmdOptionExists("-support-weighted-result")) {
-        //    inputFlagToWeightedIsSet = true;
-        //} else {
-       //     inputFlagToWeightedIsSet = false;
-       // }
+        if (input.cmdOptionExists("-force-weighted-result")) {
+            inputFlagToWeightedIsSet = true;
+        } else {
+            inputFlagToWeightedIsSet = false;
+        }
 
         if (input.cmdOptionExists("-do-signed-reduction")) {
             use_signed_kernelization = true;

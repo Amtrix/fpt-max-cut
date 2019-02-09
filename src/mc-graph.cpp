@@ -113,10 +113,11 @@ bool EdgeWeightIsValid(string val) {
 }
 
 bool ShouldExitEarly(InputParser *input_parser, const int num_nodes, const int num_edges) {
-    bool condition_v_given = input_parser->cmdOptionExists("-exact-early-stop-v");
-    bool condition_ratio_given = input_parser->cmdOptionExists("-exact-early-stop-ratio");
-    long long v_limit = !condition_v_given ? (1LL << 60) : stoi(input_parser->getCmdOption("-exact-early-stop-v"));
-    double ratio_limit = !condition_ratio_given ? 0 : stod(input_parser->getCmdOption("-exact-early-stop-ratio"));
+    if (!input_parser->cmdOptionExists("-exact-early-stop"))
+        return false;
+
+    long long v_limit = 700; // inf to not use this
+    double ratio_limit = 3;  // 0 to not use this
 
     return (num_nodes > v_limit) && (num_nodes * ratio_limit < num_edges);
 }

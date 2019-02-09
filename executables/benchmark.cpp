@@ -1,4 +1,3 @@
-//#define SKIP_FAST_KERNELIZATION_CHECK 1
 
 #include "src/mc-graph.hpp"
 #include "src/one-way-reducers.hpp"
@@ -47,11 +46,6 @@ int main(int argc, char **argv){
     bool local_solver_exists = false;
     #ifdef LOCALSOLVER_EXISTS
         local_solver_exists = true;
-    #endif
-
-    bool skip_fast_kernelization_check = false;
-    #ifdef SKIP_FAST_KERNELIZATION_CHECK
-        skip_fast_kernelization_check = true;
     #endif
 
     std::cout << "Available number of threads: " << std::thread::hardware_concurrency() << endl;
@@ -152,10 +146,6 @@ int main(int argc, char **argv){
                         cout << green << "   Localsolver lib is provided: ";
                         if (local_solver_exists) cout << "yes." << defcol << endl;
                         else cout << red << "no." << defcol << endl;
-
-                        cout << green << "   Skip fast kernelization assertion check: ";
-                        if (!skip_fast_kernelization_check) cout << "no." << defcol << endl;
-                        else cout << red << "WARNING WARNING WARNING ------- this decision skips verification on performance ------- WARNING WARNING WARNING." << defcol << endl;
                     
                         custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
                         
@@ -172,35 +162,6 @@ int main(int argc, char **argv){
             }, threadid));
         }
         std::for_each(threads.begin(), threads.end(), [](std::thread& x){x.join();});
-
-        /*
-        for (auto graph : graph_db) {
-            cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
-            cout << green << "   |V|:                           " << graph.GetRealNumNodes() << endl;
-            cout << green << "   |E|:                           " << graph.GetRealNumEdges() << endl;
-            cout << green << "   graph contains multiple edges: ";
-            if (graph.info_mult_edge > 0) cout << red;
-            cout << graph.info_mult_edge << defcol << endl;
-
-            cout << green << "   graph contains self-loops: ";
-            if (graph.info_self_loop_edge > 0) cout << red;
-            cout << graph.info_self_loop_edge << defcol << endl;
-            
-            cout << green << "   Localsolver lib is provided: ";
-            if (local_solver_exists) cout << "yes." << defcol << endl;
-            else cout << red << "no." << defcol << endl;
-
-            cout << green << "   Skip fast kernelization assertion check: ";
-            if (!skip_fast_kernelization_check) cout << "no." << defcol << endl;
-            else cout << red << "WARNING WARNING WARNING ------- this decision skips verification on performance ------- WARNING WARNING WARNING." << defcol << endl;
-
-
-            custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
-
-            benchmark_action->Evaluate(input, graph);
-            tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
-            cout << "================================= END " + graph.GetGraphNaming() + " ================ " << endl << endl << endl;
-        }*/
 
         benchmark_action->PostProcess(input);
     }
