@@ -270,9 +270,11 @@ void Evaluate(const int mixingid, InputParser &input, int already_spent_time_on_
     MAXCUT_best_size = max(MAXCUT_best_size, biqmac_cut_size_k);
     MAXCUT_best_size = max(MAXCUT_best_size, 0LL);
 
+    cout << "MAXCUT_best_size = " << MAXCUT_best_size << endl;
+
     if (input.cmdOptionExists("-exact-early-stop-v") || input.cmdOptionExists("-exact-early-stop-ratio")) {
-        if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;
-        if (MAXCUT_best_size != mqlib_cut_size_k || mqlib_cb_k.HasExceededTimelimit()) mqlib_time_k = -1;
+        //if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;
+        //if (MAXCUT_best_size != mqlib_cut_size_k || mqlib_cb_k.HasExceededTimelimit()) mqlib_time_k = -1;
 #ifdef LOCALSOLVER_EXISTS
         if (MAXCUT_best_size != localsolver_cut_size   || localsolver_cb.HasExceededTimelimit())   localsolver_time = -1;
         if (MAXCUT_best_size != localsolver_cut_size_k || localsolver_cb_k.HasExceededTimelimit()) localsolver_time_k = -1;
