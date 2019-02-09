@@ -22,7 +22,7 @@ func_localize() {
                     -do-weighted-reduction \
                     -support-weighted-result \
                     -dont-unweighted-reduction \
-                    -number-of-threads 10 \
+                    -number-of-threads 8 \
                     -locsearch-iterations 100 \
                     -no-localsolver \
                     -exact-early-stop \
