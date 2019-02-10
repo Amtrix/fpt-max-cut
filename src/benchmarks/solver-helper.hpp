@@ -277,15 +277,13 @@ struct SolverEvaluation {
 
         cout << "MAXCUT_best_size = " << MAXCUT_best_size << endl;
 
-        if (input.cmdOptionExists("-exact-early-stop-v") || input.cmdOptionExists("-exact-early-stop-ratio")) {
-            //if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;
-            //if (MAXCUT_best_size != mqlib_cut_size_k || mqlib_cb_k.HasExceededTimelimit()) mqlib_time_k = -1;
+        //if (MAXCUT_best_size != mqlib_cut_size   || mqlib_cb.HasExceededTimelimit())   mqlib_time   = -1;
+        //if (MAXCUT_best_size != mqlib_cut_size_k || mqlib_cb_k.HasExceededTimelimit()) mqlib_time_k = -1;
 #ifdef LOCALSOLVER_EXISTS
-            if (localsolver_time   > total_time_seconds * 1000 || localsolver_cb.HasExceededTimelimit())   localsolver_time = -1;
-            if (localsolver_time_k > total_time_seconds * 1000 || localsolver_cb_k.HasExceededTimelimit()) localsolver_time_k = -1;
+        if (localsolver_time   > total_time_seconds * 1000 || localsolver_cb.HasExceededTimelimit())   localsolver_time = -1;
+        if (localsolver_time_k > total_time_seconds * 1000 || localsolver_cb_k.HasExceededTimelimit()) localsolver_time_k = -1;
 #endif
-            //if (MAXCUT_best_size != biqmac_cut_size)   biqmac_time   = -1;
-            //if (MAXCUT_best_size != biqmac_cut_size_k) biqmac_time_k = -1;
-        }
+        //if (MAXCUT_best_size != biqmac_cut_size)   biqmac_time   = -1;
+        //if (MAXCUT_best_size != biqmac_cut_size_k) biqmac_time_k = -1;
     }
 };
