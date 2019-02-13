@@ -58,9 +58,9 @@ vector<string> kOutputSubtyping = {"", "-avg"};
 vector<int> kMarkedSizeColumnDescriptor =   {10, 10, 15, 22, 15, 50};
 vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
 vector<int> kernelizationCountDescriptor =  {10, 10, 10, 10, 10, 10, 60};
-vector<int> kernelizationDescriptor =       {15, 15, 15, 15, 15, 15, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 100};
-vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,30,30,30,30,30,100};
-vector<int> liveMaxcutDescriptor = {20,20,20,20,20,100};
+vector<int> kernelizationDescriptor =       {15, 15, 15, 15, 15, 15, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 150};
+vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,30,30,30,30,30,150};
+vector<int> liveMaxcutDescriptor = {20,20,20,20,20,150};
 
 void InitOutputFiles(const InputParser& input) {
     if (input.cmdOptionExists("-oneway-reduce-marked-size")) {
