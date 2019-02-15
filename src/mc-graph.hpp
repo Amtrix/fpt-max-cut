@@ -3,7 +3,7 @@
 #define LIMIT_NUM_NODES -1LL
 #define LIMIT_ABS_WEIGHT -1LL
 #define TRANSFORM_SPLITTER false
-#define SCALED_FROM 10000LL
+#define SCALED_FROM 100000LL
 
 #include "input-parser.hpp"
 #include "./src/output-filter.hpp"
