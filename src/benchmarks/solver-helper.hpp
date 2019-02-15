@@ -172,8 +172,9 @@ struct SolverEvaluation {
                 G.PrintGraph(filename, true, scale);
                 auto res = exec_custom(biqmac_binpath, project_build_dir + "/" + filename, total_time_seconds);
 
-                biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
-                if (biqmac_cut_size != -1) biqmac_cut_size *= scale;
+                double dbl_biqmac_cut_size = ParseBiqmacOutput_MxcCutSize(get<0>(res));
+                if (dbl_biqmac_cut_size >= 0) dbl_biqmac_cut_size *= scale;
+                biqmac_cut_size = (EdgeWeight) dbl_biqmac_cut_size;
                 biqmac_time = get<1>(res);
             });
 
@@ -190,9 +191,10 @@ struct SolverEvaluation {
                 kernelized.PrintGraph(filename, true, scale);
                 auto res = exec_custom(biqmac_binpath, project_build_dir + "/" + filename, total_time_seconds - already_spent_time_on_kernelization_seconds_sec);
 
-                biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
-                if (biqmac_cut_size_k != -1) biqmac_cut_size_k *= scale;
-                if (biqmac_cut_size_k != -1) biqmac_cut_size_k += (EdgeWeight)(-k_change);
+                double dbl_biqmac_cut_size_k = ParseBiqmacOutput_MxcCutSize(get<0>(res));
+                if (dbl_biqmac_cut_size_k >= 0) dbl_biqmac_cut_size_k *= scale;
+                if (dbl_biqmac_cut_size_k >= 0) dbl_biqmac_cut_size_k += (EdgeWeight)(-k_change);
+                biqmac_cut_size_k = (EdgeWeight) dbl_biqmac_cut_size_k;
                 biqmac_time_k  = get<1>(res);
                 if (biqmac_time_k >= 0) biqmac_time_k += already_spent_time_on_kernelization_seconds_ms;
             }); 
