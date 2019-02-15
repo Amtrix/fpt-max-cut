@@ -20,7 +20,7 @@ func_localize() {
                     -total-allowed-solver-time $allowed_total_time_seconds \
                     -do-weighted-reduction \
                     -do-signed-reduction \
-                    -number-of-threads 9 \
+                    -number-of-threads 8 \
                     -no-localsolver \
                     -locsearch-iterations 100 \
                     -exact-early-stop \
