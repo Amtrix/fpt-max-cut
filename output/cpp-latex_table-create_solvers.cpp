@@ -5,7 +5,7 @@ using namespace std;
 
 
 
-const string outpath = "/solvers/real-world-small-hard/out";
+const string outpath = "/solvers/real-world-small/out";
 
 Table table;
 
