@@ -125,7 +125,7 @@ public:
                 while (!is_all_finished) {
                     is_all_finished = true;
                     LogTime(times_all_components, t0);
-                    if (KernelizeExec(kernelized, {RuleIds::RuleS2Weighted, RuleIds::RuleWeightedTriag}, times_all_components, false))
+                    if (KernelizeExec(kernelized, {RuleIds::RuleS3Weighted, RuleIds::RuleS2Weighted, RuleIds::RuleWeightedTriag}, times_all_components, false))
                         is_all_finished = false, total_finish = false;
                 }
             }

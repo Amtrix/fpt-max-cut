@@ -108,7 +108,7 @@ void OutputLiveMaxcut(const InputParser& input,
                       const int num_nodes,
                       const int num_edges,
                       const double xtime,
-                      const int maxcutsz,
+                      const double maxcutsz,
                       const string sfx);
 
 void OutputMarkedSetAnalysisMeta(const InputParser& input, const string str);

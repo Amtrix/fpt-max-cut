@@ -249,7 +249,7 @@ void OutputLiveMaxcut(const InputParser& input,
                       const int num_nodes,
                       const int num_edges,
                       const double xtime,
-                      const int maxcutsz,
+                      const double maxcutsz,
                       const string sfx) {
     if (!input.cmdOptionExists("-live-maxcut-analysis"))
         return;
@@ -257,7 +257,7 @@ void OutputLiveMaxcut(const InputParser& input,
     if (input.cmdOptionExists("-benchmark-output")) {
         const string output_path = input.getCmdOption("-benchmark-output") + "-maxcut_live-" + sfx;
         ofstream out(output_path, fstream::app);
-        print_row(out, liveMaxcutDescriptor, "dddfds", sec, num_nodes, num_edges, xtime, maxcutsz, dataset.c_str());
+        print_row(out, liveMaxcutDescriptor, "dddffs", sec, num_nodes, num_edges, xtime, maxcutsz, dataset.c_str());
     }
 }
 

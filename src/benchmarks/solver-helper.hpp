@@ -88,7 +88,7 @@ struct SolverEvaluation {
             total_time_seconds = max(already_spent_time_on_kernelization_seconds_sec * 5, 10);
         }
 
-        OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time_seconds) + " of which kernelization has used: " + to_string(already_spent_time_on_kernelization_seconds) + " [seconds].");
+        OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time_seconds) + " of which kernelization has used: " + to_string(already_spent_time_on_kernelization_seconds_sec) + " [seconds].");
 
         int locsearch_iterations = 1;
         if (input.cmdOptionExists("-locsearch-iterations")) {
@@ -239,8 +239,13 @@ struct SolverEvaluation {
         if (thread_biqmac && thread_biqmac_k) {
             thread_biqmac->join(); thread_biqmac_k->join();
 
+            // No timelimit exceeded but also no cut? => CRASH happened
+            if (biqmac_cut_size < 0 && biqmac_time >= 0) biqmac_time = -2; // ERROR
+            if (biqmac_cut_size_k < 0 && biqmac_time_k >= 0) biqmac_time_k = -2; // ERROR
+
             cout << "BIQMAC(G):  " << biqmac_cut_size << " " << biqmac_time << endl;
             cout << "BIQMAC(Gk): " << biqmac_cut_size_k << " " << biqmac_time_k << endl;
+            cout << "BIQMAC(Gk-no_k_change): " << biqmac_cut_size_k + k_change << " " << biqmac_time_k << endl;
             
             tmp_MAXCUT_best_size = max(SolverEvaluation::local_search_cut_size_best, SolverEvaluation::localsolver_cut_size_best);
             tmp_MAXCUT_best_size = max(tmp_MAXCUT_best_size, biqmac_cut_size);
@@ -260,6 +265,7 @@ struct SolverEvaluation {
             
             cout << "MQLIB(G):  " << mqlib_cut_size   << " " << mqlib_time << " (timelimit exceeded: " << mqlib_cb.HasExceededTimelimit() << ")" << endl;
             cout << "MQLIB(Gk): " << mqlib_cut_size_k << " " << mqlib_time_k << " (timelimit exceeded: " << mqlib_cb_k.HasExceededTimelimit() << ")" << endl;
+            cout << "MQLIB(Gk-no_k_change): " << mqlib_cut_size_k + k_change << " " << mqlib_time_k << " (timelimit exceeded: " << mqlib_cb_k.HasExceededTimelimit() << ")" << endl;
         }
 
         if (thread_localsolver && thread_localsolver_k) {
@@ -269,6 +275,7 @@ struct SolverEvaluation {
     #ifdef LOCALSOLVER_EXISTS
             cout << "LOCALSOLVER(G):  " << localsolver_cut_size   << " " << localsolver_time << " (timelimit exceeded: " << localsolver_cb.HasExceededTimelimit() << ")" << endl;
             cout << "LOCALSOLVER(Gk): " << localsolver_cut_size_k << " " << localsolver_time_k << " (timelimit exceeded: " << localsolver_cb_k.HasExceededTimelimit() << ")" << endl;
+            cout << "LOCALSOLVER(Gk-no_k_change): " << localsolver_cut_size_k + k_change << " " << localsolver_time_k << " (timelimit exceeded: " << localsolver_cb_k.HasExceededTimelimit() << ")" << endl;
     #endif
         }
 

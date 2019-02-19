@@ -3,7 +3,7 @@
 #define LIMIT_NUM_NODES -1LL
 #define LIMIT_ABS_WEIGHT -1LL
 #define TRANSFORM_SPLITTER false
-#define SCALED_FROM 100000LL
+#define SCALED_FROM 1000000LL
 
 #include "input-parser.hpp"
 #include "./src/output-filter.hpp"
@@ -30,7 +30,7 @@ enum class RuleIds : int {
     RevSpecialRule2,
     SpecialRule2Signed,
     Rule8, Rule9, Rule9X, Rule10, Rule10AST, RuleS2, RuleS3, RuleS4, RuleS5, RuleS6, Rule8Signed, Rule8SpecialCase, RuleS2SpecialCase, MegaRule,
-    RuleS2Weighted, RuleWeightedTriag
+    RuleS2Weighted, RuleS3Weighted, RuleWeightedTriag
 };
 
 extern const map<RuleIds, string> kRuleDescriptions;
@@ -44,7 +44,7 @@ bool ShouldExitEarly(InputParser *input, const MaxCutGraph *G);
 
 class Burer2002Callback : public MaxCutCallback {
 public:
-    Burer2002Callback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, int cutadd_, string sfxout_) :
+    Burer2002Callback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, double cutadd_, string sfxout_) :
                 total_allowed_time(total_allowed_time_),
                 input_parser(input_parser_),
                 graph_name(graph_name_),
@@ -94,11 +94,29 @@ public:
     int num_nodes;
     int num_edges;
     double added_preprocess_time;
-    int cutadd;
+    double cutadd;
     string sfxout;
     int terminating_cut_size = -1;
     bool timelimit_exceeded = false;
 };
+
+// Vertices are 1-indexed.
+// Returns max num node.
+template <class EdgeW>
+int CompressEdgeList(vector<tuple<int,int,EdgeW>> &elist) {
+    int nodeid = 1;
+    unordered_map<int,int> node_mapping;
+
+    for (auto& e : elist) {
+        int a = get<0>(e), b = get<1>(e);
+        if (node_mapping[a] == 0) node_mapping[a] = nodeid++;
+        if (node_mapping[b] == 0) node_mapping[b] = nodeid++;
+        get<0>(e) = node_mapping[a];
+        get<1>(e) = node_mapping[b];
+    }
+
+    return nodeid - 1;
+}
 
 // Definition articulation node:
 // Its removal parts the graph in at least two non-empty graphs.
@@ -160,6 +178,7 @@ public:
     const vector<int>& GetAdjacency(int node) const { return g_adj_list.at(node); }
     EdgeWeight GetEdgeWeight(const int edgekey) const { return edge_weight.at(edgekey); }
     EdgeWeight GetEdgeWeight(const pair<int,int> &e) const { return edge_weight.at(MakeEdgeKey(e)); }
+    EdgeWeight GetEdgeWeight(const int a, const int b) const { return edge_weight.at(MakeEdgeKey(make_pair(a,b))); }
     bool AreAdjacent(int n1, int n2) const { return MapEqualCheck(edge_exists_lookup, MakeEdgeKey(n1,n2), true); }
     int Degree(int node) const { return g_adj_list.at(node).size(); }
     vector<int> GetConnectedComponentOf(int node, vector<bool>& visited) const;
@@ -167,7 +186,8 @@ public:
     vector<vector<int>> GetAllConnectedComponents() const;
     bool DoesDisconnect(const vector<int>& selection_rem) const;
     vector<pair<int,int>> GetAllExistingEdges() const;
-    vector<tuple<int,int,EdgeWeight>> GetAllExistingEdgesWithWeights() const;
+    vector<tuple<int,int,EdgeWeight>> GetAllExistingEdgesWithWeights(const int add_node_dx = 0) const;
+    vector<tuple<int,int,double>> GetAllExistingEdgesWithWeightsScaled(const int add_node_dx = 0) const;
     bool IsClique(const vector<int>& vertex_set, const EdgeWeight verify_weight = 0) const;
     double GetEdwardsErdosBound() const;
     int CountExternalVertices(const vector<int> &vertex_set) const; // G[vertex_set] considered.

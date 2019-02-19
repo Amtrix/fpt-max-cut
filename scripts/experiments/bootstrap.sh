@@ -30,7 +30,7 @@ func_localize() {
             read -p "Select the build (benchmark or benchmark-debug): " selected_build
         done
 
-        make $selected_build
+        make $selected_build -j4
 
         while ! [[ "$threads" =~ ^[0-9]+$ ]]; do
             read -p "Number of threads for script handling " threads

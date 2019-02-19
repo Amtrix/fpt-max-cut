@@ -46,6 +46,7 @@ const map<RuleIds, string> kRuleNames = {
     {RuleIds::Rule10AST,       "Rule10AST"},
     {RuleIds::RuleS2,          "RuleS2"},
     {RuleIds::RuleS2Weighted,  "RuleS2Weighted"},
+    {RuleIds::RuleS3Weighted,  "RuleS3Weighted"},
     {RuleIds::RuleWeightedTriag,"RuleWeightedTriag"},
     {RuleIds::RuleS3,          "RuleS3"},
     {RuleIds::RuleS4,          "RuleS4"},
@@ -61,7 +62,7 @@ const map<RuleIds, string> kRuleNames = {
 const vector<RuleIds> kAllRuleIds = {
     RuleIds::SpecialRule1, RuleIds::SpecialRule2, RuleIds::RevSpecialRule1, RuleIds::RevSpecialRule2,
     RuleIds::Rule8, RuleIds::Rule9, RuleIds::Rule9X, RuleIds::Rule10, RuleIds::Rule10AST, RuleIds::RuleS2, RuleIds::RuleS3, RuleIds::RuleS4, RuleIds::RuleS5, RuleIds::RuleS6,
-    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed, RuleIds::Rule8SpecialCase, RuleIds::RuleS2SpecialCase, RuleIds::MegaRule, RuleIds::RuleS2Weighted, RuleIds::RuleWeightedTriag
+    RuleIds::Rule8Signed, RuleIds::SpecialRule2Signed, RuleIds::Rule8SpecialCase, RuleIds::RuleS2SpecialCase, RuleIds::MegaRule, RuleIds::RuleS2Weighted, RuleIds::RuleS3Weighted, RuleIds::RuleWeightedTriag
 };
 
 struct trie_node_r8 {
@@ -513,16 +514,25 @@ vector<pair<int,int>> MaxCutGraph::GetAllExistingEdges() const {
     return ret;
 }
 
-vector<tuple<int,int,EdgeWeight>> MaxCutGraph::GetAllExistingEdgesWithWeights() const {
+vector<tuple<int,int,EdgeWeight>> MaxCutGraph::GetAllExistingEdgesWithWeights(const int add_node_dx) const {
     vector<tuple<int,int,EdgeWeight>> ret;
     const auto& elist = GetAllExistingEdges();
 
     for (auto e : elist)
-        ret.push_back(make_tuple(e.first, e.second, GetEdgeWeight(e)));
+        ret.push_back(make_tuple(e.first + add_node_dx, e.second + add_node_dx, GetEdgeWeight(e)));
     
     return ret;
 }
 
+vector<tuple<int,int,double>> MaxCutGraph::GetAllExistingEdgesWithWeightsScaled(const int add_node_dx) const {
+    vector<tuple<int,int,double>> ret;
+    const auto& elist = GetAllExistingEdges();
+
+    for (auto e : elist)
+        ret.push_back(make_tuple(e.first + add_node_dx, e.second + add_node_dx, is_scaled ? GetEdgeWeight(e) / (double)(SCALED_FROM) : GetEdgeWeight(e) ));
+    
+    return ret;
+}
 
 bool MaxCutGraph::IsClique(const vector<int>& vertex_set, const EdgeWeight verify_weight) const {
     for (unsigned int i = 0; i < vertex_set.size(); ++i)
@@ -2143,13 +2153,29 @@ vector<pair<int,int>> MaxCutGraph::GetS3Candidates(const bool break_on_first, co
 
 bool MaxCutGraph::ApplyS3Candidate(const pair<int,int>& candidate, const unordered_map<int,bool>& preset_is_external) {
     (void) preset_is_external;
-    
     custom_assert(AreAdjacent(candidate.first, candidate.second) == false);
     custom_assert(SameSets(GetAdjacency(candidate.first), GetAdjacency(candidate.second)));
     custom_assert(IsClique(SetUnion(GetAdjacency(candidate.first), {candidate.first})));
     custom_assert(IsClique(SetUnion(GetAdjacency(candidate.second), {candidate.second})));
+
+    const auto ng_a = GetAdjacency(candidate.first);
+    const auto ng_b = GetAdjacency(candidate.second);
+    const EdgeWeight w = GetEdgeWeight(candidate.first, ng_a[0]);
+
+    for (auto x1 : ng_a)
+        for (auto x2 : ng_a)
+            if (x1 != x2 && GetEdgeWeight(x1, x2) != w)
+                return false;
+
+    for (auto root : {candidate.first, candidate.second}) {
+        const auto ng = GetAdjacency(root);
+        for (auto x : ng)
+            if (GetEdgeWeight(root, x) != w)
+                return false;
+    }
+
     
-    AddEdge(candidate.first, candidate.second);
+    AddEdge(candidate.first, candidate.second, w);
 
     custom_assert(IsClique(SetUnion(GetAdjacency(candidate.second), {candidate.first, candidate.second})));
     
@@ -2556,14 +2582,8 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
             ApplyMegaRuleCandidates(false);
             break;
         }
+        case RuleIds::RuleS2Weighted:
         case RuleIds::RuleS2: { // preset_ext_supp=TRUE
-            auto candidates = GetS2Candidates(true, false, preset_is_external);
-            for (auto candidate : candidates)
-                rules_usage_count[rule_id] += ApplyS2Candidate(candidate, preset_is_external);
-
-            break;
-        }
-        case RuleIds::RuleS2Weighted: {
             auto candidates = GetS2Candidates(true, false, preset_is_external);
             for (auto candidate : candidates)
                 rules_usage_count[rule_id] += ApplyS2Candidate(candidate, preset_is_external);
@@ -2621,6 +2641,7 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
             
             break;
         }
+        case RuleIds::RuleS3Weighted:
         case RuleIds::RuleS3: {
             auto candidates = GetS3Candidates(false, preset_is_external);
             for (auto candidate : candidates)
@@ -2958,21 +2979,15 @@ pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<in
 // https://github.com/MQLib/MQLib
 pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec_time, Burer2002Callback* callback) const {
     std::vector<Instance::InstanceTuple> edgeList;
-    for (int i = 0; i < num_nodes; ++i) {
-        if (MapEqualCheck(removed_node, i, true)) continue;
+    auto edges = GetAllExistingEdgesWithWeightsScaled(1);
+    int real_num_nodes = CompressEdgeList(edges);
 
-        auto adj = GetAdjacency(i);
-        for (auto w : adj) {
-            if (MapEqualCheck(removed_node, w, true) || i >= w) continue;
-            auto edge_key = MakeEdgeKey(w, i);
-            custom_assert(MapEqualCheck(edge_exists_lookup, edge_key, true));
+    for (auto e : edges)
+        edgeList.push_back(Instance::InstanceTuple(std::make_pair(get<0>(e), get<1>(e)), get<2>(e)));
 
-            EdgeWeight weight = edge_weight.at(edge_key);
-            edgeList.push_back(Instance::InstanceTuple(std::make_pair(i+1, w+1), !is_scaled ? weight : (weight / (double)(SCALED_FROM))));
-        }
-    }
+    
 
-    MaxCutInstance mi(edgeList, num_nodes + 1);
+    MaxCutInstance mi(edgeList, real_num_nodes);
     Burer2002 heur(mi, max_exec_time, false, callback);
     const MaxCutSimpleSolution& mcSol = heur.get_best_solution();
 
@@ -3040,20 +3055,22 @@ vector<vector<int>> MaxCutGraph::GetCliquesWithAtLeastOneInternal() const {
     return ret;
 }
 
-
-
 #ifdef LOCALSOLVER_EXISTS
     pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeMaxCutWithLocalsolver(const int max_exec_time, LocalSolverCallback* callback) const {
         MaxcutLocalsolver solver;
-        auto elist = GetAllExistingEdgesWithWeights();
-        for (auto& e : elist) {
-            get<0>(e)++;
-            get<1>(e)++;
-        }
-        solver.readInstance(num_nodes, elist);
-        //if (callback != nullptr) solver.addCallback(2, &callback);
-        solver.solve(max_exec_time, callback);
+        auto elist_normal = GetAllExistingEdgesWithWeights(1);
+        auto elist_scaled = GetAllExistingEdgesWithWeightsScaled(1);
 
-        return make_pair(solver.getCutSize(), solver.getCut());
+        if (is_scaled == false) {
+            int real_num_nodes = CompressEdgeList(elist_normal);
+            solver.readInstanceInt(real_num_nodes, elist_normal);
+        } else {
+            int real_num_nodes = CompressEdgeList(elist_scaled);
+            solver.readInstanceDouble(real_num_nodes, elist_scaled);
+        }
+
+        solver.solve(max_exec_time * 1.05, callback);
+
+        return make_pair(!is_scaled ? solver.getCutSize() : solver.getCutSize() * SCALED_FROM, solver.getCut());
     }
 #endif

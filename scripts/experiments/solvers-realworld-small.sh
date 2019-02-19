@@ -12,10 +12,11 @@ func_localize() {
 
     #10 hours:
     allowed_total_time_seconds=36000
-
+    allowed_total_time_seconds=180
+    allowed_total_time_seconds=10800
 
     mkdir -p $experiment_outdir/solvers/real-world-small/
-    $builddir/./$selected_build -action "kernelization" -iterations 1 -fdir $thesis_tests/real-world-small-missing \
+    $builddir/./$selected_build -action "kernelization" -iterations 1 -fdir $thesis_tests/real-world-small-missing  \
                     -total-allowed-solver-time $allowed_total_time_seconds \
                     -do-weighted-reduction \
                     -do-signed-reduction \

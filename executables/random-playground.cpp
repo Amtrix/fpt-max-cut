@@ -1,163 +1,138 @@
-#include <bits/stdc++.h>
-#include "src/utils.hpp"
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include "localsolver.h"
+#include "./src/mc-graph.hpp"
+
+using namespace localsolver;
 using namespace std;
 
-// Rule1: If clique of odd size n and has n - 2 external, remove edge between non-external
+class Maxcut {
+public:
+    // LocalSolver 
+    LocalSolver localsolver;
 
+    // Number of vertices 
+    int n;
 
-int n = 9;
-int nc = 7;
+    // Number of edges
+    int m;
 
-string EncodeDiff(vector<int> &cuts) {
-    string ret = "";
-    for (int i = 0; i + 1 < (int)cuts.size(); ++i)
-        ret += (to_string(cuts[i] - cuts[i+1])) + ".";
-    return ret;
-}
+    // Origin of each edge 
+    vector<int> origin;
 
-int GetMaxCut(const vector<bool> color_base, const vector<pair<int,int>> &edges) {
-    int ret = 0;
-    for (int rem_mask = 0; rem_mask < (1 << (n - nc)); ++rem_mask) {
-        vector<bool> color = color_base;
-        for (int i = 0; i < n-nc; ++i) color.push_back(rem_mask & (1 << i));
+    // Destination of each edge 
+    vector<int> dest;
 
-        int curr = 0;
-        for (auto e : edges)
-            curr += color[e.first] != color[e.second];
+    // Weight of each edge 
+    vector<lsdouble> w;
 
-        ret = max(ret, curr);
-    }
+    // True if vertex x[i] is on the right side of the cut, false if it is on the left side of the cut 
+    vector<LSExpression> x;
 
-    return ret;
-}
+    // Objective 
+    LSExpression cutWeight;
 
-string GetMaxCutClass(const vector<pair<int,int>> &edges) {
-    vector<int> sol;
-    for (int nc_mask = 0; nc_mask < (1 << nc); ++nc_mask) {
-        vector<bool> color;
-        for (int i = 0; i < nc; ++i) color.push_back(nc_mask & (1 << i));
-        int subsol = GetMaxCut(color, edges);
-        sol.push_back(subsol);
-    }
+    // Reads instance data. 
+    void readInstance(const string& fileName){
+        cout << "F: " << fileName << endl; 
+        ifstream infile;
+        ///infile.exceptions(ifstream::failbit | ifstream::badbit);
+        infile.open(fileName.c_str());
+        
+        infile >> n;
+        infile >> m;
 
-    return EncodeDiff(sol);
-}
+        origin.resize(m);
+        dest.resize(m);
+        w.resize(m);
 
-vector<pair<int,int>> GetCliqueEdges(const int n) {
-    vector<pair<int,int>> ret;
-    for (int i = 0; i < n; ++i)
-        for (int j = i + 1; j < n; ++j)
-            ret.push_back(make_pair(i,j));
-    return ret;
-}
+        for(int e = 0; e < m; e++){
+            long long p1,p2,p3;
+            infile >> p1 >> p2 >> p3;
 
-void printedges(vector<pair<int,int>> edges) {
-    for (auto e : edges)
-        cout << "(" << e.first << ", " << e.second << ") ";
-    cout << endl;
-}
-
-bool TryRemoveEdge(const vector<pair<int,int>> &edges, std::function<bool(pair<int,int>, vector<pair<int,int>>&)> callback) {
-    for (auto e : edges) {
-        auto cpye = edges;
-        auto it = std::find(cpye.cbegin(), cpye.cend(), e);
-        cpye.erase(it);
-        if (callback(e, cpye)) return true;
-    }
-    return false;
-}
-
-vector<pair<int,int>> EdgeConcat(const vector<pair<int,int>> &A, const vector<pair<int,int>> &B) {
-    vector<pair<int,int>> ret = A;
-    ret.insert( ret.end(), B.begin(), B.end());
-    return ret;
-}
-
-bool TryRemoveNEdge(const int N, const vector<pair<int,int>> erased, const vector<pair<int,int>> &edges, std::function<bool(vector<pair<int,int>>, vector<pair<int,int>>&)> callback) {
-    return TryRemoveEdge(edges, [&](pair<int,int> erased_edge, vector<pair<int,int>>& edges){
-        if (erased.empty() == false && erased.back() > erased_edge) return false;
-
-        if (N > 1) return TryRemoveNEdge(N - 1, EdgeConcat(erased, {erased_edge}), edges, callback);
-        else return callback(EdgeConcat(erased, {erased_edge}), edges);
-
-        return false;
-    });
-}
-
-void TryTripleRemove(const string basesol, const vector<pair<int,int>> &edges) {
-    TryRemoveNEdge(5, {}, edges, [&](vector<pair<int,int>> erased, vector<pair<int,int>>& edges){
-        string cmpsol = GetMaxCutClass(edges);
-        if (basesol == cmpsol) {
-            cout << "Reduction: " << endl;
-            cout << "ERASE-TRIPLE: " << "X "<< erased.size() << endl;
-            cout << "mx(0) = " << GetMaxCut(vector<bool>(nc, 0), edges) << endl;
-            printedges(edges);
-            cout << endl << endl;
+            origin[e] = p1;
+            dest[e] = p2;
+            w[e] = p3 / 10000.0;
+            
+            cout << origin[e] << " " << dest[e] << " " << w[e] << endl;
         }
-        return false;
-    });
-}
-
-void TryHowManyEdgesRemovable(const string basesol, const vector<pair<int,int>> &edges) {
-    for (int i = 1; i <= n * (n-1) / 2; ++i) {
-        bool possible = false;
-        cout << "Can remove " << i << " edges?" << endl;
-        TryRemoveNEdge(i, {}, edges, [&](vector<pair<int,int>> erased, vector<pair<int,int>>& edges){
-            string cmpsol = GetMaxCutClass(edges);
-            if (basesol == cmpsol) {
-                for (auto e : erased) cout << e.first << " " << e.second << " ,  ";
-                cout << endl;
-                possible = true;
-                return true;
-            }
-            return false;
-        });
-        cout << (possible ? "yes" : "no") << endl;
     }
-}
 
-int main() {
-    string basesol = GetMaxCutClass(GetCliqueEdges(n));
-    
-    vector<pair<int,int>> cmp_edges;
-    //for (int i = 0; i < nc; ++i) // look into this too, there is something to this +-2... for n = 7,nc=5
-    //    for (int j = i + 1; j < nc; ++j)
-    //        cmp_edges.push_back(make_pair(i, j));
-    
-    for (int i = 0; i < n; ++i)
-        for (int j = i + 1; j < n; ++j)
-            if (i < nc || j < nc)
-                cmp_edges.push_back(make_pair(i, j));
+    void solve(int limit){
+        // Declares the optimization model. 
+        LSModel model = localsolver.getModel();
 
-    string cmpsol = GetMaxCutClass(cmp_edges);
-
-    cout << "Test #1: " << (basesol == cmpsol) << endl;
-
-    auto edges = GetCliqueEdges(n);
-    cout << "Base edge list: " << endl;
-    printedges(edges);
-    cout << "Base mx(0) = " << GetMaxCut(vector<bool>(nc, 0), edges) << endl;
-    //cout << "Base key = " << basesol << endl;
-    cout << endl;
-
-    TryHowManyEdgesRemovable(basesol, edges);
-
-    /*
-    TryRemoveEdge(edges, [&](pair<int,int> erased, vector<pair<int,int>>& edges){
-        string cmpsol = GetMaxCutClass(edges);
-        if (basesol == cmpsol) {
-            cout << "Reduction: " << endl;
-            cout << "ERASE: " << erased.first << " " << erased.second << endl;
-            cout << "mx(0) = " << GetMaxCut(vector<bool>(nc, 0), edges) << endl;
-            printedges(edges);
-            cout << endl << endl;
-
-            TryTripleRemove(basesol, edges);
+        // Decision variables x[i]
+        x.resize(n);
+        for(int i = 0; i < n; i++) {
+            x[i] = model.boolVar();
         }
-        return false;
-    });*/
+        
+        // incut[e] is true if its endpoints are in different class of the partition
+        vector<LSExpression> incut(m);
+        for(int e = 0; e < m; e++){
+            incut[e] = model.neq(x[origin[e] - 1], x[dest[e] - 1]);
+        }
+        
+        // Size of the cut
+        cutWeight = model.sum();
+        for(int e = 0; e < m; e++){
+            cutWeight += w[e]*incut[e];
+        }
 
-    
-    
-    return 0;
+        model.maximize(cutWeight);
+        model.close();
+
+        // Parameterizes the solver. 
+        LSPhase phase = localsolver.createPhase();
+        phase.setTimeLimit(limit);
+        
+        localsolver.getParam().setVerbosity(1);
+      //  localsolver.getParam().setTimeBetweenTicks(2);
+      std::cout.setf ( std::ios::fixed );
+        localsolver.solve();
+    }
+
+    // Writes the solution in a file following the following format: 
+    //  - objective value
+    //  - each line contains a vertex number and its subset (1 for S, 0 for V-S)
+    void writeSolution(const string& fileName){
+        ofstream outfile;
+        outfile.exceptions(ofstream::failbit | ofstream::badbit);
+        outfile.open(fileName.c_str());
+
+        outfile << cutWeight.getValue() << endl;
+        // Note: in the instances the indices start at 1
+        for (unsigned int i = 0; i < n; ++i)
+            outfile << i+1 << " " << x[i].getValue() << endl;
+    }
+};
+
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        cerr << "Usage: maxcut inputFile [outputFile] [timeLimit] " << endl;
+        return 1;
+    }
+
+    const char* instanceFile = argv[1];
+    const char* solFile = argc > 2 ? argv[2] : NULL;
+    const char* strTimeLimit = argc > 3 ? argv[3] : "10";
+
+    try {
+        MaxCutGraph G(instanceFile);
+       // cout << G.ComputeMaxCutWithMQLib(60, nullptr).first << endl;
+      //  cout << G.ComputeMaxCutWithLocalsolver(60, nullptr).first << endl;
+
+        Maxcut model;
+        model.readInstance(instanceFile);
+        model.solve(atoi(strTimeLimit));
+        //if(solFile != NULL) model.writeSolution(solFile);
+        cout << "GET VALUE" << endl;
+        cout << model.cutWeight.getDoubleValue() << endl;
+        return 0;
+    } catch (const exception& e){
+        cerr << "Error occurred: " << e.what() << endl;
+        return 1;
+    }
 }
