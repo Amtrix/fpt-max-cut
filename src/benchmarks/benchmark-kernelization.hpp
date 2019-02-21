@@ -155,7 +155,7 @@ public:
         ////////////////////////
 
         // GRAPH IS UNWEIGHTED AT THIS POINT IF UNWEIGHTED KERNELIZATION IS USED!
-        // THAT IS WHY ONE NEEDS TO POSSIBLY USE -force-weighted-result.
+        // THAT IS WHY ONE NEEDS TO USE -force-weighted-result.
         t0 = GetCurrentTime();
         if (kMakeWeightedAtEnd || inputFlagToWeightedIsSet) {
             OutputDebugLog("Unweithed to weighted kernelization. |V| = " + to_string(kernelized.GetRealNumNodes()) + ", |E| = " + to_string(kernelized.GetRealNumEdges()));

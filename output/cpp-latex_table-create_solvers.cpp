@@ -57,6 +57,7 @@ int main(int argc, char **argv){
     });
     CreateNewColumn(table, "biqmac_localsolver", [&](vector<string> row) { 
         double loct = GetValInRow(table, row, "#BIQMAC_T(G)");
+        if (loct < -1) return string("f");
         if (loct < 0) return string("-");
         return to_string_with_precision(loct/1000.0, 2);
     });

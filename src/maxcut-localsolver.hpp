@@ -17,7 +17,7 @@ bool ShouldExitEarly(InputParser *input, const int num_nodes, const int num_edge
 
 class LocalSolverCallback : public LSCallback {
 public:
-    LocalSolverCallback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, long long cutadd_, string sfxout_) :
+    LocalSolverCallback(double total_allowed_time_, InputParser *input_parser_, const string graph_name_, int mixingid_, int num_nodes_, int num_edges_, double added_preprocess_time_, long long cutadd_, string sfxout_, bool edge_weights_are_double_) :
                 total_allowed_time(total_allowed_time_),
                 input_parser(input_parser_),
                 graph_name(graph_name_),
@@ -26,7 +26,8 @@ public:
                 num_edges(num_edges_),
                 added_preprocess_time(added_preprocess_time_),
                 cutadd(cutadd_),
-                sfxout(sfxout_)
+                sfxout(sfxout_),
+                wedge_weights_are_double(edge_weights_are_double_)
         {
             if (ShouldExitEarly(input_parser, num_nodes, num_edges))
                 added_preprocess_time = max(added_preprocess_time, total_allowed_time_ - 60*60);
@@ -37,7 +38,12 @@ public:
         LSExpression obj = ls.getModel().getObjective(0);
 
         double runtime = stats.getRunningTime() + added_preprocess_time;
-        OutputLiveMaxcut(*input_parser, graph_name, mixingid, num_nodes, num_edges, runtime, obj.getDoubleValue() + cutadd, sfxout);
+
+        double cutsz;
+        if (wedge_weights_are_double) cutsz = obj.getDoubleValue();
+        else cutsz = obj.getValue();
+
+        OutputLiveMaxcut(*input_parser, graph_name, mixingid, num_nodes, num_edges, runtime, cutsz + cutadd, sfxout);
 
         if (runtime * 1.01 > total_allowed_time) {
             timelimit_exceeded = true;
@@ -60,6 +66,7 @@ private:
     long long cutadd;
     string sfxout;
     bool timelimit_exceeded = false;
+    bool wedge_weights_are_double;
 };
 
 

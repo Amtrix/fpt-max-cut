@@ -54,13 +54,14 @@ void print_row(std::ostream& out, vector<int> column_size, const char* format, .
 
 */
 
+const int FILENAMESZ = 200;
 vector<string> kOutputSubtyping = {"", "-avg"};
 vector<int> kMarkedSizeColumnDescriptor =   {10, 10, 15, 22, 15, 50};
 vector<int> cliqueDecompositionDescriptor = {10, 10, 22, 50};
 vector<int> kernelizationCountDescriptor =  {10, 10, 10, 10, 10, 10, 60};
-vector<int> kernelizationDescriptor =       {15, 15, 15, 15, 15, 15, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 150};
-vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,30,30,30,30,30,150};
-vector<int> liveMaxcutDescriptor = {20,20,20,20,20,150};
+vector<int> kernelizationDescriptor =       {15, 15, 15, 15, 15, 15, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, FILENAMESZ};
+vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,30,30,30,30,30, FILENAMESZ};
+vector<int> liveMaxcutDescriptor = {20,20,20,20,20, FILENAMESZ};
 
 void InitOutputFiles(const InputParser& input) {
     if (input.cmdOptionExists("-oneway-reduce-marked-size")) {
