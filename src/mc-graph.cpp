@@ -2790,6 +2790,8 @@ void MaxCutGraph::PrintGraph(std::ostream& out, bool printweight, EdgeWeight div
     auto currentv = GetAllExistingNodes();
     out << currentv.size() << " " << GetRealNumEdges() << endl;
 
+    if (IsScaled() == false) divide_weights = 0;
+
     int idgiver = 1;
     unordered_map<int,int> mapping_nodes;
     for (auto v : currentv) {
