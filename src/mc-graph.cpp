@@ -1519,12 +1519,14 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
 
 
     trie_r8 partitions;
+    unordered_map<int, int> visited;
     for (auto root : current_v) {
+        if (KeyExists(root, preset_is_external)) continue;
+
         vector<int> key = getr8key(root);
         partitions.Insert(key, root);
     }
 
-    unordered_map<int, int> visited;
     for (auto root : current_v) {
         if (visited[root] == 2) continue;
         if (KeyExists(root, preset_is_external)) continue;
@@ -1550,8 +1552,10 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
 
 bool MaxCutGraph::ApplyR8Candidate(const vector<int>& clique) {
     custom_assert(clique.size() >= 2);
-
-    vector<int> NG = SetSubstract(GetAdjacency(clique[0]), clique);
+    custom_assert(IsClique(clique));
+    
+    const auto adj = GetAdjacency(clique[0]);
+    vector<int> NG = SetSubstract(adj, clique);
     int szX = clique.size();
 
     bool ret = false;
@@ -2599,7 +2603,6 @@ bool MaxCutGraph::PerformKernelization(const RuleIds rule_id, const unordered_ma
         }
         case RuleIds::Rule8: { // preset_ext_supp=TRUE
             auto candidates = GetR8Candidates(false, preset_is_external);
-            cout << "C: " << candidates.size() << endl;
             for (auto candidate : candidates)
                 rules_usage_count[rule_id] += ApplyR8Candidate(candidate);
 
@@ -2766,12 +2769,13 @@ double MaxCutGraph::ExecuteLinearKernelization() {
 
 void MaxCutGraph::ExecuteExhaustiveKernelizationExternalsSupport(const unordered_map<int,bool> &preset_is_external) {
     vector<RuleIds> exec_order_stage1 = {
-        RuleIds::Rule8, RuleIds::RuleS2, RuleIds::RuleS5, RuleIds::RuleS3
+        RuleIds::RuleS2, RuleIds::Rule8, RuleIds::RuleS5, RuleIds::RuleS3
     };
 
     vector<RuleIds> exec_order_stage2 = {
         RuleIds::RuleS6
     };
+  
 
     for (auto order : {exec_order_stage1, exec_order_stage2}) {
         while (true) {

@@ -8,7 +8,7 @@ func_localize() {
     local cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
     source $cwd/bootstrap-vars.sh
 
-    bin=find-kernelization-general
+    bin=find-kernelization-general-debug
 
     cd $builddir
     make $bin
