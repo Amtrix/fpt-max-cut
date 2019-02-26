@@ -40,8 +40,8 @@ if (is.null(opt$loess)) {
 # Some variables that are used in various ways, to construct the plots
 types_to_test = c(0,1,2,3,4)
 res_folder=""
-col_vec = c("green3","red2","dodgerblue2","black", "purple", "green", "violet")
-pnt_vec  = c(19,4,18,15,0)
+col_vec = c("black","dodgerblue2","red2","green3", "purple", "green", "violet")
+pnt_vec  = c(17,16,15,5,0)
 pnt_vec1 = c(pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]], pnt_vec[[1]])
 pnt_vec2 = c(pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]], pnt_vec[[2]])
 columns  <- c('#sec','#it','#|V(G)|','#|E(G)|','#|V(Gk)|','#|E(Gk)|','#|Erem|','#CUTDIFF','#MQLIB(G)','#MQLIB(Gk)+CUT','#MQLIB.DIFF','#MQLIB.DIFF.SD','#LOCSOLVER(G)','#LOCSOLVER(Gk)+CUT',
@@ -131,11 +131,17 @@ pdf(opt$out, width=10, height=5)
     yrange[2] <- max(-yrange[1], yrange[2])
     yrange[2] <- 0.04
     xrange[1] <- 0
-    xrange[2] <- xrange[2] + 1
+    xrange[2] <- 7.9
 
     # Initialize the plotting area
-    plot(xrange, yrange, yaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
+    plot(xrange, yrange, yaxt='n',xaxt='n', xaxs='i', yaxs='i', col="black", type="n", main="stuff", ann=FALSE)
     axis(2, at=pretty(yrange), lab=paste0(pretty(yrange) * 100, '%'), las=TRUE)
+
+    labs <-c("0","1","2","3","4","5","6","7","8","9","10")
+    n=length(labs)
+    axis(side=1, at=seq(1,n,2)-1, labels=labs[seq(1,n,2)])
+    axis(side=1, at=seq(2,n,2)-1, labels=labs[seq(2,n,2)])
+
 
     # Label titles for both axes
     title(xlab=expression("Graph Density: " ~ frac(group("|",E(G),"|"),group("|",V(G),"|")), line=2.3))
@@ -147,8 +153,12 @@ pdf(opt$out, width=10, height=5)
        sub <- data_table_list[[dx + 1]]
        #points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]])
 
+       cxval <- 1.3 - 0.25 * dx
+       print(nam_vec[[dx + 1]])
+       print(cxval)
+
        if (!opt$nopoints)
-            points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[1]], cex=0.6)
+            points(sub[,x] , sub[,y] , col=col_vec[[dx + 1]], pch=pnt_vec[[dx + 1]], cex=cxval)
 
         if (do_loess) {
             loessv = loess_val
@@ -162,7 +172,7 @@ pdf(opt$out, width=10, height=5)
     lines(c(0,10), c(0,0), col=col_vec[[4]],lty=3)
 
     # Shows the legend
-    legend("bottomright", yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec1)
+    legend("bottomright", yrange[2], nam_vec, lty=, col=col_vec, pch=pnt_vec)
 }
 
 

@@ -12,7 +12,7 @@ func_localize() {
     mkdir -p $cwd/experiments-plots/cmp/isolated
     for i in "${types[@]}"
     do
-        $cwd/./cpp-latex_table-create-isolated.o $cwd/experiments $i
+        #$cwd/./cpp-latex_table-create_isolated.o $cwd/experiments $i
         Rscript $cwd/R-kagen-cmp-isolated.r -t $i -o $cwd/experiments-plots/cmp/isolated/$i.pdf
     done
 }
