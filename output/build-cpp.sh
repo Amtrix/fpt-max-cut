@@ -6,6 +6,7 @@ func_localize() {
     g++ $cwd/cpp-latex_table-create_isolated.cpp -o $cwd/cpp-latex_table-create_isolated.o
     g++ $cwd/cpp-latex_table-marked.cpp -o $cwd/cpp-latex_table-marked.o
     g++ $cwd/cpp-latex_table-create_solvers.cpp -o $cwd/cpp-latex_table-create_solvers.o
+    g++ $cwd/cpp-latex_table-create_biqmac.cpp -o $cwd/cpp-latex_table-create_biqmac.o
 }
 
 func_localize

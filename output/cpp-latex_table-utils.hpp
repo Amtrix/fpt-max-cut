@@ -25,6 +25,13 @@ string RemoveSDIfPresent(string entry) {
     return entry;
 }
 
+void RemoveSDFromColumn(Table& table, string colname) {
+    int dx = GetColumnIndex(table, colname);
+    for (auto& row : table.second) {
+        row[dx] = RemoveSDIfPresent(row[dx]);
+    }
+}
+
 Table SortMethodA(Table source) {
     sort(source.second.begin(), source.second.end(), [&](auto rowA, auto rowB) {
         int coldx = GetColumnIndex(source, "GRAPH_DENSITY");
