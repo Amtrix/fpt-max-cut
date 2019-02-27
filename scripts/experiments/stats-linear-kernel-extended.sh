@@ -14,7 +14,7 @@ func_localize() {
 
     mkdir -p $experiment_outdir/linear-kernel/real-world-small
     $builddir/./$selected_build -action "linear-kernel" -iterations 1 -disk-suite real-world-small -do-reduce "yes" -do-mc-extension-algo \
-                -number-of-threads 2 \
+                -number-of-threads 16 \
                 -benchmark-output $experiment_outdir/linear-kernel/real-world-small/out > $experiment_outdir/linear-kernel/real-world-small/out-exe
     check_and_wait_if_threadpool_full
 
