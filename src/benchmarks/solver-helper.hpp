@@ -123,7 +123,8 @@ struct SolverEvaluation {
         } else {
             cout << "Testing the solvers was skipped due to insufficient time or no kernelization done. Provided: " << total_time_seconds << "; spent on kernelization: " << already_spent_time_on_kernelization_seconds_sec << " [seconds]." << endl;
             cout << "Kernelization: " << -k_change << endl;
-            return;
+            cout << "Not skipped actually due to new change." << endl;
+            //return;
         }
 
 

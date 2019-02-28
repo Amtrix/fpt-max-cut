@@ -2984,6 +2984,7 @@ pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeLocalSearchCut(const vector<in
 
 // https://github.com/MQLib/MQLib
 pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double max_exec_time, Burer2002Callback* callback) const {
+    if (max_exec_time <= 0) return make_pair(0, vector<int>());
     std::vector<Instance::InstanceTuple> edgeList;
     auto edges = GetAllExistingEdgesWithWeightsScaled(1);
     int real_num_nodes = CompressEdgeList(edges);
