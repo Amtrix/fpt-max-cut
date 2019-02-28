@@ -112,4 +112,8 @@ int main(int argc, char **argv){
     cout << endl << endl << endl << endl;
 
     HandleLinearKernelEfficiency(table);
+
+    cout << endl << endl << endl << endl;
+
+    HandleLinearKernel(table);
 }

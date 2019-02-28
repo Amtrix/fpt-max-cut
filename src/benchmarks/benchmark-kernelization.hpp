@@ -212,102 +212,119 @@ public:
             use_unweighted_kernelization = main_graph.IsScaled() == false;
         }
 
+        int number_of_threads = 1;
+        if (input.cmdOptionExists("-number-of-iter-threads")) {
+            number_of_threads = stoi(input.getCmdOption("-number-of-iter-threads"));   
+        }
+
         vector<vector<double>> accum;
-        for (int iteration = 1; iteration <= num_iterations; ++iteration) {
-            MaxCutGraph G = main_graph;
-            MaxCutGraph kernelized = G;
+        //for (int iteration = 1; iteration <= num_iterations; ++iteration) {
+        vector<thread> threads(number_of_threads);
+        for (int threadid = 0; threadid < number_of_threads; ++threadid) {
+            threads[threadid] = std::thread(std::bind([&](int threadid){
+                int lo = (num_iterations / number_of_threads) * threadid;
+                int hi = (num_iterations / number_of_threads) * (threadid + 1);
+                if (threadid == number_of_threads - 1) hi = num_iterations;
 
-            
-            unordered_map<int, double> times_all_components;
-            auto t0_total = std::chrono::high_resolution_clock::now();
-            Kernelize(kernelized, times_all_components);
-            // Calculating spent time. From here on onwards, only O(1) operations allowed!!!!!!!!!!!!!!!!!!!!!
-            auto t1_total = std::chrono::high_resolution_clock::now();
-            double kernelization_time = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
+                for (int iteration = lo; iteration < hi; ++iteration) {
 
-
-            // Compute solver results.
-            SolverEvaluation eval;
-            eval.Evaluate(mixingid, input, kernelization_time, G, kernelized);
-            
-
-            // Some variables.
-            double EE = G.GetEdwardsErdosBound();
-            double EE_k = kernelized.GetEdwardsErdosBound();
-
-            // Aggregating usages.
-            mtx_aggregation.lock();
-            {
-
-                // Some output
-                cout << "VERIFY CUT VAL:  localsearch(" << eval.local_search_cut_size << ", " << eval.local_search_cut_size_k
-                    << ")   mqlib(" << eval.mqlib_cut_size << ", " << eval.mqlib_cut_size_k << ")" << endl;
-                cout << "              G: " << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
-                cout << "     kernelized: " << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
-
-                auto case_coverage_cnt = kernelized.GetUsageVector();
-                cout << "Spent time on kernelization[ms]: " << kernelization_time << endl;
-                cout << "Case coverage (=number of applications) = ";
-                for (unsigned int r = 0; r < case_coverage_cnt.size(); ++r)
-                    cout << case_coverage_cnt[r] << " ";
-                cout << endl;
-
-
-            
-                cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
-                for (auto rule : kAllRuleIds) {
-                    double used_time = times_all_components[static_cast<int>(rule)];
-                    int used_cnt = kernelized.GetRuleUsage(rule);
-                    int check_cnt = kernelized.GetRuleChecks(rule);
-
-                    tot_case_coverage_cnt[rule] += used_cnt;
-                    tot_rule_checks_cnt[rule] += check_cnt;
-                    total_times[static_cast<int>(rule)] += used_time;
+                    MaxCutGraph G = main_graph;
+                    MaxCutGraph kernelized = G;
 
                     
-                    //- last_times_all[static_cast<int>(rule)];
-                    cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << check_cnt << setw(20) << used_time << setw(20) << (used_time/check_cnt) << endl;
+                    unordered_map<int, double> times_all_components;
+                    auto t0_total = std::chrono::high_resolution_clock::now();
+                    Kernelize(kernelized, times_all_components);
+                    // Calculating spent time. From here on onwards, only O(1) operations allowed!!!!!!!!!!!!!!!!!!!!!
+                    auto t1_total = std::chrono::high_resolution_clock::now();
+                    double kernelization_time = std::chrono::duration_cast<std::chrono::microseconds> (t1_total - t0_total).count()/1000.;
+
+
+                    // Compute solver results.
+                    SolverEvaluation eval;
+                    eval.Evaluate(mixingid, input, kernelization_time, G, kernelized);
+                    
+
+                    // Some variables.
+                    double EE = G.GetEdwardsErdosBound();
+                    double EE_k = kernelized.GetEdwardsErdosBound();
+
+                    // Aggregating usages.
+                    mtx_aggregation.lock();
+                    {
+
+                        // Some output
+                        cout << "VERIFY CUT VAL:  localsearch(" << eval.local_search_cut_size << ", " << eval.local_search_cut_size_k
+                            << ")   mqlib(" << eval.mqlib_cut_size << ", " << eval.mqlib_cut_size_k << ")" << endl;
+                        cout << "              G: " << G.GetRealNumNodes() << " " << G.GetRealNumEdges() << endl;
+                        cout << "     kernelized: " << kernelized.GetRealNumNodes() << " " << kernelized.GetRealNumEdges() << endl;
+
+                        auto case_coverage_cnt = kernelized.GetUsageVector();
+                        cout << "Spent time on kernelization[ms]: " << kernelization_time << endl;
+                        cout << "Case coverage (=number of applications) = ";
+                        for (unsigned int r = 0; r < case_coverage_cnt.size(); ++r)
+                            cout << case_coverage_cnt[r] << " ";
+                        cout << endl;
+
+
+                    
+                        cout << setw(20) << "RULE" << setw(20) << "|USED|" << setw(20) << "|CHECKS|" << setw(20) << "|TIME|" << setw(20) << "|TIME|/|CHECKS|" << endl;
+                        for (auto rule : kAllRuleIds) {
+                            double used_time = times_all_components[static_cast<int>(rule)];
+                            int used_cnt = kernelized.GetRuleUsage(rule);
+                            int check_cnt = kernelized.GetRuleChecks(rule);
+
+                            tot_case_coverage_cnt[rule] += used_cnt;
+                            tot_rule_checks_cnt[rule] += check_cnt;
+                            total_times[static_cast<int>(rule)] += used_time;
+
+                            
+                            //- last_times_all[static_cast<int>(rule)];
+                            cout << setw(20) << kRuleNames.at(rule) << setw(20) << used_cnt << setw(20) << check_cnt << setw(20) << used_time << setw(20) << (used_time/check_cnt) << endl;
+                        }
+                        total_times[-1] += times_all_components[-1];
+                        //last_times_all = times_all;
+
+                        double k_change = kernelized.GetInflictedCutChangeToKernelized();
+                        custom_assert(eval.biqmac_cut_size == eval.biqmac_cut_size_k || eval.biqmac_cut_size == -1 || eval.biqmac_cut_size_k == -1);
+                        
+                        OutputKernelization(input, main_graph.GetGraphNaming(),
+                                            mixingid, iteration,
+                                            G.GetRealNumNodes(), G.GetRealNumEdges(),
+                                            kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
+                                            -k_change,
+                                            eval.mqlib_cut_size, eval.mqlib_cut_size_k, eval.mqlib_rate, eval.mqlib_rate_sddiff,
+                                            eval.localsolver_cut_size, eval.localsolver_cut_size_k, eval.localsolver_rate, eval.localsolver_rate_sddiff,
+                                            eval.local_search_cut_size, eval.local_search_cut_size_k, eval.local_search_rate, eval.local_search_rate_sddiff,
+
+                                            eval.mqlib_time, eval.mqlib_time_k, 
+                                            eval.localsolver_time, eval.localsolver_time_k, 
+                                            eval.biqmac_time, eval.biqmac_time_k, 
+
+                                            EE, EE_k, eval.MAXCUT_best_size, kernelization_time);
+                        
+                        accum.push_back({(double)mixingid, (double)iteration,
+                                            (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
+                                            (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
+                                            -k_change,
+                                            (double)eval.mqlib_cut_size, (double)eval.mqlib_cut_size_k, eval.mqlib_rate, eval.mqlib_rate_sddiff,
+                                            eval.localsolver_cut_size, eval.localsolver_cut_size_k, eval.localsolver_rate, eval.localsolver_rate_sddiff,
+                                            eval.local_search_cut_size, eval.local_search_cut_size_k, eval.local_search_rate, eval.local_search_rate_sddiff,
+                                            eval.mqlib_time, eval.mqlib_time_k, 
+                                            eval.localsolver_time, eval.localsolver_time_k, 
+                                            eval.biqmac_time, eval.biqmac_time_k, 
+                                            EE, EE_k, (double)eval.MAXCUT_best_size, kernelization_time});
+                        
+                        if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
+                            G.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid), true);
+                            kernelized.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid) + "-kernelized", true);
+                        }
+                    }
+                    mtx_aggregation.unlock();
                 }
-                total_times[-1] += times_all_components[-1];
-                //last_times_all = times_all;
-
-                double k_change = kernelized.GetInflictedCutChangeToKernelized();
-                custom_assert(eval.biqmac_cut_size == eval.biqmac_cut_size_k || eval.biqmac_cut_size == -1 || eval.biqmac_cut_size_k == -1);
-                
-                OutputKernelization(input, main_graph.GetGraphNaming(),
-                                    mixingid, iteration,
-                                    G.GetRealNumNodes(), G.GetRealNumEdges(),
-                                    kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
-                                    -k_change,
-                                    eval.mqlib_cut_size, eval.mqlib_cut_size_k, eval.mqlib_rate, eval.mqlib_rate_sddiff,
-                                    eval.localsolver_cut_size, eval.localsolver_cut_size_k, eval.localsolver_rate, eval.localsolver_rate_sddiff,
-                                    eval.local_search_cut_size, eval.local_search_cut_size_k, eval.local_search_rate, eval.local_search_rate_sddiff,
-
-                                    eval.mqlib_time, eval.mqlib_time_k, 
-                                    eval.localsolver_time, eval.localsolver_time_k, 
-                                    eval.biqmac_time, eval.biqmac_time_k, 
-
-                                    EE, EE_k, eval.MAXCUT_best_size, kernelization_time);
-                
-                accum.push_back({(double)mixingid, (double)iteration,
-                                    (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
-                                    (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
-                                    -k_change,
-                                    (double)eval.mqlib_cut_size, (double)eval.mqlib_cut_size_k, eval.mqlib_rate, eval.mqlib_rate_sddiff,
-                                    eval.localsolver_cut_size, eval.localsolver_cut_size_k, eval.localsolver_rate, eval.localsolver_rate_sddiff,
-                                    eval.local_search_cut_size, eval.local_search_cut_size_k, eval.local_search_rate, eval.local_search_rate_sddiff,
-                                    eval.mqlib_time, eval.mqlib_time_k, 
-                                    eval.localsolver_time, eval.localsolver_time_k, 
-                                    eval.biqmac_time, eval.biqmac_time_k, 
-                                    EE, EE_k, (double)eval.MAXCUT_best_size, kernelization_time});
-                
-                if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
-                    G.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid), true);
-                    kernelized.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid) + "-kernelized", true);
-                }
-            }
-            mtx_aggregation.unlock();
+            }, threadid));
         }
+        std::for_each(threads.begin(), threads.end(), [](std::thread& x){x.join();});
 
         custom_assert(accum.size() > 0);
     

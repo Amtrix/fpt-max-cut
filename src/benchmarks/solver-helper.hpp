@@ -88,6 +88,11 @@ struct SolverEvaluation {
             total_time_seconds = max(already_spent_time_on_kernelization_seconds_sec * 5, 10);
         }
 
+        if (input.cmdOptionExists("-total-allowed-solver-time-range")) {
+            total_time_seconds = stoi(input.getCmdOption("-total-allowed-solver-time-range"));
+            total_time_seconds = rand() % total_time_seconds;
+        }
+
         OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time_seconds) + " of which kernelization has used: " + to_string(already_spent_time_on_kernelization_seconds_sec) + " [seconds].");
 
         int locsearch_iterations = 1;
