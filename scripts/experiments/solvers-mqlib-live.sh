@@ -12,14 +12,14 @@ func_localize() {
 
     #10 hours:
     allowed_total_time_seconds=1800
-    allowed_total_time_seconds=100
+    allowed_total_time_seconds=300
 
     mkdir -p $experiment_outdir/solvers/real-world-live/
-    $builddir/./$selected_build -action "kernelization" -iterations 100 -fdir $thesis_tests/real-world-live  \
+    $builddir/./$selected_build -action "kernelization" -iterations 100 -f $thesis_tests/real-world-live/ca-coauthors-dblp.mtx  \
                     -total-allowed-solver-time-range $allowed_total_time_seconds \
-                    -number-of-threads 3 \
+                    -number-of-threads 1 \
                     -number-of-iter-threads 5 \
-                    -locsearch-iterations 5 \
+                    -locsearch-iterations 0 \
                     -no-localsolver \
                     -no-biqmac \
                     -force-weighted-result \

@@ -129,6 +129,9 @@ public:
                         is_all_finished = false, total_finish = false;
                 }
             }
+
+            if (!use_signed_kernelization && !use_weighted_kernelization)
+                break;
         }
 
         auto t_end_fast = std::chrono::high_resolution_clock::now();

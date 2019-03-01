@@ -93,7 +93,7 @@ struct SolverEvaluation {
             total_time_seconds = rand() % total_time_seconds;
         }
 
-        OutputDebugLog("Allocated total runtime for solvers (+kernelization): " + to_string(total_time_seconds) + " of which kernelization has used: " + to_string(already_spent_time_on_kernelization_seconds_sec) + " [seconds].");
+        cout << ("Allocated total runtime for solvers (+kernelization): " + to_string(total_time_seconds) + " of which kernelization has used: " + to_string(already_spent_time_on_kernelization_seconds_sec) + " [seconds].") << endl;
 
         int locsearch_iterations = 1;
         if (input.cmdOptionExists("-locsearch-iterations")) {
