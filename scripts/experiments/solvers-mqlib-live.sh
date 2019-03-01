@@ -19,7 +19,7 @@ func_localize() {
                     -total-allowed-solver-time-range $allowed_total_time_seconds \
                     -number-of-threads 3 \
                     -number-of-iter-threads 5 \
-                    -locsearch-iterations 100 \
+                    -locsearch-iterations 5 \
                     -no-localsolver \
                     -no-biqmac \
                     -force-weighted-result \
