@@ -98,6 +98,9 @@ public:
                     LogTime(times_all_components, t0);
                     if (KernelizeExec(kernelized, selected_kernelization_order, times_all_components, false))
                         is_all_finished = false, total_finish = false;
+                    
+                    if (!use_signed_kernelization && !use_weighted_kernelization)
+                        break;
                 }
             }
 
