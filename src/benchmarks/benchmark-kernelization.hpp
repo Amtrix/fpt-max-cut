@@ -70,6 +70,7 @@ public:
     bool use_signed_kernelization = true;
     bool use_weighted_kernelization = false;
     bool use_unweighted_kernelization = true;
+    bool use_fast_kernelization = false;
     void Kernelize(MaxCutGraph &kernelized,
                    unordered_map<int, double>& times_all_components,
                    bool provide_order = false,
@@ -99,7 +100,7 @@ public:
                     if (KernelizeExec(kernelized, selected_kernelization_order, times_all_components, false))
                         is_all_finished = false, total_finish = false;
                     
-                    if (!use_signed_kernelization && !use_weighted_kernelization)
+                    if (use_fast_kernelization)
                         break;
                 }
             }
@@ -115,6 +116,9 @@ public:
                     is_all_finished = true;
                     if (KernelizeExec(kernelized, {RuleIds::Rule8Signed}, times_all_components, false))
                         is_all_finished = false, total_finish = false;
+                    
+                    if (use_fast_kernelization)
+                        break;
                 }
             }
 
@@ -130,10 +134,13 @@ public:
                     LogTime(times_all_components, t0);
                     if (KernelizeExec(kernelized, {RuleIds::RuleS3Weighted, RuleIds::RuleS2Weighted, RuleIds::RuleWeightedTriag}, times_all_components, false))
                         is_all_finished = false, total_finish = false;
+                    
+                    if (use_fast_kernelization)
+                        break;
                 }
             }
 
-            if (!use_signed_kernelization && !use_weighted_kernelization)
+            if (use_fast_kernelization)
                 break;
         }
 
@@ -153,7 +160,7 @@ public:
         ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // Finishers.
-        if (use_unweighted_kernelization) { // default is true
+        if (use_unweighted_kernelization && !use_fast_kernelization) { // default is true
             kernelized.MakeUnweighted();
             OutputDebugLog("Made Unweighted.");
             KernelizeExec(kernelized, finishing_rules_order, times_all_components, true);
@@ -216,6 +223,11 @@ public:
             use_unweighted_kernelization = false;
         } else {
             use_unweighted_kernelization = main_graph.IsScaled() == false;
+        }
+
+        use_fast_kernelization = false;
+        if (input.cmdOptionExists("-use-fast-kernelization")) {
+            use_fast_kernelization = true;
         }
 
         int number_of_threads = 1;

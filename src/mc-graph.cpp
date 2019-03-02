@@ -1490,11 +1490,11 @@ void MaxCutGraph::ApplyMegaRuleCandidates(const bool break_on_first, const unord
 // This rule in itself is ORDER INDEPENDENT!!!!
 // BUTTTTT
 // It does affect which vertex's index remains, which might effect the ordering somewhere else!
-vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
+vector<vector<int>> MaxCutGraph:: GetR8Candidates(const bool break_on_first, const unordered_map<int,bool>& preset_is_external) {
     vector<vector<int>> ret;
     
     
-    vector<int> current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.R8, true); // not all adjacent needed, see (1)
+    vector<int> current_v = GetVerticesAfterTimestamp(CURRENT_TIMESTAMPS.R8, false); // not all adjacent needed, see (1)
     if (!break_on_first)
         CURRENT_TIMESTAMPS.R8 = current_kernelization_time;
 
@@ -1516,12 +1516,22 @@ vector<vector<int>> MaxCutGraph::GetR8Candidates(const bool break_on_first, cons
         return key;
     };
 
+    const int sz_fix = (int)current_v.size();
+    for (int i = 0; i < sz_fix; ++i) {             // (1) ........... kind of an insignificant speed up
+        int root = current_v[i];
 
+        const auto& adj = GetAdjacency(root);
+        for (auto w : adj) {
+            if ((int)adj.size() == Degree(w))
+                current_v.push_back(w); // it does not matter if we have a vertex multiple times -- visited will take care of that.
+        }
+    }
 
     trie_r8 partitions;
     unordered_map<int, int> visited;
     for (auto root : current_v) {
-        if (KeyExists(root, preset_is_external)) continue;
+        if (visited[root] || KeyExists(root, preset_is_external)) continue;
+        visited[root] = 1;
 
         vector<int> key = getr8key(root);
         partitions.Insert(key, root);
@@ -3064,6 +3074,8 @@ vector<vector<int>> MaxCutGraph::GetCliquesWithAtLeastOneInternal() const {
 
 #ifdef LOCALSOLVER_EXISTS
     pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeMaxCutWithLocalsolver(const int max_exec_time, LocalSolverCallback* callback) const {
+        if (max_exec_time <= 0) return make_pair(0, vector<int>());
+        
         MaxcutLocalsolver solver;
         auto elist_normal = GetAllExistingEdgesWithWeights(1);
         auto elist_scaled = GetAllExistingEdgesWithWeightsScaled(1);

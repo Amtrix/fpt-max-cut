@@ -22,6 +22,7 @@ func_localize() {
                     -locsearch-iterations 0 \
                     -no-localsolver \
                     -no-biqmac \
+                    -use-fast-kernelization \
                     -force-weighted-result \
                     -benchmark-output $experiment_outdir/solvers/real-world-live/out > $experiment_outdir/solvers/real-world-live/out-exe
                                        # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -force-weighted-result \
