@@ -12,18 +12,17 @@ func_localize() {
 
     #10 hours:
     allowed_total_time_seconds=1800
-    allowed_total_time_seconds=300
+    #allowed_total_time_seconds=1000
 
     mkdir -p $experiment_outdir/solvers/real-world-live/
-    $builddir/./$selected_build -action "kernelization" -iterations 100 -f $thesis_tests/real-world-live/ca-coauthors-dblp.mtx  \
+    $builddir/./$selected_build -action "kernelization" -iterations 3000 -f $thesis_tests/real-world-live  \
                     -total-allowed-solver-time-range $allowed_total_time_seconds \
-                    -number-of-threads 1 \
-                    -number-of-iter-threads 5 \
+                    -number-of-threads 3 \
+                    -number-of-iter-threads 1 \
                     -locsearch-iterations 0 \
-                    -no-localsolver \
                     -no-biqmac \
+                    -live-maxcut-analysis \
                     -use-fast-kernelization \
-                    -force-weighted-result \
                     -benchmark-output $experiment_outdir/solvers/real-world-live/out > $experiment_outdir/solvers/real-world-live/out-exe
                                        # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -force-weighted-result \
                                        # number-of-threads 8 for KIT pc
