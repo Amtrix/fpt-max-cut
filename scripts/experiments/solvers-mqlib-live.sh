@@ -15,7 +15,7 @@ func_localize() {
     #allowed_total_time_seconds=1000
 
     mkdir -p $experiment_outdir/solvers/real-world-live/
-    $builddir/./$selected_build -action "kernelization" -iterations 3000 -f $thesis_tests/real-world-live  \
+    $builddir/./$selected_build -action "kernelization" -iterations 3000 -fdir $thesis_tests/real-world-live  \
                     -total-allowed-solver-time-range $allowed_total_time_seconds \
                     -number-of-threads 3 \
                     -number-of-iter-threads 1 \
