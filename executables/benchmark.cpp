@@ -116,9 +116,10 @@ int main(int argc, char **argv){
         int number_of_threads = (BENCHMARK_NUMBER_OF_THREADS);
         const int number_of_instances = graph_db.GetNumberOfInstances();
 
+        
         if (input.cmdOptionExists("-number-of-threads")) {
             number_of_threads = stoi(input.getCmdOption("-number-of-threads"));    
-        }
+        } 
 
         std::mutex mtx_aggregation;
         vector<thread> threads(number_of_threads);
@@ -129,7 +130,14 @@ int main(int argc, char **argv){
                 if (threadid == number_of_threads - 1) hi = number_of_instances;
 
                 for (int i = lo; i < hi; ++i) {
-                    auto graph = graph_db.GetGraphById(i);
+                    auto graph = graph_db.GetGraphById(i);;
+        
+                    std::unique_ptr<BenchmarkAction> benchmark_action_nxt;
+                    if (action == "kernelization") {
+                        benchmark_action_nxt.reset(new Benchmark_Kernelization());
+                    } else {
+                        benchmark_action_nxt = benchmark_action;
+                    }
 
                     if (graph.GraphIsValid()) {
                         cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
@@ -149,10 +157,10 @@ int main(int argc, char **argv){
                     
                         custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
                         
-                        benchmark_action->Evaluate(input, graph);
+                        benchmark_action_nxt->Evaluate(input, graph);
 
                         mtx_aggregation.lock();
-                        tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
+                        tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action_nxt->tot_used_rules, true);
                         mtx_aggregation.unlock();
                     } else {
                         cout << "not supported." << endl;
