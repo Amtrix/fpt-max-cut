@@ -133,11 +133,7 @@ int main(int argc, char **argv){
                     auto graph = graph_db.GetGraphById(i);;
         
                     std::unique_ptr<BenchmarkAction> benchmark_action_nxt;
-                    if (action == "kernelization") {
-                        benchmark_action_nxt.reset(new Benchmark_Kernelization());
-                    } else {
-                        benchmark_action_nxt = benchmark_action;
-                    }
+                    benchmark_action_nxt.reset(new Benchmark_Kernelization());
 
                     if (graph.GraphIsValid()) {
                         cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
