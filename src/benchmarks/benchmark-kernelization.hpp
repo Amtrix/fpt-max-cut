@@ -193,6 +193,7 @@ public:
         }
         mtx_mixingid_gen.unlock();
         int mixingid = GetMixingId(main_graph);
+        cout << "MIXING ID: " << mixingid << " = " << main_graph.GetGraphNaming() << endl;
         
         
 
@@ -235,6 +236,11 @@ public:
             number_of_threads = stoi(input.getCmdOption("-number-of-iter-threads"));   
         }
 
+        int iteration_offset = 0;
+        if (input.cmdOptionExists("-iteration-offset")) {
+            iteration_offset = stoi(input.getCmdOption("-iteration-offset"));
+        }
+
         vector<vector<double>> accum;
         //for (int iteration = 1; iteration <= num_iterations; ++iteration) {
         vector<thread> threads(number_of_threads);
@@ -244,7 +250,7 @@ public:
                 int hi = (num_iterations / number_of_threads) * (threadid + 1);
                 if (threadid == number_of_threads - 1) hi = num_iterations;
 
-                for (int iteration = lo; iteration < hi; ++iteration) {
+                for (int iteration = lo + 1; iteration <= hi; ++iteration) {
 
                     MaxCutGraph G = main_graph;
                     MaxCutGraph kernelized = G;
@@ -307,7 +313,7 @@ public:
                         custom_assert(eval.biqmac_cut_size == eval.biqmac_cut_size_k || eval.biqmac_cut_size == -1 || eval.biqmac_cut_size_k == -1);
                         
                         OutputKernelization(input, main_graph.GetGraphNaming(),
-                                            mixingid, iteration,
+                                            mixingid, iteration + iteration_offset,
                                             G.GetRealNumNodes(), G.GetRealNumEdges(),
                                             kernelized.GetRealNumNodes(), kernelized.GetRealNumEdges(),
                                             -k_change,
@@ -321,7 +327,7 @@ public:
 
                                             EE, EE_k, eval.MAXCUT_best_size, kernelization_time);
                         
-                        accum.push_back({(double)mixingid, (double)iteration,
+                        accum.push_back({(double)mixingid, (double)iteration + iteration_offset,
                                             (double)G.GetRealNumNodes(), (double)G.GetRealNumEdges(),
                                             (double)kernelized.GetRealNumNodes(), (double)kernelized.GetRealNumEdges(),
                                             -k_change,
@@ -333,7 +339,7 @@ public:
                                             eval.biqmac_time, eval.biqmac_time_k, 
                                             EE, EE_k, (double)eval.MAXCUT_best_size, kernelization_time});
                         
-                        if (iteration == 1 && input.cmdOptionExists("-output-graphs-dir")) {
+                        if (iteration + iteration_offset == 1 && input.cmdOptionExists("-output-graphs-dir")) {
                             G.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid), true);
                             kernelized.PrintGraph(input.getCmdOption("-output-graphs-dir") + to_string(mixingid) + "-kernelized", true);
                         }

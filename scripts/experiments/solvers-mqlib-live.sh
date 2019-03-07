@@ -11,21 +11,45 @@ func_localize() {
 
 
     #10 hours:
-    allowed_total_time_seconds=1800
-    #allowed_total_time_seconds=1000
+    allowed_total_time_seconds=600
 
-    mkdir -p $experiment_outdir/solvers/real-world-live/
-    $builddir/./$selected_build -action "kernelization" -iterations 3000 -fdir $thesis_tests/real-world-live  \
-                    -total-allowed-solver-time-range $allowed_total_time_seconds \
-                    -number-of-threads 3 \
-                    -number-of-iter-threads 1 \
-                    -locsearch-iterations 0 \
-                    -no-biqmac \
-                    -live-maxcut-analysis \
-                    -use-fast-kernelization \
-                    -benchmark-output $experiment_outdir/solvers/real-world-live/out > $experiment_outdir/solvers/real-world-live/out-exe
-                                       # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -force-weighted-result \
-                                       # number-of-threads 8 for KIT pc
+    echo "" > $experiment_outdir/solvers/real-world-live/out
+
+    local iterations=600
+    local idtime=20
+    for i in $(seq 0 $iterations)
+    do
+        check_and_wait_if_threadpool_full
+        idtime=$((idtime + 1))
+
+        local optflags=""
+        optflags="$optflags -no-output-init"
+        
+        mkdir -p $experiment_outdir/solvers/real-world-live/
+        $builddir/./$selected_build -action "kernelization" -fdir $thesis_tests/real-world-live  \
+                        -iteration-offset $i \
+                        -total-allowed-solver-time $idtime \
+                        -number-of-threads 1 \
+                        -number-of-iter-threads 1 \
+                        -locsearch-iterations 0 -no-biqmac -no-localsolver \
+                        -use-fast-kernelization \
+                        $optflags \
+                        -benchmark-output $experiment_outdir/solvers/real-world-live/out-$threadcnt4946 > $experiment_outdir/solvers/real-world-live/out-$threadcnt4946-exe &
+                                        # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -force-weighted-result \
+                                        # number-of-threads 8 for KIT pc
+    done
+
+    for i in $(seq 0 $threads)
+    do
+        cat $experiment_outdir/solvers/real-world-live/out-$i >> $experiment_outdir/solvers/real-world-live/out
+        cat $experiment_outdir/solvers/real-world-live/out-$i-exe >> $experiment_outdir/solvers/real-world-live/out-exe
+        wait
+        rm $experiment_outdir/solvers/real-world-live/out-$i
+        rm $experiment_outdir/solvers/real-world-live/out-$i-exe
+        rm $experiment_outdir/solvers/real-world-live/out-$i-avg
+    done
+
+    
 
     rm $builddir/out-tmp*
 }

@@ -64,6 +64,10 @@ vector<int> markedSetDescriptor = {15,15,15,15,15,15,30,30,30,30,30,30,30,30,30,
 vector<int> liveMaxcutDescriptor = {20,20,20,20,20, FILENAMESZ};
 
 void InitOutputFiles(const InputParser& input) {
+    if (input.cmdOptionExists("-no-output-init")) {
+        return;
+    }
+
     if (input.cmdOptionExists("-oneway-reduce-marked-size")) {
         const string output_path = input.getCmdOption("-oneway-reduce-marked-size");
         ofstream out(output_path);

@@ -131,9 +131,6 @@ int main(int argc, char **argv){
 
                 for (int i = lo; i < hi; ++i) {
                     auto graph = graph_db.GetGraphById(i);;
-        
-                    std::unique_ptr<BenchmarkAction> benchmark_action_nxt;
-                    benchmark_action_nxt.reset(new Benchmark_Kernelization());
 
                     if (graph.GraphIsValid()) {
                         cout << "================ RUNNING BENCHMARK ON " + graph.GetGraphNaming() + " ================ " << endl;
@@ -153,10 +150,10 @@ int main(int argc, char **argv){
                     
                         custom_assert(kMultipleEdgesAreOk || graph.info_mult_edge == 0);
                         
-                        benchmark_action_nxt->Evaluate(input, graph);
+                        benchmark_action->Evaluate(input, graph);
 
                         mtx_aggregation.lock();
-                        tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action_nxt->tot_used_rules, true);
+                        tot_used_rules = VectorsAdd(tot_used_rules, benchmark_action->tot_used_rules, true);
                         mtx_aggregation.unlock();
                     } else {
                         cout << "not supported." << endl;

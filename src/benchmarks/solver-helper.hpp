@@ -273,7 +273,7 @@ struct SolverEvaluation {
             cout << "MQLIB(Gk): " << mqlib_cut_size_k << " " << mqlib_time_k << " (timelimit exceeded: " << mqlib_cb_k.HasExceededTimelimit() << ")" << endl;
             cout << "MQLIB(Gk-no_k_change): " << mqlib_cut_size_k + k_change << " " << mqlib_time_k << " (timelimit exceeded: " << mqlib_cb_k.HasExceededTimelimit() << ")" << endl;
 
-            if (input.cmdOptionExists("-total-allowed-solver-time-range")) {
+            if (input.cmdOptionExists("-no-biqmac")) {
                 biqmac_time = biqmac_time_k = total_time_seconds;
             }
         }
