@@ -128,9 +128,11 @@ int main(int argc, char **argv){
         vector<thread> threads(number_of_threads);
         for (int threadid = 0; threadid < number_of_threads; ++threadid) {
             threads[threadid] = std::thread(std::bind([&](int threadid){
-                int lo = (number_of_instances / number_of_threads) * threadid;
-                int hi = (number_of_instances / number_of_threads) * (threadid + 1);
+                int lo = (number_of_instances / (double)number_of_threads) * threadid;
+                int hi = (number_of_instances / (double)number_of_threads) * (threadid + 1);
                 if (threadid == number_of_threads - 1) hi = number_of_instances;
+
+                cout << "Thread " << threadid << " assigned range: " << lo << " to " << hi << endl;
 
                 for (int i = lo; i < hi; ++i) {
                     auto graph = graph_db.GetGraphById(i);;
