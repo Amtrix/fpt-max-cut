@@ -12,6 +12,10 @@ func_localize() {
     Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver.pdf
     Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver-nopoints-loess.pdf --nopoints --loess 0.01
     Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver-loess.pdf --loess 0.01
+
+    #Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver.pdf
+    #Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver-nopoints-loess.pdf --nopoints --loess 0.01
+    #Rscript $cwd/R-solvers-over-time.r --file $timeana_realworld/out-maxcut_live-localsolver --out $outdir/real-world/plot-localsolver-loess.pdf --loess 0.01
     set +o xtrace
 }
 

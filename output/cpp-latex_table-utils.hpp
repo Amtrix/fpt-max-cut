@@ -56,6 +56,11 @@ Table SortMethodB(Table source) {
     return source;
 }
 
+Table SortCustom(Table source, std::function<bool(vector<string>, vector<string>)> cmp) {
+    sort(source.second.begin(), source.second.end(), cmp);
+    return source;
+}
+
 string latexify(string w, bool remove_decimals = false) {
     string ret = "";
     int period = 0;
