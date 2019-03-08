@@ -122,6 +122,7 @@ int main(int argc, char **argv){
         } 
 
         cout << "TOTAL NUMBER OF THREADS FOR INSTANCES: " << number_of_threads << endl;
+        cout << "TOTAL NUMBER OF INSTANCES: " << number_of_instances << endl;
 
         std::mutex mtx_aggregation;
         vector<thread> threads(number_of_threads);
