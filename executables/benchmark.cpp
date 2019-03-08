@@ -132,7 +132,9 @@ int main(int argc, char **argv){
                 int hi = (number_of_instances / (double)number_of_threads) * (threadid + 1);
                 if (threadid == number_of_threads - 1) hi = number_of_instances;
 
+                mtx_aggregation.lock();
                 cout << "Thread " << threadid << " assigned range: " << lo << " to " << hi << endl;
+                mtx_aggregation.unlock();
 
                 for (int i = lo; i < hi; ++i) {
                     auto graph = graph_db.GetGraphById(i);;
