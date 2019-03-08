@@ -121,6 +121,8 @@ int main(int argc, char **argv){
             number_of_threads = stoi(input.getCmdOption("-number-of-threads"));    
         } 
 
+        cout << "TOTAL NUMBER OF THREADS FOR INSTANCES: " << number_of_threads << endl;
+
         std::mutex mtx_aggregation;
         vector<thread> threads(number_of_threads);
         for (int threadid = 0; threadid < number_of_threads; ++threadid) {
