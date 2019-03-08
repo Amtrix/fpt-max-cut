@@ -20,7 +20,7 @@ func_localize() {
                     -number-of-threads 10 \
                     -locsearch-iterations 0 -no-biqmac -no-localsolver \
                     -use-fast-kernelization \
-                    -benchmark-output $experiment_outdir/solvers/real-world/out > $experiment_outdir/solvers/real-world/out-exe &
+                    -benchmark-output $experiment_outdir/solvers/real-world/out > $experiment_outdir/solvers/real-world/out-exe
                                     # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -force-weighted-result \
                                     # number-of-threads 8 for KIT pc
 
