@@ -1,6 +1,6 @@
 {
     "localsolver": {
-        "enabled": true,
+        "enabled": false,
         "use-parallelism": false,
         "bin-path": "/opt/localsolver_8_0/bin"
     },

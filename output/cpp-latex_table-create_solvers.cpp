@@ -19,7 +19,7 @@ int main(int argc, char **argv){
 
     ifstream in((root_dir + outpath).c_str());
     if (!in.is_open()) {
-        cout << "Couldn't open: " << outpath << endl;
+        cout << "Couldn't open: " << root_dir + outpath << endl;
         exit(-1);
     }
 

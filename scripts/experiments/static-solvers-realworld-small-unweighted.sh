@@ -14,16 +14,15 @@ func_localize() {
     allowed_total_time_seconds=36000
     # allowed_total_time_seconds=-1
 
-    mkdir -p $experiment_outdir/solvers/real-world-small/
+    mkdir -p $experiment_outdir/solvers/real-world-small-un/
     $builddir/./$selected_build -action "kernelization" -iterations 1 -fdir $thesis_tests/real-world-small  \
                     -total-allowed-solver-time $allowed_total_time_seconds \
                     -do-weighted-reduction \
                     -do-signed-reduction \
-                    -number-of-threads 1 \
+                    -number-of-threads 4 \
                     -locsearch-iterations 100 \
                     -exact-early-stop \
-                    -force-weighted-result \
-                    -benchmark-output $experiment_outdir/solvers/real-world-small/out > $experiment_outdir/solvers/real-world-small/out-exe
+                    -benchmark-output $experiment_outdir/solvers/real-world-small-un/out > $experiment_outdir/solvers/real-world-small-un/out-exe
                                        # -no-mqlib -no-localsolver -do-signed-reduction -live-maxcut-analysis -force-weighted-result \
                                        # number-of-threads 8 for KIT pc
 

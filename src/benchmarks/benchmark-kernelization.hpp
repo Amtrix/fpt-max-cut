@@ -162,8 +162,10 @@ public:
         // Finishers.
         if (use_unweighted_kernelization && !use_fast_kernelization) { // default is true
             kernelized.MakeUnweighted();
-            OutputDebugLog("Made Unweighted.");
+            cout << ("Made Unweighted.") << endl;
             KernelizeExec(kernelized, finishing_rules_order, times_all_components, true);
+        } else {
+            // GRAPH REMAINS WEIGHTED!!!!
         }
         ////////////////////////
 

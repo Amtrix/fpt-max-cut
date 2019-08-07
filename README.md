@@ -1,5 +1,13 @@
 <h1>Max-Cut kernelization benchmark suite</h1>
 
+<h2>Setup:</h2>
+git submodule update --init --recursive
+cd solvers/MQLIb
+make
+cd build
+cmake ../
+make benchmark
+
 General flags:
 
     -action [action-name]
