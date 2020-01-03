@@ -1967,18 +1967,6 @@ vector<int> MaxCutGraph::GetS2Candidates(const bool consider_dirty_only, const b
         if (break_on_first) return ret;
     }
 
-    //const size_t nthreads = 1;//std::thread::hardware_concurrency();
-    //int blocksz = (current_v.size() / nthreads) + (current_v.size() % nthreads != 0);
-    //for (size_t i = 0; i < nthreads; ++i) {
-    //    threads.push_back(thread(handle_vertex, i * blocksz, min(current_v.size(), (i+1) * blocksz) - 1));
-    //}
-    //for (auto root : current_v) { // an internal vertex
-    //    threads.push_back(thread(handle_vertex, root));
-        // there cant be more, add proof in thesis.
-   // }
-
-    //std::for_each(threads.begin(), threads.end(), [](std::thread& x){x.join();});
-
     return ret;
 }
 bool MaxCutGraph::ApplyS2Candidate(const int root, const unordered_map<int,bool>& preset_is_external) {// Clique cut.
@@ -2399,40 +2387,9 @@ bool MaxCutGraph::CandidateSatisfiesSpecialRule2(const tuple<int,int,int> &candi
     auto adj = GetAdjacency(b);
     if (adj.size() != 2) return false;
 
-   //// if (MapEqualCheck(edge_weight, MakeEdgeKey(a,b), 1) == false) return false;
-   // if (MapEqualCheck(edge_weight, MakeEdgeKey(b,c), 1) == false) return false;
-
     return min(adj[0], adj[1]) == min(a,c) && max(adj[0], adj[1]) == max(a,c);
 }
 
-/*
-vector<tuple<int,int,int,int>> MaxCutGraph::GetSpecialRule1Candidates() const {
-    vector<tuple<int,int,int, int>> ret;
-    
-    const auto &current_v = GetAllExistingNodes();
-    for (auto b : current_v) {
-        auto &adj1 = GetAdjacency(b);
-
-        if (adj1.size() != 2) continue;
-
-        for (int i = 0; i < (int)adj1.size(); ++i) {
-            int c = adj1[i];
-            auto &adj2 = GetAdjacency(c);
-            if (adj2.size() != 2) continue;
-
-            int a = adj1[1 - i];
-            int d = adj2[0] == b ? adj2[1] : adj2[0];
-
-            if (a == d) continue;
-
-            auto candidate = make_tuple(a, b, c, d);
-            custom_assert(CandidateSatisfiesSpecialRule1(candidate));
-            ret.push_back(candidate);
-        }
-    }
-
-    return ret;
-}*/
 
 vector<tuple<int,int,int>> MaxCutGraph::GetSpecialRule2Candidates() const {
     vector<tuple<int,int,int>> ret;
@@ -2450,20 +2407,6 @@ vector<tuple<int,int,int>> MaxCutGraph::GetSpecialRule2Candidates() const {
     return ret;
 }
 
-/*
-bool MaxCutGraph::ApplySpecialRule1(const tuple<int,int,int,int> &candidate) {
-    if (!CandidateSatisfiesSpecialRule1(candidate))
-        return false;
-
-    int a = get<0>(candidate), b = get<1>(candidate), c = get<2>(candidate), d = get<3>(candidate);
-    int w1 = edge_weight.at(MakeEdgeKey(a,b)), w2 = edge_weight.at(MakeEdgeKey(b,c)), w3 = edge_weight.at(MakeEdgeKey(c,d));
-    RemoveNode(b);
-    RemoveNode(c);
-    AddEdge(a, d, min(w1, min(w2, w3)));
-    inflicted_cut_change_to_kernelized -= w1 + w2 + w3 - min(w1, min(w2, w3));
-
-    return true;
-}*/
 
 bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate, const bool make_signed) {
     if (!CandidateSatisfiesSpecialRule2(candidate))
@@ -2485,8 +2428,6 @@ bool MaxCutGraph::ApplySpecialRule2(const tuple<int,int,int> &candidate, const b
     if (make_signed && added_res_weight != 1 && added_res_weight != -1 && added_res_weight != 0)
         return false;
     
-    //cout << "pack " << a << " - " << b << " - " << c << " with weights " << w1 << " " << w2 <<" : " << w3 << " to a edge with weight: " << added_res_weight << endl;
-
     RemoveNode(b);
     AddEdge(a, c, res_weight);
     inflicted_cut_change_to_kernelized -= same;

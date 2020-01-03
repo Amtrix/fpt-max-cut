@@ -1,4 +1,4 @@
-<h1>Max-Cut kernelization benchmark suite</h1>
+<h1>Max-Cut Kernelization Benchmark Suite</h1>
 
 <h2>Setup:</h2>
 <pre><code>git submodule update --init --recursive
