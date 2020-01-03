@@ -1,14 +1,17 @@
 <h1>Max-Cut kernelization benchmark suite</h1>
 
 <h2>Setup:</h2>
-git submodule update --init --recursive
+<pre><code>git submodule update --init --recursive
 cd solvers/MQLIb
 make
 cd build
 cmake ../
-make benchmark
+make benchmark</code></pre>
 
-General flags:
+<h3>Linking BiqMac and Localsolver</h3>
+Use build-config.json to specify the paths to the corresponding binaries. Do this before running cmake in the previous step.
+
+<h2>Execution flags:</h2>
 
     -action [action-name]
     Which action the suite should perform.
