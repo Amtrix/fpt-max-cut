@@ -440,18 +440,6 @@ private:
 
     vector<int> GetVerticesAfterTimestamp(int timestamp, int include_neighbhors = 0) {
         vector<pair<int,pair<int,TimestampType>>> selected;
-        /*while (!vertex_timetable.empty()) {
-            auto u = vertex_timetable.top();
-            vertex_timetable.pop();
-            if (current_timestamp[u.second.first] != u.first) continue; // has been made invalid.
-
-            if (u.first < timestamp) {
-                vertex_timetable.push(u); // return the one we don't want.
-                break;
-            }
-            
-            selected.push_back(u);
-        }*/
 
         for (int i = max(0, timestamp - 1); i < (int)vertex_timetable.size(); ++i) {
             auto u = vertex_timetable[i];
@@ -462,7 +450,6 @@ private:
         
         unordered_map<int,bool> visi;
         for (auto entry : selected) {
-            //assert(!visi[entry.second.first]);
             visi[entry.second.first] = true;
 
             const auto& adj = GetAdjacency(entry.second.first);
@@ -478,11 +465,6 @@ private:
         vector<int> ret;
         for (auto it : visi)
             ret.push_back(it.first);
-        
-        //for (auto entry : selected) {
-        //    if (current_timestamp[entry.second.first] == entry.first)
-        //        vertex_timetable.push(entry); // put back as it was not changed nor requested to be removed.
-        //}
 
         sort(ret.begin(), ret.end()); // insignificant, but allows us to check if result remains the same compared to checking all vertices -- UNDER CERTAIN CIRCUMSTANCES! (if the ignored ones do not influence the result at all!).
         return ret;
