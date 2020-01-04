@@ -72,9 +72,6 @@ private:
 
 class MaxcutLocalsolver {
 public:
-    // LocalSolver 
-    LocalSolver localsolver;
-
     // Number of vertices 
     int n;
 
@@ -90,9 +87,6 @@ public:
     // Weight of each edge 
     vector<lsdouble> w_double;
     vector<lsint> w_int;
-
-    // True if vertex x[i] is on the right side of the cut, false if it is on the left side of the cut 
-    vector<LSExpression> x;
 
     // Objective 
     LSExpression cutWeight;
@@ -134,6 +128,8 @@ public:
     }
 
     void solve(int limit, LocalSolverCallback* callback = nullptr){
+        LocalSolver localsolver;
+
         // Declares the optimization model. 
         LSModel model = localsolver.getModel();
 

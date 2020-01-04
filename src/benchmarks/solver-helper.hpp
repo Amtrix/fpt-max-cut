@@ -106,6 +106,9 @@ struct SolverEvaluation {
             cout << "Should exit early G: true." << endl;
             should_exit_G = true;
         }
+        (void) should_exit_G; // surpress unusued variable
+        (void) should_exit_kernelized; // surpress unusued variable
+
         if (ShouldExitEarly(&input, &kernelized)) {
             cout << "Should exit early kernelized: true." << endl;
             should_exit_kernelized = true;

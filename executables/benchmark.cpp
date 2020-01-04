@@ -10,8 +10,6 @@
 
 //#include "src/benchmarks/benchmark-marked-set.hpp"
 #include "src/benchmarks/benchmark-kernelization.hpp"
-#include "src/benchmarks/benchmark-count-clique-with-internal.hpp"
-#include "src/benchmarks/benchmark-playground.hpp"
 #include "src/benchmarks/benchmark-linear-kernel-paper.hpp"
 
 #include <thread>
@@ -63,10 +61,6 @@ int main(int argc, char **argv){
         
     if (action == "kernelization") {
         benchmark_action.reset(new Benchmark_Kernelization());
-    } else if (action == "count-clique-internal") {
-        benchmark_action.reset(new Benchmark_CountCliquesWithInternal());
-    } else if (action == "playground") {
-        benchmark_action.reset(new Benchmark_Playground());
     } else if (action == "linear-kernel") {
         benchmark_action.reset(new Benchmark_LinearKernelPaper());
     } else if (action == "make-unweighted") {
