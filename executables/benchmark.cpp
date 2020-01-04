@@ -63,17 +63,12 @@ int main(int argc, char **argv){
         
     if (action == "kernelization") {
         benchmark_action.reset(new Benchmark_Kernelization());
-    } else if (action == "eval-marked-set") {
-        exit(-1);
-        //benchmark_action.reset(new Benchmark_MarkedSet());
     } else if (action == "count-clique-internal") {
         benchmark_action.reset(new Benchmark_CountCliquesWithInternal());
     } else if (action == "playground") {
         benchmark_action.reset(new Benchmark_Playground());
     } else if (action == "linear-kernel") {
         benchmark_action.reset(new Benchmark_LinearKernelPaper());
-    } else if (action == "graph-sampling-kernelization") {
-
     } else if (action == "make-unweighted") {
         auto files = GetAllDatasets(input.getCmdOption("-f"));
         for (auto file : files) {
