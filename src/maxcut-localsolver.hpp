@@ -70,6 +70,7 @@ private:
 };
 
 
+// https://www.localsolver.com/docs/last/exampletour/maxcut.html
 class MaxcutLocalsolver {
 public:
     // Number of vertices 
@@ -78,10 +79,8 @@ public:
     // Number of edges
     int m;
 
-    // Origin of each edge 
+    // Endpoints of each edge 
     vector<int> origin;
-
-    // Destination of each edge 
     vector<int> dest;
 
     // Weight of each edge 

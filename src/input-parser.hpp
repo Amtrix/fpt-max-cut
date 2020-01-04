@@ -4,6 +4,7 @@
 #include <algorithm>
 using namespace std;
 
+// https://stackoverflow.com/questions/865668/how-to-parse-command-line-arguments-in-c
 class InputParser{
     public:
         InputParser (int &argc, char **argv){
