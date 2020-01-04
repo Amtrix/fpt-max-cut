@@ -6,6 +6,6 @@
     },
     "biqmac": {
         "enabled": true,
-        "binary-file": "./../BiqMac/bab"
+        "bin-path": "/BiqMac/bab"
     }
 }

@@ -67,7 +67,7 @@ Flags when kagen graph sampling is used for graph instance generations:
     Turn of random selection between 2 and 6 and use the given fixed one by this parameter.
 
 
-Flags for benchmark current kernelization performance:
+Flags for benchmarking performance of kernelization:
     -support-weighted-result
     If the resulting graph is allowed to be weighted -- allows further reduciton in terms of number of vertices/edges.
 
@@ -97,8 +97,8 @@ Only relevant for benchmarking the linear kernel performance:
     Only relevant for linear kernel. Indicates if the heuristics should be applied to reduce the computed marked vertex set by the algorithm from the linear kernel paper.
     
 
-Helpful stuff:
-
-    To get 1-indexed in KaGen: +1 within generator.io.h
-    To input a graph through adjacency list format, append ".graph" suffix to file. Our parser automatically treats it then as adjacency list input format.
-    To execute a set of graphs {graph0,...,graph1} which are the same set of graphs but with different randomization seed, one can name them graph0.0,...,graphn.n to make the suite aware of it.
+Tips:
+<ul>
+    <li>To input a graph through adjacency list format: Append ".graph" suffix to file. Our parser automatically treats it then as such.</li>
+    <li>To aggregate the results for a set of graphs {graph0,...,graph1}, name them graph0.0,...,graphn.n.</li>
+</ul>

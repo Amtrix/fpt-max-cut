@@ -14,7 +14,7 @@ set(LOCALSOLVER_ENABLED ${configJson.localsolver.enabled})
 set(LOCALSOLVER_USE_CONCURRENCY ${configJson.localsolver.use-parallelism})
 set(LOCALSOLVER_BIN_PATH ${configJson.localsolver.bin-path})
 set(BIQMAC_ENABLED ${configJson.biqmac.enabled})
-set(BIQMAC_BINARY_PATH ${configJson.biqmac.binary-file})
+set(BIQMAC_BINARY_PATH ${configJson.biqmac.bin-path})
 set(BIQMAC_BINARY_PATH_EVAL ${CMAKE_CURRENT_SOURCE_DIR}/../BiqMac/bab)
 set(MQLIB_DATA ${configJson.mqlib-set})
 
