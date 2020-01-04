@@ -1,4 +1,4 @@
-//********* maxcut.cpp *********
+
 #pragma once
 #ifdef LOCALSOLVER_EXISTS
 
