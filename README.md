@@ -28,7 +28,7 @@ We have also provided the script <code>run-example.sh</code> to showcase how to 
     x_{#edges} y_{#edges}
 </code></pre>
 
-<h3>File with suffix <code>.graph</code>:</h3>
+<h3>File with suffix <code>.edges</code>:</h3>
 <pre><code>
     x_{1} y_{1}
     ....
@@ -36,7 +36,7 @@ We have also provided the script <code>run-example.sh</code> to showcase how to 
 </code></pre>
 In this case, #edges and #nodes are automatically computed.
 
-<h3>File with suffix <code>.edges</code>:</h3>
+<h3>File with suffix <code>.graph</code>:</h3>
 <pre><code>
     #nodes #edges is_weighted
     c_{1} y_{1,1} y_{1,2} ... y_{1, c_{1}}
