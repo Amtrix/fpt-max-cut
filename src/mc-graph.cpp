@@ -2943,7 +2943,9 @@ pair<EdgeWeight, vector<int>> MaxCutGraph::ComputeMaxCutWithMQLib(const double m
     for (auto e : edges)
         edgeList.push_back(Instance::InstanceTuple(std::make_pair(get<0>(e), get<1>(e)), get<2>(e)));
 
-    
+    if (edgeList.size() == 0 || real_num_nodes == 0) {
+        return make_pair(0, vector<int>());
+    }
 
     MaxCutInstance mi(edgeList, real_num_nodes);
     Burer2002 heur(mi, max_exec_time, false, callback);

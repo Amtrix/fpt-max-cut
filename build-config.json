@@ -5,7 +5,7 @@
         "bin-path": "/opt/localsolver_8_0/bin"
     },
     "biqmac": {
-        "enabled": true,
+        "enabled": false,
         "bin-path": "/BiqMac/bab"
     }
 }

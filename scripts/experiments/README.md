@@ -1,1 +1,0 @@
-Note: When kagen is called with 20 graphs per each type and 8000 vertices, the generation remains the same with unspecified seed. Meaning, results from linear-kernel and kernelization are comparable.
