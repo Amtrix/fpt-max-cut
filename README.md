@@ -10,8 +10,14 @@ cd build
 cmake ../
 make benchmark</code></pre>
 
+<h2>Solvers</h2>
+Per default, localsearch (simple implementation by us) and mqlib are run. These are included with our project. This enables our project to perform a comparison between the non-kernelized and kernelized graph's maximum cut computation.
+
 <h3>Linking BiqMac and Localsolver</h3>
-Use build-config.json to specify the paths to the corresponding binaries. Do this before running cmake in the previous step.
+Two other famous maximum cut solvers are the BiqMac solver and Localsolver. These are not open source and, therefore, not included with our project. You can manually retrieve those binaries and use build-config.json to specify the paths to their executable. Do this before running cmake in the previous step.
+
+<h2>Run Example</h2>
+We have also provided the script <code>run-example</code> to showcase how to use our project. More execution scripts are available in scripts/experiments. They should be only used for education purposes, though. We used them to compute the results for our experiments.
 
 <h2>Execution flags:</h2>
 
