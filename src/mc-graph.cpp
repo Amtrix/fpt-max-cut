@@ -208,13 +208,13 @@ MaxCutGraph::MaxCutGraph(const string path) {
         }
     } else {
         const bool is_weighted_instance = sparams.size() >= 3 && stoi(sparams[2]); 
-        OutputDebugLog("Adjacency list. Is weighted: " + to_string(is_weighted_instance));
+        cout << ("Adjacency list. Is weighted: " + to_string(is_weighted_instance)) << endl;;
 
         const int num_nodes = stoi(sparams[0]);
         if (!SetNumNodes(num_nodes)) return;
 
         if (is_weighted_instance && stoi(sparams[2]) != 1) {
-            OutputDebugLog("UNSUPPORTED FORMAT. Skipping.");
+            cout << ("UNSUPPORTED FORMAT. Skipping.") << endl;
             return;
         }
 
