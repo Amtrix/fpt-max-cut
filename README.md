@@ -39,10 +39,10 @@ In this case, #edges and #nodes are automatically computed.
 <h3>File with suffix <code>.graph</code>:</h3>
 <pre><code>
     #nodes #edges is_weighted
-    c_{1} y_{1,1} y_{1,2} ... y_{1, c_{1}}
-    c_{2} y_{2,1} y_{2,2} ... y_{2, c_{2}}
+    y_{1,1} y_{1,2} ... y_{1, c_{1}}
+    y_{2,1} y_{2,2} ... y_{2, c_{2}}
     ....
-    c_{#nodes} y_{#nodes, 1} y_{#nodes, 2} ... y_{#nodes, c_{#nodes}}
+    y_{#nodes, 1} y_{#nodes, 2} ... y_{#nodes, c_{#nodes}}
 </code></pre>
 
 <h2>Execution flags:</h2>
