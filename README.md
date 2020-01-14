@@ -10,8 +10,40 @@ cd build
 cmake ../
 make benchmark</code></pre>
 
+<h2>Solvers</h2>
+Per default, localsearch (simple implementation by us) and mqlib are run. These are included with our project. This enables our project to perform a comparison between the non-kernelized and kernelized graph's maximum cut computation.
+
 <h3>Linking BiqMac and Localsolver</h3>
-Use build-config.json to specify the paths to the corresponding binaries. Do this before running cmake in the previous step.
+Two other famous maximum cut solvers are the BiqMac solver and Localsolver. These are not open source and, therefore, not included with our project. You can manually retrieve those binaries and use build-config.json to specify the paths to their executable. Do this before running cmake in the previous step.
+
+<h2>Run Example</h2>
+We have also provided the script <code>run-example.sh</code> to showcase how to use our project. More execution scripts are available in scripts/experiments. They should be only used for education purposes, though. We used them to compute the results for our experiments.
+
+<h2>Supported graph formats</h2>
+<h3>Default:</h3>
+<pre><code>
+    #nodes #edges
+    x_{1} y_{1}
+    ....
+    x_{#edges} y_{#edges}
+</code></pre>
+
+<h3>File with suffix <code>.edges</code>:</h3>
+<pre><code>
+    x_{1} y_{1}
+    ....
+    x_{#edges} y_{#edges}
+</code></pre>
+In this case, #edges and #nodes are automatically computed.
+
+<h3>File with suffix <code>.graph</code>:</h3>
+<pre><code>
+    #nodes #edges is_weighted
+    c_{1} y_{1,1} y_{1,2} ... y_{1, c_{1}}
+    c_{2} y_{2,1} y_{2,2} ... y_{2, c_{2}}
+    ....
+    c_{#nodes} y_{#nodes, 1} y_{#nodes, 2} ... y_{#nodes, c_{#nodes}}
+</code></pre>
 
 <h2>Execution flags:</h2>
 
