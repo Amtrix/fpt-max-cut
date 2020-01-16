@@ -1,6 +1,15 @@
 <h1>Max-Cut Kernelization Benchmark Suite</h1>
 
-<h2>Setup:</h2>
+<h2>How to use</h2>
+<h3>Prerequisites</h2>
+<pre><code>
+  sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  sudo apt-get -qq update
+  sudo apt-get install gcc-7 g++-7 libopenmpi-dev libcgal-dev libcgal-qt5-dev libsparsehash-dev 
+ </code></pre>
+ 
+ 
+<h3>Setup</h3>
 <pre><code>git submodule update --init --recursive
 cd solvers/MQLIb
 make
@@ -124,8 +133,7 @@ Only relevant for benchmarking the linear kernel performance:
     Indicates if the heuristics should be applied to reduce the computed marked vertex set.
     
 
-Tips:
+Tip:
 <ul>
-    <li>To input a graph through adjacency list format: Append ".graph" suffix to file. Our parser automatically treats it then as such.</li>
     <li>To aggregate the results for a set of graphs {graph0,...,graph1}, name them graph0.0,...,graphn.n.</li>
 </ul>
