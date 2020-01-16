@@ -1,7 +1,8 @@
 #!/bin/bash
 
+rm -rf build
 git submodule update --init --recursive
-cd solvers/MQLIb
+cd solvers/MQLib/
 make
 cd ../../
 mkdir build

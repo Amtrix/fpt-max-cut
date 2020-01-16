@@ -10,6 +10,7 @@
  
  
 <h3>Setup</h3>
+In the main directory call ./build.sh or do the following manually:
 <pre><code>git submodule update --init --recursive
 cd solvers/MQLIb
 make
