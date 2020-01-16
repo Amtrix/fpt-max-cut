@@ -27,9 +27,9 @@ Per default, localsearch (simple implementation by us) and mqlib are run. These 
 Two other famous maximum cut solvers are the BiqMac solver and Localsolver. These are not open source and, therefore, not included with our project. You can manually retrieve those binaries and use build-config.json to specify the paths to their executable. Do this before running cmake in the previous step.
 
 <h2>Example Graphs</h2>
-We have also provided the script <code>run-example.sh</code> to showcase how to use our project. More execution scripts are available in scripts/experiments. They should be only used for education purposes, though. We used them to compute the results for our experiments.
+We have also provided the script <code>run-example.sh</code> to showcase how to use our project. More execution scripts are available in scripts/experiments.  We used them to compute the results for our experiments.
 
-After running <code>run-example.sh</code>, <code>output/experiments/kernelization</code> will contain the output.
+After running <code>run-example.sh</code>, <code>examples_output</code> will contain the output.
 
 <h2>Supported graph formats</h2>
 <h3>Default:</h3>
