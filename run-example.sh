@@ -3,6 +3,14 @@
 func_localize() {
     local cwd="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
+    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+    sudo apt-get -qq update
+    sudo apt-get install gcc-7 g++-7 libopenmpi-dev libcgal-dev libcgal-qt5-dev libsparsehash-dev 
+
+    git submodule update --init --recursive
+    cd $cwd/solvers/MQLIb
+    make
+
     mkdir $cwd/build
     cd $cwd/build
     cmake ../

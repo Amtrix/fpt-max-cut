@@ -55,10 +55,17 @@ list(APPEND ALL_CPP_FILES
 )
 
 find_library(MQLIB NAMES "MQLib.a" PATHS ./solvers/MQLib/bin/)
-find_library(LOCALSOLVER localsolver PATHS /software/localsolver/localsolver_8_0/bin /opt/localsolver_7_5/bin /opt/localsolver_8_5/bin ${LOCALSOLVER_BIN_PATH})
 
+if (${LOCALSOLVER_ENABLED})
+    find_library(LOCALSOLVER localsolver PATHS /software/localsolver/localsolver_8_0/bin /opt/localsolver_7_5/bin /opt/localsolver_8_5/bin ${LOCALSOLVER_BIN_PATH})
+endif()
 
-set(TARGET_LIBS Threads::Threads -lstdc++fs ${LOCALSOLVER} ${MQLIB} generators)
+set(TARGET_LIBS Threads::Threads -lstdc++fs ${MQLIB} generators)
+
+if (${LOCALSOLVER_ENABLED})
+    set(TARGET_LIBS Threads::Threads -lstdc++fs ${LOCALSOLVER} ${MQLIB} generators)
+endif()
+
 
 macro(add_binary_exec TARGETNAME DEBUGMODE ENTRYCPP)
     add_executable(${TARGETNAME} ${ENTRYCPP})
