@@ -3,4 +3,4 @@
 	url = https://github.com/MQLib/MQLib
 [submodule "test-generators/KaGen"]
 	path = test-generators/KaGen
-	url = https://github.com/Amtrix/KaGen
+	url = https://github.com/KarlsruheGraphGeneration/KaGen
